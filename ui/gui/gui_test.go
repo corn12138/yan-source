@@ -897,6 +897,14 @@ func TestSideBySideDiff(t *testing.T) {
 	if err := h.ed.OpenFile(filepath.Join(root, "main.go")); err != nil {
 		t.Fatal(err)
 	}
+	// Opening a change requires repository discovery; waiting only after the
+	// command cannot recover when it was rejected before discovery completed.
+	for end := time.Now().Add(15 * time.Second); h.f.frame.Status.Branch != "main" && time.Now().Before(end); {
+		h.settle()
+	}
+	if h.f.frame.Status.Branch != "main" {
+		t.Fatal("repository did not become ready")
+	}
 	h.ed.Run("git.openChange")
 	var split string
 	// The diff is read by git in the background; under a loaded test run it can take a few frames.

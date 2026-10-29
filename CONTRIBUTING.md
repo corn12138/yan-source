@@ -19,6 +19,8 @@ SHOTS=$PWD/build/shots go test ./ui/gui   # 无头界面测试顺便截图
 改动用户看得到的，都在 `CHANGELOG.md` 的 `## Unreleased` 下加一条（英文，写给用砚的人看）。
 一个功能一个分支（`codex/<主题>`），做完开 PR 合进 `main`。
 
+超长行保护的原生验收为 `YAN_SELFTEST_MODE=long-line`（独立目录、关闭自动保存），覆盖 26 MiB 单行文件拒绝、原有脏文件、重载/还原、撤销和恢复正常文件。
+
 公式预览原生验收使用 `YAN_SELFTEST_MODE=math`（`-tags selftest`、独立目录和配置），覆盖深浅色、双栏、字号、源码编辑/撤销和配置热重载。
 
 ## CI

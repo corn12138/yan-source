@@ -61,6 +61,10 @@ func runSelftest(ed *app.Editor, fe *gui.Frontend) {
 		fe.SelfTestUpdateRestart(dir, func(s string) { enc.Encode(map[string]string{"UpdateRestart": s}) })
 		return
 	}
+	if os.Getenv("YAN_SELFTEST_MODE") == "long-line" {
+		fe.SelfTestLongLine(dir, func(s string) { enc.Encode(map[string]string{"LongLine": s}) })
+		return
+	}
 	if os.Getenv("YAN_SELFTEST_MODE") == "math" {
 		fe.SelfTestMath(dir, func(s string) { enc.Encode(map[string]string{"Math": s}) })
 		return

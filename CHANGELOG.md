@@ -8,6 +8,10 @@ version's section, and that section becomes the "What's new" of the release note
 - Yan's own source is licensed under MIT; see `LICENSE` for reuse terms and `THIRD_PARTY_NOTICES.md` for included third-party code. To build from source, follow the clone and `make build` steps in `README.md`.
 - On macOS and Linux, saved sessions (including recent paths and review notes) and crash logs are now readable only by your account. Existing session permissions are tightened when the session is next saved; crash-log permissions are tightened when the app next starts.
 
+## 0.1.0-alpha.35
+
+- Files containing a line longer than 64 KiB are refused before text layout, with an explanation, so minified bundles and source maps cannot stall the editor when opened or restored. Session restore skips these files and keeps other tabs. If an external change introduces a long line, the current buffer and undo history stay intact; format the file externally before reopening or reloading it. UTF-8 BOM and CRLF line endings do not consume the line budget.
+
 ## 0.1.0-alpha.34
 
 - Preview LaTeX formulas in Markdown with `$…$`, `$$…$$`, or fenced `math` blocks. Formulas render locally in the current theme; hover a display formula to copy its TeX or view its source. Unsupported formulas keep their source with an explanation. Set `[ui] preview_math = false` in `config.toml` or `.yan.toml` to show formulas as source.

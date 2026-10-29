@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -352,6 +353,9 @@ func (e *Editor) checkDisk() {
 		}
 		s, err := text.Load(d.buf.Path())
 		if err != nil {
+			if errors.Is(err, text.ErrLineTooLong) {
+				e.status = err.Error()
+			}
 			continue
 		}
 		e.reloading = true

@@ -360,11 +360,16 @@ func TestMathPreviewEditUndo(t *testing.T) {
 }
 
 func TestMathLongInlineResizes(t *testing.T) {
-	h := newHarness(t, map[string]string{"long.md": "$" + strings.Repeat("x+", 100) + "y$\n"}, Options{})
+	// A wide rule isolates layout scaling from the renderer time budget under -race.
+	h := newHarness(t, map[string]string{"long.md": "$\\rule{200em}{1em}$\n"}, Options{})
 	h.open("long.md")
 	h.ed.Run("yan.svg.togglePreview")
 	path := filepath.Join(h.root, "long.md")
 	m := waitMath(t, h, path, true)
+	formula := m.blocks[0].runs[0].math
+	if formula == nil || formula.err != "" || formula.w < 100 {
+		t.Fatalf("oversized fixture: %+v", formula)
+	}
 	for _, width := range []int{1200, 620, 1000} {
 		h.tt.SetSize(width, 780)
 		h.settle()

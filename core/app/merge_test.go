@@ -242,11 +242,12 @@ func TestMergeViewRestoreConflict(t *testing.T) {
 	mv := e.cur().merge
 	e.mergeTake(mv, 0, true)
 	e.mergeMarkResolved()
-	pump(t, e, func() bool { en, ok := e.git.entries[path]; return ok && !en.Conflicted() })
+	// Watcher state can precede the completion callback that resets the merge view.
+	pump(t, e, func() bool { en, ok := e.git.entries[path]; return e.git.busy == "" && ok && !en.Conflicted() })
 	e.FocusColumn(1)
 	e.Run("yan.merge.restoreConflict")
 	chooseItem(t, e, "恢复冲突")
-	pump(t, e, func() bool { en, ok := e.git.entries[path]; return ok && en.Conflicted() })
+	pump(t, e, func() bool { en, ok := e.git.entries[path]; return e.git.busy == "" && ok && en.Conflicted() })
 	if got := resultText(mv); got != "a\nm\nz\n" || mv.unresolved() != 1 {
 		t.Fatalf("restored %q", got)
 	}

@@ -19,12 +19,18 @@ const (
 	NormalMax = 8 << 20
 	// LargeMax 以上拒绝打开。
 	LargeMax = 256 << 20
+	// MaxLineBytes bounds whole-line layout and caret stops in both frontends.
+	// Line endings and a leading UTF-8 BOM do not count toward the limit.
+	MaxLineBytes = 64 << 10
 )
 
 var bom = []byte{0xEF, 0xBB, 0xBF}
 
 // ErrTooLarge 表示文件超过 LargeMax。
 var ErrTooLarge = i18n.Error("The file is larger than 256 MB: Yan doesn't open it")
+
+// ErrLineTooLong rejects disk input before it can reach whole-line layout.
+var ErrLineTooLong = i18n.Error("A line is longer than 64 KiB: Yan cannot display this file")
 
 // Load 只读一次文件，识别编码与换行，切成叶子。文件不存在时返回空的新文档。
 // 叶子直接切自读入的缓冲区（零拷贝）；之后的修改只会新建叶子，绝不写回这块缓冲区。
@@ -56,6 +62,9 @@ func Load(path string) (Snapshot, error) {
 		m.Encoding = EncUTF8BOM
 		data = data[len(bom):]
 	}
+	if hasLongLine(data) {
+		return Snapshot{}, fmt.Errorf("%s: %w", filepath.Base(abs), ErrLineTooLong)
+	}
 	m.EOL, m.MixedEOL = detectEOL(data)
 	if len(data) > NormalMax {
 		m.Tier, m.ReadOnly = TierLarge, true
@@ -64,6 +73,19 @@ func Load(path string) (Snapshot, error) {
 		m.ReadOnly = true // GB18030 等编码在 M1 实现；先只读，避免保存时损坏
 	}
 	return newSnapshot(newFlat(split(data)), m), nil
+}
+
+// Inspect only enough bytes to find the next boundary; minified files fail
+// before allocating per-line structures. CRLF has the same content budget as LF.
+func hasLongLine(data []byte) bool {
+	for len(data) > MaxLineBytes {
+		end := bytes.IndexByte(data[:min(len(data), MaxLineBytes+2)], '\n')
+		if end < 0 || (end > MaxLineBytes && data[end-1] != '\r') {
+			return true
+		}
+		data = data[end+1:]
+	}
+	return false
 }
 
 func detectEOL(b []byte) (EOL, bool) {

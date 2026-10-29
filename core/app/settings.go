@@ -1,6 +1,7 @@
 package app
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"slices"
@@ -10,6 +11,7 @@ import (
 	"github.com/corn12138/yan-source/core/config"
 	"github.com/corn12138/yan-source/core/edit"
 	"github.com/corn12138/yan-source/core/i18n"
+	"github.com/corn12138/yan-source/core/text"
 	"github.com/corn12138/yan-source/core/workspace"
 )
 
@@ -310,6 +312,7 @@ func (e *Editor) RestoreSession() bool {
 	e.sync()
 	defer e.sync()
 	opened := false
+	skipped := 0
 	for ci, sc := range s.Columns {
 		if ci > 0 {
 			e.cols = append(e.cols, newColumn())
@@ -356,6 +359,9 @@ func (e *Editor) RestoreSession() bool {
 				continue
 			}
 			if err := e.openIn(c, len(c.tabs), st.Path, st.Preview); err != nil {
+				if errors.Is(err, text.ErrLineTooLong) {
+					skipped++
+				}
 				continue
 			}
 			opened = true
@@ -392,6 +398,9 @@ func (e *Editor) RestoreSession() bool {
 	}
 	e.sidebar = s.Sidebar
 	e.area = areaEditor
+	if skipped > 0 {
+		e.status = i18n.F("Skipped %d file(s) with lines longer than 64 KiB while restoring the session", skipped)
+	}
 	return opened
 }
 

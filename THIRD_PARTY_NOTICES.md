@@ -100,6 +100,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
+UP-56 disk-input line-length protection adapts the behavior and bounded newline scan in Mayoi commit `6d98a4981121aef441498c6cbe9e8f15085e608a` (MIT, Copyright (c) 2026 chencheng). Yan applies it through its shared text loader, excludes BOM/CRLF from the line budget, and preserves its reload/undo and save-conflict protections.
+
 ## MyGo update archive format
 
 `internal/updatepack` adapts the archive writer from MyGo `internal/update/update.go`. The GUI uses

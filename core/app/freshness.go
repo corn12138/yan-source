@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -137,6 +138,7 @@ type diskRead struct {
 	version uint64     // the buffer's snapshot when the read began
 	stamp   edit.Stamp // its disk baseline then
 	state   edit.DiskState
+	loadErr error
 	snap    text.Snapshot // the file's content, when it changed
 }
 
@@ -170,10 +172,10 @@ func (e *Editor) checkDocs(docs []*document) {
 			r.state = edit.DiskStateOf(j.path, j.base, j.read.stamp)
 			if r.state == edit.DiskChanged {
 				s, err := text.Load(j.path)
-				if err != nil {
+				if err != nil && !errors.Is(err, text.ErrLineTooLong) {
 					continue
 				}
-				r.snap = s
+				r.snap, r.loadErr = s, err
 			}
 			if r.state != edit.DiskSame {
 				reads = append(reads, r)
@@ -207,6 +209,9 @@ func (e *Editor) takeDiskReads(reads []diskRead) {
 			e.status = e.conflictError(d).Error() // the unsaved text stays; Save refuses too
 		case r.state == edit.DiskDeleted:
 			e.status = i18n.F("%s was deleted from disk: the tab keeps its content, and saving creates it again", filepath.Base(d.buf.Path()))
+		case r.loadErr != nil:
+			// A refused reload must not advance the saved baseline or lose undo history.
+			e.status = r.loadErr.Error()
 		case r.state == edit.DiskChanged:
 			e.reloading = true
 			d.buf.Reload(r.snap)

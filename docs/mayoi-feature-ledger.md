@@ -312,14 +312,14 @@
 | UP-53 | [#80](https://github.com/sorrycc/Mayoi/pull/80) 文件和目录拖出到其他应用 | P | 上游未合并，头 `718b1e3`；砚已有 transfer.FileData，专项核验剪贴板格式、目录、已删除文件、原生系统拖放 |
 | UP-54 | `2650b9b` 桌面启动的 Git/hooks 使用登录 shell PATH | V | GUI 启用一次有界探测，Git 可执行文件与 hooks 共用路径，失败沿用继承环境；不写全局 PATH。`internal/process/loginpath*_test.go` 覆盖噪声/异常/超时/输出限额/子进程管道与并发，`TestCommitHookUsesLoginPath` 验证真实 hook。独立 macOS 系统启动测试通过；另一独立应用在探测挂起时退出，退出钩子在 3 秒超时前结束假 shell 及占住管道的子进程（强制结束和逃出进程组的子进程不在保证内）。Windows 保留继承环境，Linux/Windows 原生桌面仍开放 |
 | UP-55 | `f1498a9`/`2ba2637` Markdown 的 mermaid 块与 `.mmd`/`.mermaid` 预览画成随主题着色的图，可看源码/复制，`previewMermaid` 关闭 | V | `ui/gui/mermaid.go`：Pele 1.9.0（MIT，`scripts/pele.sh` 可复现）在 goja 里只跑打包脚本，文档文字只当数据；`[ui] preview_mermaid` 关闭；`.mmd`/`.mermaid` 走 Markdown 预览；宽图可超出正文栏。终端版不链接 goja（regexp2 升级使其 +约 200 KB，门禁内），窗口版 +约 6.4 MB；终端版无预览，`.mmd` 提示去窗口版。`TestMermaidUserFlowchart`/`ThemeColors`/`PreviewWindow`/`FilePreview` 覆盖中文标签、判断、边标签、回环、虚线、深浅色、错误说明、显示源码/复制与开关，含无头截图。原生 Windows/Linux 桌面未验收 |
-| UP-56 | `6d98a49` 有超过 64 KiB 的行的文件（压缩包、source map）拒绝打开/重载/还原，会话不再重开 | P | 砚高亮跳过 4000 字符以上的行、256 MB 以上文件不开；单个超长行的排版开销未测，先在核心与 GUI 复现 26 MB 单行文件 |
+| UP-56 | `6d98a49` 超长单行文件保护 | V | `core/text.Load` 在排版前拒绝单行内容超过 64 KiB 的磁盘文件（BOM、LF/CRLF 不计）；GUI/TUI 打开、预览、恢复、重载与还原共用入口。拒绝重载不改变缓冲区、撤销或保存基线；恢复跳过问题文件并提示。边界、26 MiB source map、脏文件/保存冲突/恢复测试及原生 macOS 验收见 `docs/up56-long-line-acceptance.md`；Windows/Linux 原生桌面仍开放 |
 | UP-57 | [#83](https://github.com/sorrycc/Mayoi/pull/83) 转到符号遇行首 `func() {` 不崩溃 | V | 上游未合并，头 `b36c7d0`；砚 `core/syntax/symbols` 有同一越界（已复现，转到定义扫文件夹时也会碰到），空参数不当接收者。`TestFuncLiteralLine`、`TestFindAnonymousFunc` |
 | UP-58 | [#84](https://github.com/sorrycc/Mayoi/pull/84) Homebrew cask 安装 | P | 砚经 `corn12138/yan-releases` 分发；是否提供 cask、放在哪个仓库另行决定 |
 | UP-59 | `b906ff6` Mermaid 节点、子图被 `style`/`classDef` 填色后标签仍可读 | V | 对比度不足 3 时换主题文字色或背景色中对比更高的，文字自带 `color` 不改；`TestMermaidStyledFillLabels` 覆盖深浅两种主题 |
 | UP-60 | `3d03b96` 标点（全角冒号、括号）、汉字、数字后的裸网址成链接 | V | `ui/gui/markdownlinkify.go` AST 变换，去尾标点、未配对的 `)` 与实体；代码与已有链接不动。`TestMarkdownLinkifyAfterPunctuation` |
 | UP-61 | `88e00cf` Markdown 脚注：上标引用、末尾列表、回链 | V | 锚点同 GitHub，复用页内链接滚动；脚注小一号、浅色。`TestMarkdownFootnotes`、`TestMarkdownFootnoteLinks`（点引用到脚注、点 ↩ 回来）及截图 |
 | UP-62 | `1010308` Markdown LaTeX 公式预览 | V | `ui/gui/math.go`、`markdown.go`、`markdownview.go`：MathJax 3.2.2 本地 SVG，行内/块/`math` 围栏、深浅色、表格对齐、源码复制与编辑撤销；`[ui] preview_math` 支持用户/项目配置和热重载。输入/时间/数量上限、宏隔离、超时恢复；依赖固定 `4bd079439ee7`，终端回归及真实 macOS 窗口验收通过。详见 `docs/up62-math-acceptance.md`；原生 Windows/Linux 尚未验收 |
-| UP-63 | `64bd32c` 「在右侧打开预览」复用右侧最近的未锁定列，否则左侧；没有其他未锁定列时才拆分 | V | 2026-10-28：`core/app/preview.go` 保留源码焦点、共享文档和既有标签，跳过锁列；`TestPreviewReusesUnlockedSideColumn` 覆盖左右优先级、锁列、已有标签、列宽和重复调用，`TestPreviewSkipsLockedExistingPreview` 防止复用锁定的预览列；原有会话恢复/双向滚动回归保留。macOS 原生中英文窗口通过右侧 Markdown 复用、源码焦点与重复调用验证（`SelfTestLanguage`）；左侧/锁列/其他格式的原生布局验收及 Windows/Linux 桌面验收仍开放；未发布 |
+| UP-63 | `64bd32c` 「在右侧打开预览」复用右侧最近的未锁定列，否则左侧；没有其他未锁定列时才拆分 | V | 2026-10-28：`core/app/preview.go` 保留源码焦点、共享文档和既有标签，跳过锁列；`TestPreviewReusesUnlockedSideColumn` 覆盖左右优先级、锁列、已有标签、列宽和重复调用，`TestPreviewSkipsLockedExistingPreview` 防止复用锁定的预览列；原有会话恢复/双向滚动回归保留。macOS 原生中英文窗口通过右侧 Markdown 复用、源码焦点与重复调用验证（`SelfTestLanguage`）；左侧/锁列/其他格式的原生布局验收及 Windows/Linux 桌面验收仍开放；已随 alpha.33 发布 |
 | UP-64 | `d888678` 关闭其他项目前先问一次 | V | 默认取消的总确认；逐个处理未保存文件，取消或保存失败停止后续关闭；新增项目不被关闭。自动测试覆盖取消/保存/冲突/新增项目，macOS 原生验证总确认及保存冲突保留项目 |
 | UP-65 | `58b5041`/`68ee016` 面板、列表、跳转落点淡入，每帧少做事 | P | 动效属设计取舍；其中的性能改动（作用域查找、词法一次读行）可单独评估 |
 | UP-66 | `8122013`/`f914000` MyGo 0.7.1（需 Go 1.27.3）与非 ASCII 文本每帧减负 | P | 依赖升级单独一批：砚用 sorrycc/mygo 分支，需重新核对补丁与体积 |
@@ -393,7 +393,7 @@
 | CF-04 | 配置文件格式 | D | 保留TOML与项目覆盖，不迁移settings.json |
 | CF-05 | 字体family/size/line-height | I | 跨平台设置入口 |
 | CF-06 | 字体weight/features与独立terminal字体 | M | 共享字体默认，独立字号不受编辑器zoom影响 |
-| CF-07 | 英文/中文/日文和实时切换 | M | 当前中文界面；命令支持多语言检索 |
+| CF-07 | 英文/中文/日文和实时切换 | P | alpha.33 已支持跟随系统、简体中文和英文，重启后统一生效；日文与实时切换未做，不能算完整上游契约 |
 | CF-08 | 保存配置实时应用所有窗口 | V | 每个窗口监听用户配置目录，项目 .yan.toml 走项目监听；项目覆盖保留；格式错时沿用进程内上次可读内容并常驻状态栏。`TestExternalConfigChangesApplyToEveryWindow`、`TestMalformedReloadKeepsLastValidConfiguration`（含 keybindings 重载）。配置目录启动后才创建时，需保存或聚焦后生效 |
 | CF-09 | VS Code JSONC、chord、解绑与命令别名 | I | 错误可见，保留有效配置 |
 | CF-10 | 动态when选区/终端/侧栏/系统上下文 | V | 含运行时名字的绑定编成守卫命令，按下时求值，不成立回落到原键或照常打字；系统名按 `keymap.Profile.Platform()`。`TestWhenSelectionIsEvaluatedAtKeyPress`、`TestWhenPlatformFollowsProfile` |
@@ -435,7 +435,7 @@
 | `panelPosition` | LY-09 / 缺 |
 | `projectTabs` | WN-05 / state |
 | `projectTabStyle` | WN-09～12 / 缺 |
-| `locale` | CF-07 / 缺 |
+| `locale` | CF-07 / ui.language；设置面板选择优先，启动时生效 |
 | `autoSave` | ED-07 / editor.auto_save |
 | `wordWrap` | ED-06 / editor.word_wrap |
 | `vim` | VI-01 / editor.vim |
@@ -455,7 +455,7 @@
 
 ## 分批执行顺序
 
-当前执行：Markdown 预览三项（UP-59～61）随 alpha.31 发布；UP-38 已随 alpha.30 发布，ED-22、UP-54/55/57 已发布。随后按价值排：子模块 SCM（UP-50，上游已合并）、超长行文件（UP-56）、LaTeX 公式（UP-62）、长行合并（UP-49），再补 CLI（UP-48）及 Vim 兼容。每项按源码、针对性测试、真实平台验收分别记证据。以下 B1～B9 保留完整模块范围；账户/AI/SSH 不因界面存在就视为完成，外部服务仍需独立方案。
+当前执行：UP-56 超长单行文件保护；UP-62 已随 alpha.34 发布，UP-63/64 与界面语言已随 alpha.33 发布。本批选择文件打开可靠性，避免与 Git 子模块、依赖升级混合。下一批优先评估子模块 SCM（UP-50），再核验长行三方合并（UP-49）；CLI（UP-48）、Vim 与依赖升级（UP-66）独立推进。以下 B1～B9 保留模块范围，外部服务与原生平台仍需各自验收。
 
 1. **B1 Markdown 阅读闭环（本轮）**：MD-07～16。右侧预览、提示块、代码复制、锚点、表格、选择复制、阅读统计、会话与滚动；验证重复调用、中文、源码不被预览编辑、重启恢复。
 2. **B2 文件与键盘可靠性（保存冲突、文件/搜索新鲜度、配置与键位已修；SE-05 性能与 CF-13 终端前置拦截仍开放）**：ED-02/17、SE-04/08/11/12、CF-08～12，先独立复现外部改动/异步回调/快捷键范围，再补遗漏；验收不能覆盖或丢失脏文档。
@@ -469,7 +469,7 @@
 
 ## 统计与证据
 
-本次登记 276 项：D=3，I=111，M=32，P=37，V=83，X=10（增量登记至 UP-68，另有 ED-22）。此数字是契约登记数，不是功能完成百分比。
+本次登记 276 项：D=3，I=111，M=31，P=34，V=87，X=10（增量登记至 UP-68，另有 ED-22）。此数字是契约登记数，不是功能完成百分比。
 
 当前基线多仓库证据见 [multi-repository-scm.md](multi-repository-scm.md)。本轮 MD-07～16 已通过核心与 GUI 点击/选择/复制/双向滚动测试、截图检查、完整 make check（含 race/架构/体积）及 Windows amd64 核心/GUI 测试交叉编译。原生 Windows/Linux 桌面和真实人工阅读验收仍未执行。
 
