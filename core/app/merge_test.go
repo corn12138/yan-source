@@ -220,7 +220,8 @@ func TestMergeViewResolveAndContinue(t *testing.T) {
 	if err := e.mergeMarkResolved(); err != nil {
 		t.Fatal(err)
 	}
-	pump(t, e, func() bool { en, ok := e.git.entries[path]; return ok && !en.Conflicted() })
+	// The watcher can observe the staged file before gitDo posts completion.
+	pump(t, e, func() bool { en, ok := e.git.entries[path]; return e.git.busy == "" && ok && !en.Conflicted() })
 	if out := gitOut(t, root, "diff", "--cached", "--name-only"); out != "shared.txt" {
 		t.Fatalf("staged %q", out)
 	}
