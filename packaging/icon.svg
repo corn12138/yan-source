@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<defs>
+<filter id="c-shadow" x="-10%" y="-10%" width="120%" height="130%">
+<feDropShadow dx="0" dy="14" stdDeviation="16" flood-color="#000000" flood-opacity="0.34"/>
+</filter>
+<linearGradient id="c-ink" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#2E2B35"/>
+<stop offset="1" stop-color="#121116"/>
+</linearGradient>
+<radialGradient id="c-glow" cx="0.5" cy="0.32" r="0.55">
+<stop offset="0" stop-color="#FFFFFF" stop-opacity="0.07"/>
+<stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+</radialGradient>
+<linearGradient id="c-drop" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#E05A40"/>
+<stop offset="1" stop-color="#B8321F"/>
+</linearGradient>
+<linearGradient id="c-beam" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#FBF6EC"/>
+<stop offset="1" stop-color="#E6DCCA"/>
+</linearGradient>
+</defs>
+<rect x="100" y="100" width="824" height="824" rx="185" fill="url(#c-ink)" filter="url(#c-shadow)"/>
+<rect x="100" y="100" width="824" height="824" rx="185" fill="url(#c-glow)"/>
+<rect x="101.5" y="101.5" width="821" height="821" rx="184" fill="none" stroke="#FFFFFF" stroke-opacity="0.09" stroke-width="3"/>
+<path d="M 396 232 Q 396 214 414 214 L 466 214 Q 498 214 512 238 Q 526 214 558 214 L 610 214 Q 628 214 628 232 Q 628 250 610 250 L 560 250 Q 532 250 532 280 L 532 616 Q 532 646 560 646 L 610 646 Q 628 646 628 664 Q 628 682 610 682 L 558 682 Q 526 682 512 658 Q 498 682 466 682 L 414 682 Q 396 682 396 664 Q 396 646 414 646 L 464 646 Q 492 646 492 616 L 492 280 Q 492 250 464 250 L 414 250 Q 396 250 396 232 Z" fill="url(#c-beam)"/>
+<path d="M 512 718 C 512 718 444 800 444 846 C 444 884 474 912 512 912 C 550 912 580 884 580 846 C 580 800 512 718 512 718 Z" transform="translate(0 -24)" fill="url(#c-drop)"/>
+<ellipse cx="486" cy="830" rx="13" ry="22" transform="rotate(20 486 830)" fill="#FFFFFF" fill-opacity="0.32"/>
+</svg>

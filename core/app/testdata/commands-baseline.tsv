@@ -1,0 +1,298 @@
+# id	hidden	title	macOS window	Windows window	Linux window	terminal
+actions.find	false	查找	⌘F	Ctrl+F	Ctrl+F	Ctrl+F
+compareFiles	false	资源管理器：与已选文件比较				
+copyFilePath	false	复制路径				
+copyRelativeFilePath	false	复制相对路径				
+cursorBottom	true	文件尾	⌘↓	Ctrl+End	Ctrl+End	Ctrl+End
+cursorBottomSelect	true	文件尾并选择	⇧⌘↓			
+cursorDown	true	光标下移	↓	Down	Down	Down
+cursorDownSelect	true	光标下移并选择	⇧↓	Shift+Down	Shift+Down	Shift+Down
+cursorEnd	true	行尾	⌘→	End	End	End
+cursorEndSelect	true	行尾并选择	⇧⌘→	Shift+End	Shift+End	Shift+End
+cursorHome	true	行首	⌘←	Home	Home	Home
+cursorHomeSelect	true	行首并选择	⇧⌘←	Shift+Home	Shift+Home	Shift+Home
+cursorLeft	true	光标左移	←	Left	Left	Left
+cursorLeftSelect	true	光标左移并选择	⇧←	Shift+Left	Shift+Left	Shift+Left
+cursorPageDown	true	下一页	⇟	Pagedown	Pagedown	Pagedown
+cursorPageDownSelect	true	下一页并选择	⇧⇟	Shift+Pagedown	Shift+Pagedown	Shift+Pagedown
+cursorPageUp	true	上一页	⇞	Pageup	Pageup	Pageup
+cursorPageUpSelect	true	上一页并选择	⇧⇞	Shift+Pageup	Shift+Pageup	Shift+Pageup
+cursorRight	true	光标右移	→	Right	Right	Right
+cursorRightSelect	true	光标右移并选择	⇧→	Shift+Right	Shift+Right	Shift+Right
+cursorTop	true	文件首	⌘↑	Ctrl+Home	Ctrl+Home	Ctrl+Home
+cursorTopSelect	true	文件首并选择	⇧⌘↑			
+cursorUp	true	光标上移	↑	Up	Up	Up
+cursorUpSelect	true	光标上移并选择	⇧↑	Shift+Up	Shift+Up	Shift+Up
+cursorWordEndRight	true	按词右移	⌥F	Opt+F	Opt+F	Opt+F
+cursorWordEndRightSelect	true	按词右移并选择	⌥⇧→	Opt+Shift+Right	Opt+Shift+Right	Opt+Shift+Right
+cursorWordLeft	true	按词左移	⌥B	Opt+B	Opt+B	Opt+B
+cursorWordLeftSelect	true	按词左移并选择	⌥⇧←	Opt+Shift+Left	Opt+Shift+Left	Opt+Shift+Left
+deleteAllLeft	false	删除到行首	⌘⌫			
+deleteFile	false	资源管理器：移到废纸篓				
+deleteLeft	false	向左删除	⌫	Backspace	Backspace	Backspace
+deleteRight	false	向右删除	⌦	Delete	Delete	Delete
+deleteWordLeft	false	向左删除单词	⌥⌫	Opt+Backspace	Opt+Backspace	Opt+Backspace
+editor.action.addSelectionToNextFindMatch	false	选中下一个匹配项	⌘D	Ctrl+D	Ctrl+D	Ctrl+D
+editor.action.clipboardCopyAction	false	复制	⌘C	Ctrl+C	Ctrl+C	Ctrl+C
+editor.action.clipboardCutAction	false	剪切	⌘X	Ctrl+X	Ctrl+X	Ctrl+X
+editor.action.clipboardPasteAction	false	粘贴	⌘V	Ctrl+V	Ctrl+V	Ctrl+V
+editor.action.commentLine	false	切换行注释	⌘/	Ctrl+/	Ctrl+/	Ctrl+/
+editor.action.copyLinesDownAction	false	向下复制行	⌥⇧↓	Opt+Shift+Down	Opt+Shift+Down	Opt+Shift+Down
+editor.action.copyLinesUpAction	false	向上复制行	⌥⇧↑	Opt+Shift+Up	Opt+Shift+Up	Opt+Shift+Up
+editor.action.deleteLines	false	删除行	⇧⌘K	Ctrl+Shift+K	Ctrl+Shift+K	Ctrl+Shift+K
+editor.action.dirtydiff.next	false	Git：看下一处改动	⌥F3	Opt+F3	Opt+F3	Opt+F3
+editor.action.dirtydiff.previous	false	Git：看上一处改动	⌥⇧F3	Opt+Shift+F3	Opt+Shift+F3	Opt+Shift+F3
+editor.action.indentLines	false	行：缩进	⌘]	Ctrl+]	Ctrl+]	Ctrl+]
+editor.action.indentUsingTabs	false	缩进：使用制表符				
+editor.action.insertLineAfter	false	在下面插入行	⌘↩	Ctrl+Enter	Ctrl+Enter	Ctrl+Enter
+editor.action.insertLineBefore	false	在上面插入行	⇧⌘↩	Ctrl+Shift+Enter	Ctrl+Shift+Enter	Ctrl+Shift+Enter
+editor.action.jumpToBracket	false	跳到配对的括号	⇧⌘\	Ctrl+Shift+\	Ctrl+Shift+\	Ctrl+Shift+\
+editor.action.moveLinesDownAction	false	向下移动行	⌥↓	Opt+Down	Opt+Down	Opt+Down
+editor.action.moveLinesUpAction	false	向上移动行	⌥↑	Opt+Up	Opt+Up	Opt+Up
+editor.action.nextMatchFindAction	false	查找下一个	⌘G	F3	F3	F3
+editor.action.outdentLines	false	行：反缩进	⌘[	Ctrl+[	Ctrl+[	Ctrl+[
+editor.action.previousMatchFindAction	false	查找上一个	⇧⌘G	Shift+F3	Shift+F3	Shift+F3
+editor.action.replaceAll	false	全部替换	⌥⌘↩	Ctrl+Opt+Enter	Ctrl+Opt+Enter	Ctrl+Opt+Enter
+editor.action.replaceOne	false	替换当前匹配				
+editor.action.revealDefinition	false	转到定义	F12	F12	F12	F12
+editor.action.selectAll	false	全选	⌘A	Ctrl+A	Ctrl+A	Ctrl+A
+editor.action.sortLinesAscending	false	行：升序排列				
+editor.action.sortLinesDescending	false	行：降序排列				
+editor.action.startFindReplaceAction	false	替换	⌥⌘F	Ctrl+H	Ctrl+H	Ctrl+Opt+F
+editor.action.toggleWordWrap	false	切换自动换行				
+editor.action.transformToCamelcase	false	转换为驼峰命名				
+expandLineSelection	false	选中行	⌘L	Ctrl+L	Ctrl+L	Ctrl+L
+explorer.newFile	false	资源管理器：新建文件…				
+explorer.newFolder	false	资源管理器：新建文件夹…				
+filesExplorer.copy	false	资源管理器：复制	⌘C	Ctrl+C	Ctrl+C	Ctrl+C
+filesExplorer.paste	false	资源管理器：粘贴	⌘V	Ctrl+V	Ctrl+V	Ctrl+V
+git.addRemote	false	Git：添加远程仓库…				
+git.checkout	false	Git：切换分支…				
+git.clean	true					
+git.commit	false	Git：提交	⌘↩	Ctrl+K C	Ctrl+K C	Ctrl+K C
+git.commitAmend	false	Git：修改上次提交				
+git.commitAndPush	false	Git：提交并推送				
+git.deleteBranch	false	Git：删除本地分支…				
+git.fetch	false	Git：抓取				
+git.init	false	Git：初始化仓库				
+git.openAllChanges	false	Git：打开所有改动				
+git.openChange	false	Git：打开改动				
+git.pull	false	Git：拉取				
+git.push	false	Git：推送				
+git.refresh	false	Git：刷新				
+git.removeRemote	false	Git：删除远程仓库…				
+git.renameBranch	false	Git：重命名当前分支…				
+git.revertSelectedRanges	false	Git：还原这处改动	⌃K R	Ctrl+K R	Ctrl+K R	Ctrl+K R
+git.stage	false	Git：暂存当前文件				
+git.stageAll	false	Git：暂存全部更改				
+git.stageSelectedRanges	false	Git：暂存这处改动	⌃K S	Ctrl+K S	Ctrl+K S	Ctrl+K S
+git.sync	false	Git：同步（拉取后推送；没有上游时发布分支）				
+git.toggleCommitFiles	false	Git：显示或隐藏提交文件列表				
+git.undoCommit	false	Git：撤销上次提交				
+git.unstage	false	Git：取消暂存当前文件				
+git.unstageAll	false	Git：取消暂存全部				
+list.clear	true		⎋	Esc	Esc	Esc
+list.collapse	true		←	Left	Left	Left
+list.delete	true		⌘⌫	Delete	Delete	Delete
+list.expand	true		→	Right	Right	Right
+list.expandSelectionDown	true		⇧↓	Shift+Down	Shift+Down	Shift+Down
+list.expandSelectionUp	true		⇧↑	Shift+Up	Shift+Up	Shift+Up
+list.focusDown	true		↓	Down	Down	Down
+list.focusMessage	true		⇥	Tab	Tab	Tab
+list.focusPageDown	true		⇟	Pagedown	Pagedown	Pagedown
+list.focusPageUp	true		⇞	Pageup	Pageup	Pageup
+list.focusUp	true		↑	Up	Up	Up
+list.select	true		↩	Enter	Enter	Enter
+list.selectAll	true		⌘A	Ctrl+A	Ctrl+A	Ctrl+A
+list.toggleExpand	true		Space	 	 	 
+markdown.showPreviewToSide	false	在右侧打开预览（SVG、Markdown、Mermaid）				
+openInIntegratedTerminal	false	资源管理器：在终端中打开				
+outdent	false	反缩进	⇧⇥	Shift+Tab	Shift+Tab	Shift+Tab
+redo	false	重做	⇧⌘Z	Ctrl+Y	Ctrl+Y	Ctrl+Y
+removeSecondaryCursors	false	只保留主光标	⎋	Esc	Esc	Esc
+renameFile	false	资源管理器：改名…	F2	F2	F2	F2
+revealFileInOS	false	在访达中显示				
+review.cancel	false	评审：取消编辑				
+review.clear	false	评审：清空意见				
+review.comment	false	评审：添加或编辑意见	⇧⌘M	Ctrl+K M	Ctrl+K M	Ctrl+K M
+review.copy	false	评审：复制全部意见				
+review.copyExcerpt	false	评审：复制代码片段与位置				
+review.delete	false	评审：删除意见				
+review.list	false	评审：查看全部意见				
+review.next	false	评审：下一条意见				
+review.previous	false	评审：上一条意见				
+review.save	false	评审：保存意见				
+review.send	false	评审：发送意见到终端				
+review.undo	false	评审：撤销删除或清空				
+search.action.replaceAll	false	搜索：全部替换				
+selectForCompare	false	资源管理器：选为比较对象				
+tab	false	缩进	⇥	Tab	Tab	Tab
+toggle.diff.renderSideBySide	false	改动视图：换排法（自动、并排、一栏）				
+toggleFindCaseSensitive	false	查找：区分大小写	⌥⌘C	Opt+C	Opt+C	Ctrl+Opt+C
+toggleFindRegex	false	查找：使用正则表达式	⌥⌘R	Opt+R	Opt+R	Ctrl+Opt+R
+toggleFindWholeWord	false	查找：全字匹配	⌥⌘W	Opt+W	Opt+W	Ctrl+Opt+W
+undo	false	撤销	⌘Z	Ctrl+Z	Ctrl+Z	Ctrl+Z
+view.lockColumn	false	锁定/解锁这一列				
+view.terminalLocation	false	终端：默认在编辑区新建				
+view.terminalLockRight	false	终端：移到右侧锁定列				
+workbench.action.closeActiveEditor	false	关闭编辑器	⌘W	Ctrl+W	Ctrl+W	Ctrl+W
+workbench.action.closeEditorsInGroup	false	关闭这一列的所有编辑器				
+workbench.action.closeOtherEditors	false	关闭其他编辑器				
+workbench.action.compareEditor.nextChange	false	改动视图：下一处改动				
+workbench.action.compareEditor.previousChange	false	改动视图：上一处改动				
+workbench.action.createTerminalEditor	false	终端：在编辑区新建终端				
+workbench.action.editor.nextChange	false	Git：下一个改动	⌥F5	Opt+F5	Opt+F5	Opt+F5
+workbench.action.editor.previousChange	false	Git：上一个改动	⌥⇧F5	Opt+Shift+F5	Opt+Shift+F5	Opt+Shift+F5
+workbench.action.files.newFile	false	新建文件…				
+workbench.action.files.newUntitledFile	false	新建未命名文件	⌘N	Ctrl+N	Ctrl+N	
+workbench.action.files.openFolder	false	打开文件夹…	⌘O	Ctrl+K Ctrl+O	Ctrl+K Ctrl+O	
+workbench.action.files.revert	false	文件：还原为磁盘上的版本				
+workbench.action.files.save	false	文件：保存	⌘S	Ctrl+S	Ctrl+S	Ctrl+S
+workbench.action.files.saveAll	false	文件：全部保存				
+workbench.action.files.saveAs	false	另存为…	⇧⌘S	Ctrl+Shift+S	Ctrl+Shift+S	
+workbench.action.findInFiles	false	在文件中搜索	⇧⌘F	Ctrl+K F	Ctrl+K F	Ctrl+K F
+workbench.action.focusActiveEditorGroup	false	聚焦到编辑器				
+workbench.action.focusNextGroup	false	聚焦到下一列	⌥⌘→	Ctrl+K Right	Ctrl+K Right	Ctrl+K Right
+workbench.action.focusPreviousGroup	false	聚焦到上一列	⌥⌘←	Ctrl+K Left	Ctrl+K Left	Ctrl+K Left
+workbench.action.gotoLine	false	转到行…	⌃G	Ctrl+G	Ctrl+G	Ctrl+G
+workbench.action.gotoSymbol	false	转到符号…	⇧⌘O	Ctrl+K O	Ctrl+K O	Ctrl+K O
+workbench.action.keepEditor	false	保留编辑器（预览标签转正）				
+workbench.action.moveEditorToNextGroup	false	把编辑器移到下一列				
+workbench.action.moveEditorToPreviousGroup	false	把编辑器移到上一列				
+workbench.action.navigateBack	false	后退	⌃-	Opt+Left	Opt+Left	Ctrl+-
+workbench.action.navigateForward	false	前进	⌃⇧-	Opt+Right	Opt+Right	Ctrl+Shift+-
+workbench.action.newWindow	false	新建窗口	⇧⌘N	Ctrl+Shift+N	Ctrl+Shift+N	
+workbench.action.nextEditor	false	打开下一个编辑器	⇧⌘]	Ctrl+K ]	Ctrl+K ]	Ctrl+K ]
+workbench.action.openEditorAtIndex1	true		⌘1	Opt+1	Opt+1	
+workbench.action.openEditorAtIndex2	true		⌘2	Opt+2	Opt+2	
+workbench.action.openEditorAtIndex3	true		⌘3	Opt+3	Opt+3	
+workbench.action.openEditorAtIndex4	true		⌘4	Opt+4	Opt+4	
+workbench.action.openEditorAtIndex5	true		⌘5	Opt+5	Opt+5	
+workbench.action.openEditorAtIndex6	true		⌘6	Opt+6	Opt+6	
+workbench.action.openEditorAtIndex7	true		⌘7	Opt+7	Opt+7	
+workbench.action.openEditorAtIndex8	true		⌘8	Opt+8	Opt+8	
+workbench.action.openEditorAtIndex9	true		⌘9	Opt+9	Opt+9	
+workbench.action.openGlobalKeybindingsFile	false	首选项：打开键盘快捷方式（keybindings.json）				
+workbench.action.openRecent	false	打开最近的文件夹…	⌃R	Ctrl+R	Ctrl+R	Ctrl+R
+workbench.action.positionPanelBottom	false	终端面板放在底部				
+workbench.action.positionPanelLeft	false	终端面板放在左侧				
+workbench.action.positionPanelRight	false	终端面板放在右侧				
+workbench.action.previousEditor	false	打开上一个编辑器	⇧⌘[	Ctrl+K [	Ctrl+K [	Ctrl+K [
+workbench.action.quickOpen	false	转到文件…	⌘P	Ctrl+P	Ctrl+P	Ctrl+P
+workbench.action.quit	false	退出	⌘Q	Ctrl+Q	Ctrl+Q	Ctrl+Q
+workbench.action.reopenClosedEditor	false	重新打开关闭的编辑器	⇧⌘T	Ctrl+Shift+T	Ctrl+Shift+T	Ctrl+Shift+T
+workbench.action.replaceInFiles	false	在文件中替换	⇧⌘H	Ctrl+Shift+H	Ctrl+Shift+H	Ctrl+Shift+H
+workbench.action.selectTheme	false	首选项：颜色主题…				
+workbench.action.showCommands	false	显示所有命令	⇧⌘P	F1	F1	F1
+workbench.action.splitEditor	false	向右拆分编辑器	⌘\	Ctrl+\	Ctrl+\	Ctrl+\
+workbench.action.terminal.new	false	终端：新建终端	⌃⇧`	Ctrl+Shift+`	Ctrl+Shift+`	Ctrl+Shift+`
+workbench.action.terminal.toggleTerminal	false	终端：切换终端	⌃`	Ctrl+`	Ctrl+`	Ctrl+`
+workbench.action.toggleAutoSave	false	切换自动保存				
+workbench.action.toggleSidebarPosition	false	移动侧边栏到另一侧				
+workbench.action.toggleSidebarVisibility	false	切换侧边栏可见性	⌘B	Ctrl+B	Ctrl+B	Ctrl+B
+workbench.action.zoomIn	false	放大	⌘=	Ctrl+=	Ctrl+=	
+workbench.action.zoomOut	false	缩小	⌘-	Ctrl+-	Ctrl+-	
+workbench.action.zoomReset	false	重置缩放	⌘0	Ctrl+0	Ctrl+0	
+workbench.files.action.refreshFilesExplorer	false	刷新资源管理器				
+workbench.files.action.showActiveFileInExplorer	false	在资源管理器中显示当前文件				
+workbench.view.explorer	false	显示资源管理器	⇧⌘E	Ctrl+K E	Ctrl+K E	Ctrl+K E
+workbench.view.scm	false	显示源代码管理	⌃K G	Ctrl+K G	Ctrl+K G	Ctrl+K G
+workbench.view.search	false	显示搜索				
+yan.appearance.dark	false	外观：深色				
+yan.appearance.light	false	外观：浅色				
+yan.appearance.system	false	外观：跟随系统				
+yan.config.importSettingsFile	false	从文件导入设置（settings.json）				
+yan.config.importVSCode	false	导入 VS Code / Cursor 的设置和快捷键				
+yan.config.open	false	打开用户配置文件				
+yan.diff.acceptRight	false	比较两个文件：把右边这处写进左边				
+yan.diff.appendBlock	false	改动视图：在这处改动后追加对侧的行				
+yan.diff.compareFiles	false	比较两个文件…				
+yan.diff.context	false	改动视图：上下文行数（0～10）…				
+yan.diff.editBeside	false	改动视图：在旁边编辑工作区这一边（i）				
+yan.diff.highlight	false	改动视图：标出改动的方式（按词、按字、整行）…				
+yan.diff.nextFile	false	改动视图：下一个文件				
+yan.diff.previousFile	false	改动视图：上一个文件				
+yan.diff.revertBlock	false	改动视图：还原这处改动（比较两个文件时把左边写进右边）				
+yan.diff.toggleAlignedRows	false	改动视图：并排两边的行对齐／各自排				
+yan.diff.toggleFullFiles	false	改动视图：显示整个文件／只显示改动附近				
+yan.diff.toggleSyncScroll	false	改动视图：并排两边一起滚／各自滚				
+yan.diff.whitespace	false	改动视图：比较空白（全部、忽略行尾、忽略全部、忽略空行）…				
+yan.edit.newline	false	换行	↩	Enter	Enter	Enter
+yan.eol.choose	false	转换行尾序列…				
+yan.eol.crlf	false	行尾序列：CRLF				
+yan.eol.lf	false	行尾序列：LF				
+yan.files.overwrite	false	文件：覆盖磁盘上的版本				
+yan.find.close	false	关闭查找框				
+yan.font.family	false	字体：选择代码字体…				
+yan.font.lineHeight	false	字体：行高…				
+yan.font.size	false	字体：代码字号…				
+yan.git.abortOp	false	Git：中止合并、变基、拣选或还原				
+yan.git.compareCommitToHead	false	Git：比较选中提交 → HEAD				
+yan.git.compareHeadToCommit	false	Git：比较 HEAD → 选中提交				
+yan.git.compareSelected	false	Git：与选定起点比较				
+yan.git.continueOp	false	Git：继续合并、变基、拣选或还原				
+yan.git.copyPatch	false	Git：复制提交改动补丁				
+yan.git.exportPatch	false	Git：导出提交补丁…				
+yan.git.openCommitRemote	false	Git：在远端打开提交				
+yan.git.pruneRemote	false	Git：清理远程已删除的分支…				
+yan.git.selectCompare	false	Git：选中提交作为比较起点				
+yan.git.setRemoteURL	false	Git：修改远程仓库地址…				
+yan.git.toggleBlame	false	Git：切换行内 blame				
+yan.guide.nextTip	false	学习：下一条提示				
+yan.guide.open	false	学习：功能导览				
+yan.guide.reset	false	学习：清空课程进度				
+yan.guide.skip	false	学习：跳过这一步				
+yan.hunk.close	false	Git：关掉改动的框				
+yan.indent.choose	false	选择缩进方式…				
+yan.indentUsingSpaces2	false	缩进：使用 2 个空格				
+yan.indentUsingSpaces4	false	缩进：使用 4 个空格				
+yan.indentUsingSpaces8	false	缩进：使用 8 个空格				
+yan.installCLI	false	安装 yan 命令…				
+yan.merge.acceptOurs	false	合并：这处冲突用我们的				
+yan.merge.acceptTheirs	false	合并：这处冲突用他们的				
+yan.merge.applyAndNext	false	合并：应用（标记已解决）并打开下一个冲突文件				
+yan.merge.applyChanges	false	合并：应用两边不冲突的改动				
+yan.merge.applyOursChanges	false	合并：应用我们这边不冲突的改动				
+yan.merge.applyTheirsChanges	false	合并：应用他们那边不冲突的改动				
+yan.merge.files	false	合并：冲突文件列表…				
+yan.merge.ignoreOurs	false	合并：这处冲突忽略我们的				
+yan.merge.ignoreTheirs	false	合并：这处冲突忽略他们的				
+yan.merge.markResolved	false	合并：标记为已解决（保存并暂存）				
+yan.merge.nextConflict	false	合并：下一处冲突				
+yan.merge.open	false	合并：打开三方合并（冲突文件）				
+yan.merge.previousConflict	false	合并：上一处冲突				
+yan.merge.resolveOurs	false	合并：全部冲突用我们的				
+yan.merge.resolveTheirs	false	合并：全部冲突用他们的				
+yan.merge.restoreConflict	false	合并：恢复成冲突…				
+yan.merge.saveAndClose	false	合并：保存并关闭三方合并				
+yan.merge.toggleAutoApply	false	合并：打开时自动应用不冲突的改动（开关）				
+yan.openFolderNewWindow	false	在新窗口中打开文件夹…	⌥⌘O	Ctrl+K Shift+O	Ctrl+K Shift+O	
+yan.project.close	false	文件：关闭项目				
+yan.project.customize	false	自定义项目标识与颜色…				
+yan.project.next	false	转到：下一个项目	⌃⌘]			
+yan.project.previous	false	转到：上一个项目	⌃⌘[			
+yan.project.show1	true		⌃⌘1			
+yan.project.show2	true		⌃⌘2			
+yan.project.show3	true		⌃⌘3			
+yan.project.show4	true		⌃⌘4			
+yan.project.show5	true		⌃⌘5			
+yan.project.show6	true		⌃⌘6			
+yan.project.show7	true		⌃⌘7			
+yan.project.show8	true		⌃⌘8			
+yan.project.show9	true		⌃⌘9			
+yan.projectTabs.toggle	false	显示：项目标签（一个窗口里几个文件夹）				
+yan.scm.chooseRepository	false	Git：选择仓库…				
+yan.scm.commitActions	false	Git：对选中的提交…（检出、合并、变基、重置、还原、拣选）				
+yan.scm.moreCommits	false	Git：显示更多提交				
+yan.scm.refreshRepositories	false	Git：刷新仓库列表				
+yan.scm.toggleAllBranches	false	Git：提交历史显示所有分支				
+yan.scm.toggleCommits	false	Git：折起或展开提交历史				
+yan.scm.toggleRepositoryPanel	false	Git：显示或隐藏仓库面板（分支、远程）				
+yan.scm.toggleTree	false	Git：以树的形式查看改动				
+yan.svg.togglePreview	false	切换预览（SVG、Markdown、Mermaid）	⇧⌘V	Ctrl+Shift+V	Ctrl+Shift+V	Ctrl+Shift+V
+yan.theme.claude	false	主题：Claude				
+yan.theme.matrix	false	主题：The Matrix				
+yan.theme.mayoi	false	主题：Mayoi				
+yan.toggleTabWordWrap	false	切换这个标签的自动换行	⌥Z	Opt+Z	Opt+Z	Opt+Z
+yan.toggleThemeEffects	false	主题：切换装饰效果				
+yan.toggleVim	false	切换 Vim 模式				

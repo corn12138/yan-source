@@ -1,0 +1,18 @@
+title = "yan source privacy checks"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "machine-home-path"
+description = "Machine-specific home directory in published source"
+# Default credential rules allow absolute paths. Extract their private segment
+# so that inherited allowlist does not suppress these privacy findings.
+regex = '''(?:/(?:Users|home)/|[A-Za-z]:\\Users\\)([A-Za-z0-9_.-]+[/\\])'''
+secretGroup = 1
+
+[[rules]]
+id = "macos-private-temp-path"
+description = "Machine-specific macOS temporary directory"
+regex = '''/(?:private/)?var/folders/([A-Za-z0-9_-]+/[A-Za-z0-9_-]+/)'''
+secretGroup = 1

@@ -1,0 +1,130 @@
+# id	menu path
+actions.find	编辑 › 查找
+editor.action.addSelectionToNextFindMatch	选择 › 选中下一个匹配项
+editor.action.commentLine	选择 › 切换行注释
+editor.action.copyLinesDownAction	选择 › 向下复制行
+editor.action.copyLinesUpAction	选择 › 向上复制行
+editor.action.deleteLines	选择 › 删除行
+editor.action.indentLines	选择 › 缩进行
+editor.action.indentUsingTabs	选择 › 缩进方式 › 使用制表符
+editor.action.insertLineAfter	选择 › 在下面插入行
+editor.action.insertLineBefore	选择 › 在上面插入行
+editor.action.jumpToBracket	转到 › 跳到配对的括号
+editor.action.moveLinesDownAction	选择 › 向下移动行
+editor.action.moveLinesUpAction	选择 › 向上移动行
+editor.action.nextMatchFindAction	编辑 › 查找下一个
+editor.action.outdentLines	选择 › 反缩进行
+editor.action.previousMatchFindAction	编辑 › 查找上一个
+editor.action.revealDefinition	转到 › 转到定义
+editor.action.sortLinesAscending	选择 › 升序排列行
+editor.action.sortLinesDescending	选择 › 降序排列行
+editor.action.startFindReplaceAction	编辑 › 替换
+editor.action.toggleWordWrap	显示 › 自动换行
+editor.action.transformToCamelcase	选择 › 转换为驼峰命名
+expandLineSelection	选择 › 选中行
+git.addRemote	Git › 远程仓库 › 添加…
+git.checkout	Git › 切换分支…
+git.deleteBranch	Git › 删除本地分支…
+git.fetch	Git › 抓取
+git.pull	Git › 拉取
+git.push	Git › 推送
+git.removeRemote	Git › 远程仓库 › 删除…
+git.renameBranch	Git › 重命名当前分支…
+redo	编辑 › 重做
+review.clear	评审 › 清空意见
+review.comment	评审 › 添加或编辑意见
+review.copy	评审 › 复制全部意见
+review.copyExcerpt	评审 › 复制代码片段与位置
+review.list	评审 › 查看全部意见
+review.next	评审 › 下一条意见
+review.previous	评审 › 上一条意见
+review.send	评审 › 发送意见到终端
+review.undo	评审 › 撤销删除或清空
+toggle.diff.renderSideBySide	Git › 改动视图换排法
+undo	编辑 › 撤销
+view.terminalLocation	显示 › 默认在编辑区新建终端
+workbench.action.closeActiveEditor	文件 › 关闭标签
+workbench.action.createTerminalEditor	显示 › 在编辑区新建终端
+workbench.action.files.newFile	文件 › 新建文件…
+workbench.action.files.newUntitledFile	文件 › 新建未命名文件
+workbench.action.files.openFolder	文件 › 打开文件夹…
+workbench.action.files.revert	文件 › 还原为磁盘上的版本
+workbench.action.files.save	文件 › 保存
+workbench.action.files.saveAll	文件 › 全部保存
+workbench.action.files.saveAs	文件 › 另存为…
+workbench.action.focusNextGroup	显示 › 聚焦到下一列
+workbench.action.focusPreviousGroup	显示 › 聚焦到上一列
+workbench.action.gotoLine	转到 › 转到行…
+workbench.action.moveEditorToNextGroup	显示 › 把标签移到下一列
+workbench.action.moveEditorToPreviousGroup	显示 › 把标签移到上一列
+workbench.action.navigateBack	转到 › 后退
+workbench.action.navigateForward	转到 › 前进
+workbench.action.newWindow	文件 › 新建窗口
+workbench.action.nextEditor	转到 › 下一个标签
+workbench.action.openGlobalKeybindingsFile	文件 › 打开键盘快捷方式（keybindings.json）
+workbench.action.openRecent	文件 › 打开最近 › 更多…
+workbench.action.positionPanelBottom	显示 › 终端面板位置 › 底部
+workbench.action.positionPanelLeft	显示 › 终端面板位置 › 左侧
+workbench.action.positionPanelRight	显示 › 终端面板位置 › 右侧
+workbench.action.previousEditor	转到 › 上一个标签
+workbench.action.quickOpen	转到 › 快速打开…
+workbench.action.reopenClosedEditor	文件 › 重新打开关闭的标签
+workbench.action.selectTheme	显示 › 主题 › 颜色主题…
+workbench.action.showCommands	显示 › 命令面板…
+workbench.action.splitEditor	显示 › 向右拆分
+workbench.action.terminal.new	显示 › 新建终端
+workbench.action.terminal.toggleTerminal	显示 › 切换终端
+workbench.action.toggleAutoSave	文件 › 自动保存
+workbench.action.toggleSidebarPosition	显示 › 移动侧边栏到另一侧
+workbench.action.toggleSidebarVisibility	显示 › 切换侧边栏
+workbench.action.zoomIn	显示 › 放大
+workbench.action.zoomOut	显示 › 缩小
+workbench.action.zoomReset	显示 › 实际大小
+workbench.view.explorer	显示 › 资源管理器
+yan.appearance.dark	显示 › 主题 › 深色
+yan.appearance.light	显示 › 主题 › 浅色
+yan.appearance.system	显示 › 主题 › 跟随系统
+yan.config.open	文件 › 打开用户配置文件
+yan.diff.compareFiles	Git › 比较两个文件…
+yan.diff.context	Git › 改动视图上下文行数…
+yan.diff.highlight	Git › 改动视图标出改动的方式…
+yan.diff.toggleAlignedRows	Git › 并排两边的行对齐（开关）
+yan.diff.toggleSyncScroll	Git › 并排两边一起滚动（开关）
+yan.diff.whitespace	Git › 改动视图比较空白…
+yan.files.overwrite	文件 › 覆盖磁盘上的版本
+yan.font.family	显示 › 字体 › 代码字体…
+yan.font.lineHeight	显示 › 字体 › 行高…
+yan.font.size	显示 › 字体 › 字号…
+yan.git.pruneRemote	Git › 远程仓库 › 清理已删除的分支…
+yan.git.setRemoteURL	Git › 远程仓库 › 修改地址…
+yan.guide.open	帮助 › 功能导览（学习）
+yan.indentUsingSpaces2	选择 › 缩进方式 › 使用 2 个空格
+yan.indentUsingSpaces4	选择 › 缩进方式 › 使用 4 个空格
+yan.indentUsingSpaces8	选择 › 缩进方式 › 使用 8 个空格
+yan.installCLI	文件 › 安装 yan 命令…
+yan.merge.acceptOurs	Git › 合并冲突 › 这处用我们的
+yan.merge.acceptTheirs	Git › 合并冲突 › 这处用他们的
+yan.merge.applyAndNext	Git › 合并冲突 › 应用并打开下一个冲突文件
+yan.merge.applyChanges	Git › 合并冲突 › 应用两边不冲突的改动
+yan.merge.files	Git › 合并冲突 › 冲突文件列表…
+yan.merge.ignoreOurs	Git › 合并冲突 › 这处忽略我们的
+yan.merge.ignoreTheirs	Git › 合并冲突 › 这处忽略他们的
+yan.merge.markResolved	Git › 合并冲突 › 标记为已解决
+yan.merge.nextConflict	Git › 合并冲突 › 下一处冲突
+yan.merge.open	Git › 合并冲突 › 打开三方合并
+yan.merge.previousConflict	Git › 合并冲突 › 上一处冲突
+yan.merge.resolveOurs	Git › 合并冲突 › 全部用我们的
+yan.merge.resolveTheirs	Git › 合并冲突 › 全部用他们的
+yan.merge.restoreConflict	Git › 合并冲突 › 恢复成冲突…
+yan.merge.saveAndClose	Git › 合并冲突 › 保存并关闭
+yan.merge.toggleAutoApply	Git › 合并冲突 › 打开时自动应用不冲突的改动
+yan.openFolderNewWindow	文件 › 在新窗口中打开文件夹…
+yan.project.close	文件 › 关闭项目
+yan.project.next	转到 › 下一个项目
+yan.project.previous	转到 › 上一个项目
+yan.projectTabs.toggle	显示 › 项目标签
+yan.theme.claude	显示 › 主题 › Claude
+yan.theme.matrix	显示 › 主题 › The Matrix
+yan.theme.mayoi	显示 › 主题 › Mayoi
+yan.toggleThemeEffects	显示 › 主题 › 装饰效果
+yan.toggleVim	显示 › Vim 模式

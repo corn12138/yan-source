@@ -1,0 +1,41 @@
+# 检查 PR：格式、vet、测试，只在一台 Linux 上跑。GitHub Actions 按分钟计费，私有仓库的 macOS 分钟按十倍算，
+# 所以不开 macOS、不在每次推送时跑；竞态检测、体积门禁和打包只在本机的 make check、make release 里做。
+# 想在没有 PR 的分支上跑，到 Actions 页面手动运行（workflow_dispatch）。
+name: CI
+
+on:
+  pull_request:
+    paths-ignore: ["**/*.md", "docs/**", "LICENSE"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# 同一个 PR 又推了新提交：取消还在跑的那次。
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CGO_ENABLED: "0"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      # MyGo 在 Linux 上用 EGL 在内存里画无头的界面测试（同 MyGo 自己的 CI）。
+      - name: Install Mesa
+        run: sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends libegl-mesa0 libgl1-mesa-dri libglx-mesa0
+      - name: gofmt
+        run: test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
+      - run: go vet ./...
+      - name: Build for macOS
+        run: GOOS=darwin go build ./...
+      - name: Test
+        env:
+          XDG_CONFIG_HOME: ${{ runner.temp }}/xdg-config
+        run: go test -count=1 ./...

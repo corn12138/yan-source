@@ -1,0 +1,51 @@
+# context	entry
+editor tab	关闭
+editor tab	关闭全部
+editor tab	关闭其他
+editor tab	向右拆分
+editor tab	在访达中显示
+editor tab	复制相对路径
+editor tab	复制路径
+editor tab	移到上一列
+editor tab	移到下一列
+editor tab	锁定列
+explorer file	与已选文件比较
+explorer file	在终端中打开
+explorer file	在访达中显示
+explorer file	复制
+explorer file	复制相对路径
+explorer file	复制路径
+explorer file	改名…
+explorer file	新建文件…
+explorer file	新建文件夹…
+explorer file	移到废纸篓
+explorer file	粘贴
+explorer file	选为比较对象
+explorer folder	在终端中打开
+explorer folder	在访达中显示
+explorer folder	复制
+explorer folder	复制相对路径
+explorer folder	复制路径
+explorer folder	改名…
+explorer folder	新建文件…
+explorer folder	新建文件夹…
+explorer folder	移到废纸篓
+explorer folder	粘贴
+source control commit	与选定起点比较
+source control commit	在远端打开提交
+source control commit	复制改动补丁
+source control commit	导出补丁…
+source control commit	打开
+source control commit	检出、合并、变基、重置、还原、拣选…
+source control commit	比较 HEAD → 此提交
+source control commit	比较此提交 → HEAD
+source control commit	选为比较起点
+terminal tab	关闭
+terminal tab	关闭全部
+terminal tab	关闭其他
+terminal tab	向右拆分
+terminal tab	移到上一列
+terminal tab	移到下一列
+terminal tab	移到右侧锁定列
+terminal tab	移到面板
+terminal tab	锁定列
