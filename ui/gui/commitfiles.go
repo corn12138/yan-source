@@ -1,10 +1,10 @@
 package gui
 
 import (
-	"fmt"
 	"path/filepath"
 
 	"github.com/corn12138/yan-source/core/app"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/view"
 	"github.com/egoist/mygo/ui"
 )
@@ -37,20 +37,20 @@ func (f *Frontend) commitDiffView(c *ui.Context, pane ui.Element, ci int) {
 			code := ui.Box(c.Key("commit-code")).Grow(1).MinWidth(0).FillHeight().Clip()
 			draw(code)
 			box := ui.Column(c.Key("commit-files")).Width(w).Shrink(0).FillHeight().Background(f.pal.chrome).
-				BorderWidth(0, 0, 0, 1).BorderColor(f.pal.border).Label("提交文件列表")
+				BorderWidth(0, 0, 0, 1).BorderColor(f.pal.border).Label(i18n.T("Commit File List"))
 			box.Children(func() {
 				f.splitter(c, edgeLeft, func(dx float32) { f.ed.SetCommitFilesWidth(float64(w - dx)) })
 				ui.Row(c).Height(28).Padding(0, 6, 0, 10).AlignItems(ui.Center).Children(func() {
-					ui.Text(c, fmt.Sprintf("提交文件 · %d", cf.Count)).FontSize(11.5).TextColor(f.pal.muted).SingleLine().Grow(1)
-					if f.smallButton(c, iconListTree, "切换提交文件树/列表") {
+					ui.Text(c, i18n.F("Commit Files · %d", cf.Count)).FontSize(11.5).TextColor(f.pal.muted).SingleLine().Grow(1)
+					if f.smallButton(c, iconListTree, i18n.T("Toggle Commit File Tree/List")) {
 						f.ed.CommitFilesToggleTree(ci, cf.Identity)
 					}
-					if f.smallButton(c, iconX, "隐藏提交文件列表") {
+					if f.smallButton(c, iconX, i18n.T("Hide Commit File List")) {
 						f.ed.Run("git.toggleCommitFiles")
 					}
 				})
 				if cf.Loading {
-					ui.Text(c, "读取中…").Padding(10).TextColor(f.pal.muted)
+					ui.Text(c, i18n.T("Reading…")).Padding(10).TextColor(f.pal.muted)
 					return
 				}
 				if cf.Error != "" {
@@ -58,7 +58,7 @@ func (f *Frontend) commitDiffView(c *ui.Context, pane ui.Element, ci int) {
 					return
 				}
 				if len(cf.Rows) == 0 {
-					ui.Text(c, "没有文件改动").Padding(10).TextColor(f.pal.muted)
+					ui.Text(c, i18n.T("No file changes")).Padding(10).TextColor(f.pal.muted)
 					return
 				}
 				st := &f.cols[ci].commitList
@@ -139,7 +139,7 @@ func (f *Frontend) commitDiffView(c *ui.Context, pane ui.Element, ci int) {
 }
 
 func (f *Frontend) commitFileRow(c *ui.Context, r view.CommitFile) ui.Element {
-	return ui.Row(c).Height(24).Padding(0, 8, 0, float32(8+r.Depth*12)).Gap(5).AlignItems(ui.Center).Tooltip(r.Path).Label("提交文件树 " + r.Name).Children(func() {
+	return ui.Row(c).Height(24).Padding(0, 8, 0, float32(8+r.Depth*12)).Gap(5).AlignItems(ui.Center).Tooltip(r.Path).Label(i18n.F("Commit file tree %s", r.Name)).Children(func() {
 		icon, tint := fileIcon(f.pal, r.Name)
 		if r.Folder {
 			arrow := iconChevronDown
@@ -164,7 +164,7 @@ func (f *Frontend) commitFileRow(c *ui.Context, r view.CommitFile) ui.Element {
 func (f *Frontend) scmCommitFile(c *ui.Context, ed repositoryEditor, cm *view.SCMCommit, i int, selected bool) {
 	r := *cm.File
 	row := ui.Row(c.Key(cm.Hash+":"+r.Path)).Height(24).Padding(0, 4, 0, float32(16+r.Depth*12)).Gap(5).AlignItems(ui.Center).
-		Label("提交文件 " + r.Name).Tooltip(r.Path)
+		Label(i18n.F("Commit files %s", r.Name)).Tooltip(r.Path)
 	if selected {
 		row.Background(f.pal.active)
 	} else if row.Hovered() {

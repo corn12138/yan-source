@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/corn12138/yan-source/core/git"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/view"
 )
 
@@ -175,9 +176,9 @@ func (e *Editor) toggleAllBranches() error {
 	}
 	e.refreshHistory()
 	if e.allBranches {
-		e.status = "提交历史：所有分支"
+		e.status = i18n.T("Commit History: All Branches")
 	} else {
-		e.status = "提交历史：当前分支"
+		e.status = i18n.T("Commit History: Current Branch")
 	}
 	return nil
 }
@@ -228,28 +229,28 @@ func (e *Editor) commitChoices(c git.Commit, fs []git.CommitFile) {
 			detail += " · " + strings.TrimSuffix(dir, "/")
 		}
 		if f.Orig != "" {
-			detail += " · 从 " + r.Rel(f.Orig) + " 改名"
+			detail += i18n.F(" · renamed from %s", r.Rel(f.Orig))
 		}
 		items = append(items, ovItem{label: name, detail: detail, run: func(e *Editor) error { return e.openCommitChange(c, f) }})
 	}
 	at := c.Short()
 	items = append(items,
-		ovItem{label: "复制提交号", detail: c.Hash, run: func(e *Editor) error {
+		ovItem{label: i18n.T("Copy Commit Hash"), detail: c.Hash, run: func(e *Editor) error {
 			if e.host == nil {
-				return errors.New("剪贴板不可用")
+				return errors.New(i18n.T("Clipboard unavailable"))
 			}
 			if err := e.host.SetClipboard(c.Hash); err != nil {
 				return err
 			}
-			e.status = "已复制 " + at
+			e.status = i18n.F("Copied %s", at)
 			return nil
 		}},
-		ovItem{label: "检出这个提交", detail: "HEAD 会分离到 " + at, run: func(e *Editor) error {
+		ovItem{label: i18n.T("Check Out This Commit"), detail: i18n.F("HEAD will be detached at %s", at), run: func(e *Editor) error {
 			if err := e.saveDirtyInRepo(); err != nil {
 				return err
 			}
-			return e.gitDo("检出中…", func(r *git.Repo) error { return r.Checkout(c.Hash) }, func(e *Editor) {
-				e.status = "已检出 " + at
+			return e.gitDo(i18n.T("Checking out…"), func(r *git.Repo) error { return r.Checkout(c.Hash) }, func(e *Editor) {
+				e.status = i18n.F("Checked out %s", at)
 				e.checkDisk()
 			})
 		}},
@@ -257,26 +258,26 @@ func (e *Editor) commitChoices(c git.Commit, fs []git.CommitFile) {
 	items = append(items, e.commitToolItems(c)...)
 	items = append(items, e.commitOpItems(c)...)
 	items = append(items,
-		ovItem{label: "在这里新建分支…", detail: at, run: func(e *Editor) error {
-			e.gitPrompt("在 "+at+" 新建分支", "", func(s string) string { return "新建分支 " + strings.TrimSpace(s) }, func(e *Editor, name string) error {
+		ovItem{label: i18n.T("Create Branch Here…"), detail: at, run: func(e *Editor) error {
+			e.gitPrompt(i18n.F("New branch at %s", at), "", func(s string) string { return i18n.F("Create branch %s", strings.TrimSpace(s)) }, func(e *Editor, name string) error {
 				name, err := refName(name)
 				if err != nil {
 					return err
 				}
-				return e.gitDo("新建分支中…", func(r *git.Repo) error { return r.CreateBranch(name, c.Hash) }, func(e *Editor) {
-					e.status = "已在 " + at + " 新建分支 " + name
+				return e.gitDo(i18n.T("Creating branch…"), func(r *git.Repo) error { return r.CreateBranch(name, c.Hash) }, func(e *Editor) {
+					e.status = i18n.F("Created branch %[2]s at %[1]s", at, name)
 				})
 			})
 			return nil
 		}},
-		ovItem{label: "在这里打标签…", detail: at, run: func(e *Editor) error {
-			e.gitPrompt("给 "+at+" 打标签", "", func(s string) string { return "打标签 " + strings.TrimSpace(s) }, func(e *Editor, name string) error {
+		ovItem{label: i18n.T("Create Tag Here…"), detail: at, run: func(e *Editor) error {
+			e.gitPrompt(i18n.F("Tag %s", at), "", func(s string) string { return i18n.F("Create tag %s", strings.TrimSpace(s)) }, func(e *Editor, name string) error {
 				name, err := refName(name)
 				if err != nil {
 					return err
 				}
-				return e.gitDo("打标签中…", func(r *git.Repo) error { return r.CreateTag(name, c.Hash, "") }, func(e *Editor) {
-					e.status = "已给 " + at + " 打标签 " + name
+				return e.gitDo(i18n.T("Creating tag…"), func(r *git.Repo) error { return r.CreateTag(name, c.Hash, "") }, func(e *Editor) {
+					e.status = i18n.F("Tagged %s as %s", at, name)
 				})
 			})
 			return nil
@@ -284,7 +285,7 @@ func (e *Editor) commitChoices(c git.Commit, fs []git.CommitFile) {
 	)
 	title := at + " " + c.Subject
 	if len(fs) == 0 {
-		title += "（没有改文件）"
+		title += i18n.T("(No files changed)")
 	}
 	e.gitChoose(title, items...)
 }
@@ -295,9 +296,9 @@ func refName(s string) (string, error) {
 	s = strings.TrimSpace(s)
 	switch {
 	case s == "":
-		return "", errors.New("名字不能空着")
+		return "", errors.New(i18n.T("The name can't be empty"))
 	case strings.HasPrefix(s, "-"):
-		return "", fmt.Errorf("名字不能以 - 开头：%s", s)
+		return "", fmt.Errorf(i18n.T("The name can't start with -: %s"), s)
 	}
 	return s, nil
 }
@@ -306,7 +307,7 @@ func refName(s string) (string, error) {
 func (e *Editor) openCommitChange(c git.Commit, f git.CommitFile) error {
 	r := e.repository().git.repo
 	if r == nil {
-		return errors.New("不在 git 仓库里")
+		return errors.New(i18n.T("Not in a Git repository"))
 	}
 	post := e.postGit()
 	go func() {

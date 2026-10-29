@@ -3,9 +3,10 @@ package keymap
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"slices"
 	"strings"
+
+	"github.com/corn12138/yan-source/core/i18n"
 )
 
 // VSBinding 是 keybindings.json（VS Code 的格式）里的一条：按键序列，命令和它的参数，什么时候生效。
@@ -44,19 +45,19 @@ func ParseVSCode(data []byte) (bs []VSBinding, warns []string, err error) {
 		}
 		b := VSBinding{Key: strings.ToLower(strings.TrimSpace(e.Key)), Command: e.Command, Args: e.Args}
 		if b.Key == "" && !b.Removal() {
-			warns = append(warns, fmt.Sprintf("%s 没写 key", e.Command))
+			warns = append(warns, i18n.F("%s has no key", e.Command))
 			continue
 		}
 		if b.Key != "" {
 			if _, err := Parse(b.Key, ModCtrl); err != nil {
-				warns = append(warns, fmt.Sprintf("%q：%v", e.Key, err))
+				warns = append(warns, i18n.F("%q: %v", e.Key, err))
 				continue
 			}
 		}
 		if strings.TrimSpace(e.When) != "" {
 			w, err := ParseWhen(e.When)
 			if err != nil {
-				warns = append(warns, fmt.Sprintf("when %q：%v", e.When, err))
+				warns = append(warns, i18n.F("when %q: %v", e.When, err))
 				continue
 			}
 			b.When = w

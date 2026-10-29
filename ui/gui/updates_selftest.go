@@ -114,7 +114,7 @@ func (f *Frontend) SelfTestPublishedUpdate(dir string, report func(string)) {
 			return
 		}
 		out, err := exec.Command(exe, "--version").CombinedOutput()
-		if err != nil || !strings.Contains(string(out), "v"+want+"（") {
+		if err != nil || !strings.Contains(string(out), "v"+want+" (") && !strings.Contains(string(out), "v"+want+"（") {
 			report(fmt.Sprintf("FAIL installed executable: %s %v", out, err))
 			return
 		}

@@ -6,6 +6,7 @@ import (
 	"github.com/egoist/mygo/ui"
 
 	"github.com/corn12138/yan-source/core/app"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/view"
 )
 
@@ -31,35 +32,35 @@ func diffBlockButtonsOf(kind view.DiffBlock) [][3]string {
 	switch kind {
 	case view.DiffBlockRevert:
 		return [][3]string{
-			{"✎ 编辑", "在旁边编辑工作区这一边（i）", "edit"},
-			{"＋ 暂存", "暂存这处改动", "stage"},
-			{"↶ 还原", "还原这处改动：换回对侧的行（可以撤销）", "revert"},
-			{"⤓ 追加", "在这处改动后追加对侧的行（可以撤销）", "append"},
+			{i18n.T("✎ Edit"), i18n.T("Edit the working tree side alongside (i)"), "edit"},
+			{i18n.T("+ Stage"), i18n.T("Stage this change"), "stage"},
+			{i18n.T("↶ Revert"), i18n.T("Revert this change: restore the other side's lines (can be undone)"), "revert"},
+			{i18n.T("⤓ Append"), i18n.T("Append the other side's lines after this change (can be undone)"), "append"},
 		}
 	case view.DiffBlockStaged:
-		return [][3]string{{"－ 取消暂存", "取消暂存这处改动", "unstage"}}
+		return [][3]string{{i18n.T("− Unstage"), i18n.T("Unstage this change"), "unstage"}}
 	case view.DiffBlockCompare:
 		return [][3]string{
-			{"→ 写进右边", "把左边这处写进右边的文件（可以撤销）", "revert"},
-			{"← 写进左边", "把右边这处写进左边的文件（可以撤销）", "acceptRight"},
+			{i18n.T("→ Write Right"), i18n.T("Write this left-side change into the right file (can be undone)"), "revert"},
+			{i18n.T("← Write Left"), i18n.T("Write this right-side change into the left file (can be undone)"), "acceptRight"},
 		}
 	case view.DiffBlockMerge:
 		return [][3]string{
-			{"✓ 用这边", "这处冲突用这一边的行（另一边已用时两边都用；可以撤销）", "take"},
-			{"✕ 忽略", "这处冲突不用这一边：算已处理（可以撤销）", "ignore"},
+			{i18n.T("✓ Use This"), i18n.T("Use this side's lines for this conflict (both sides when the other is already used; can be undone)"), "take"},
+			{i18n.T("✕ Ignore"), i18n.T("Don't use this side for this conflict: counts as handled (can be undone)"), "ignore"},
 		}
 	case view.DiffBlockMergeApply:
-		return [][3]string{{"» 应用这处", "把这一边这处不冲突的改动应用到结果里（可以撤销）", "apply"}}
+		return [][3]string{{i18n.T("» Apply This"), i18n.T("Apply this side's non-conflicting change to the result (can be undone)"), "apply"}}
 	case view.DiffBlockFile:
-		return [][3]string{{"打开文件", "打开这个文件到第一处改动", "openFile"}, {"↶ 放弃修改…", "放弃这个文件的修改（会先问）", "discardFile"}, {"＋ 暂存文件", "暂存整个文件", "stageFile"}}
+		return [][3]string{{i18n.T("Open File"), i18n.T("Open this file at its first change"), "openFile"}, {i18n.T("↶ Discard Changes…"), i18n.T("Discard this file's changes (asks first)"), "discardFile"}, {i18n.T("+ Stage File"), i18n.T("Stage the whole file"), "stageFile"}}
 	case view.DiffBlockFileDeleted:
-		return [][3]string{{"↶ 恢复文件…", "从暂存区恢复这个删掉的文件（会先问）", "discardFile"}, {"＋ 暂存删除", "暂存这个文件的删除", "stageFile"}}
+		return [][3]string{{i18n.T("↶ Restore File…"), i18n.T("Restore this deleted file from the index (asks first)"), "discardFile"}, {i18n.T("+ Stage Deletion"), i18n.T("Stage this file's deletion"), "stageFile"}}
 	case view.DiffBlockFileUntracked:
-		return [][3]string{{"打开文件", "打开这个文件", "openFile"}, {"✕ 删除文件…", "把这个文件移到" + app.TrashName(hostOS) + "（会先问）", "discardFile"}, {"＋ 暂存文件", "暂存整个文件", "stageFile"}}
+		return [][3]string{{i18n.T("Open File"), i18n.T("Open this file"), "openFile"}, {i18n.T("✕ Delete File…"), i18n.F("Move this file to %s (asks first)", app.TrashName(hostOS)), "discardFile"}, {i18n.T("+ Stage File"), i18n.T("Stage the whole file"), "stageFile"}}
 	case view.DiffBlockFileStaged:
-		return [][3]string{{"打开文件", "打开这个文件到第一处改动", "openFile"}, {"－ 取消暂存", "取消暂存整个文件", "unstageFile"}}
+		return [][3]string{{i18n.T("Open File"), i18n.T("Open this file at its first change"), "openFile"}, {i18n.T("− Unstage"), i18n.T("Unstage the whole file"), "unstageFile"}}
 	case view.DiffBlockFileConflict:
-		return [][3]string{{"三方合并", "在三方合并里解决这个文件的冲突", "merge"}}
+		return [][3]string{{i18n.T("Three-Way Merge"), i18n.T("Resolve this file's conflicts in the three-way merge"), "merge"}}
 	}
 	return nil
 }
@@ -101,7 +102,7 @@ func (f *Frontend) diffBlockBarAt(c *ui.Context, ci int, key string, y float32, 
 			return
 		}
 		el := ui.Box(c.Key("more")).Padding(0, 6).Height(f.font.lineH - 2).Radius(4).AlignItems(ui.Center).
-			Background(f.pal.hover).Cursor(ui.CursorPointer).Label("更多操作").Tooltip("更多操作")
+			Background(f.pal.hover).Cursor(ui.CursorPointer).Label(i18n.T("More Actions")).Tooltip(i18n.T("More Actions"))
 		el.Children(func() { ui.Text(c, "⋯").FontSize(11).TextColor(f.pal.accent) })
 		el.Menu(func(m *ui.Menu) {
 			for _, b := range more {

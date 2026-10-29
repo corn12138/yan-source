@@ -8,6 +8,7 @@ import (
 	"slices"
 
 	"github.com/corn12138/yan-source/core/edit"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/syntax/highlight"
 	"github.com/corn12138/yan-source/core/text"
 	"github.com/corn12138/yan-source/core/view"
@@ -157,7 +158,7 @@ func (e *Editor) loadDoc(path string) (*document, error) {
 		e.ws.watcher.Add(filepath.Dir(path))
 	}
 	if m := s.Meta(); m.ReadOnly {
-		e.status = "只读打开：文件不是 UTF-8 或超过 8 MB"
+		e.status = i18n.T("Opened read-only: the file is not UTF-8 or is larger than 8 MB")
 	}
 	return d, nil
 }
@@ -331,10 +332,9 @@ func (e *Editor) closeTab(c *column, i int, force bool) error {
 	}
 	if !force && t.doc.buf.Dirty() && len(t.doc.tabs) == 1 && e.armed != id {
 		e.armed = id
-		e.status = t.doc.name() + " 有未保存的修改：" + e.hintOr("workbench.action.files.save", "保存") +
-			"，或再按一次 " + e.hintOr(id, "关闭") + " 放弃修改并关闭"
+		e.status = i18n.F("%s has unsaved changes: %s, or press %s again to discard changes and close", t.doc.name(), e.hintOr("workbench.action.files.save", i18n.T("Save")), e.hintOr(id, i18n.T("Close")))
 		if saveErr != nil {
-			e.status = saveErr.Error() + "。再按一次 " + e.hintOr(id, "关闭") + " 放弃修改并关闭"
+			e.status = i18n.F("%s. Press %s again to discard changes and close", saveErr.Error(), e.hintOr(id, i18n.T("Close")))
 		}
 		return nil
 	}
@@ -373,7 +373,7 @@ func (e *Editor) closeTabsIn(c *column, keep *tab) error {
 		}
 	}
 	if left > 0 {
-		return fmt.Errorf("%d 个标签有未保存的修改，没有关", left)
+		return fmt.Errorf(i18n.T("%d tabs have unsaved changes and were not closed"), left)
 	}
 	return nil
 }
@@ -439,7 +439,7 @@ func (e *Editor) reopenClosed() error {
 		}
 		return nil
 	}
-	return errors.New("没有关闭过的标签")
+	return errors.New(i18n.T("No closed tabs"))
 }
 
 func clampSels(s edit.Selections, n int) edit.Selections {

@@ -1816,6 +1816,7 @@ flowchart TD
 ```toml
 # ~/.config/yan/config.toml —— 所有项都可省略
 [ui]
+language = "system"         # system | zh-Hans | en；只在用户配置里有效，设置里选过的（state.json）优先
 theme = "dark"              # dark | light | themes/ 下的自定义主题名
 mouse = true                # false：不捕获鼠标，恢复终端原生的选中复制
 
@@ -1868,6 +1869,12 @@ flowchart LR
 - **未知键**：`toml.Decode` 返回的 `MetaData.Undecoded()` 列出没有对应字段的键，例如把 `ui.mouse` 写成 `ui.mous`。只告警（附「你是不是想写 `ui.mouse`」的编辑距离建议），**从不因配置错误拒绝启动**。
 - **热重载**：解析在 watcher job 里做，成功后 `Post`。主题变化时 `Frame` 报告 `changed`，整屏重绘一次（如果以后加了行哈希层，还要清空哈希缓存，因为哈希只包含 StyleID 不包含颜色）。
 - **不能热生效的项**：`cjk.ambiguous_width` 由 tcell 在包初始化时读取，修改后状态栏提示「重启生效」。
+- **界面语言**：`core/i18n` 以英文原文为键，带一份简体中文目录；缺译文时显示英文，`core/i18n` 的测试扫描源码，
+  保证每条用到的文字都有译文、目录里没有没人用的条目。偏好的优先级是「设置里选的（`state.json` 的 `language`）→
+  用户 `config.toml` 的 `[ui] language` → 跟随系统」，项目的 `.yan.toml` 不能设置它。`main` 在建任何窗口、菜单、
+  更新窗口之前用 `config.StartLocale` 解析一次（系统语言由 `platform/locale` 给出：macOS 读
+  `NSLocale.preferredLanguages`，终端版读 POSIX 的语言环境变量），整个进程不再改变；之后保存的选择和配置热重载只更新
+  设置里的「已保存」和重启提示。
 
 🧭 **Go 学习点**
 - **`embed.FS`**：`//go:embed defaults/*.toml` 把整个目录编进二进制，`fs.ReadFile(defaultsFS, "defaults/keymap-vscode.toml")` 读取。

@@ -1,6 +1,8 @@
 # 内核、终端版和窗口版一律 CGO_ENABLED=0：纯 Go，可交叉编译（窗口版的 MyGo 用 purego 调系统 API）。
 # 只有竞态检测要 cgo（-race 需要 C 工具链）。
 GO      ?= go
+# go may select a newer toolchain than the gofmt installed on PATH.
+GOFMT   ?= $(shell $(GO) env GOROOT)/bin/gofmt
 BIN     := bin/yan
 APP     := bin/yan-app
 LDFLAGS := -s -w
@@ -53,7 +55,7 @@ race:
 
 # 提交前跑：格式、vet、测试、竞态检测、架构边界（在测试里）、体积门禁
 check: build app
-	@test -z "$$(gofmt -l .)" || (gofmt -l .; echo "请先 gofmt"; exit 1)
+	@test -z "$$("$(GOFMT)" -l .)" || ("$(GOFMT)" -l .; echo "请先 gofmt"; exit 1)
 	$(GO) vet ./...
 	$(GO) test -count=1 ./...
 	$(MAKE) race

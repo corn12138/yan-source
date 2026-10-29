@@ -318,9 +318,9 @@
 | UP-59 | `b906ff6` Mermaid 节点、子图被 `style`/`classDef` 填色后标签仍可读 | V | 对比度不足 3 时换主题文字色或背景色中对比更高的，文字自带 `color` 不改；`TestMermaidStyledFillLabels` 覆盖深浅两种主题 |
 | UP-60 | `3d03b96` 标点（全角冒号、括号）、汉字、数字后的裸网址成链接 | V | `ui/gui/markdownlinkify.go` AST 变换，去尾标点、未配对的 `)` 与实体；代码与已有链接不动。`TestMarkdownLinkifyAfterPunctuation` |
 | UP-61 | `88e00cf` Markdown 脚注：上标引用、末尾列表、回链 | V | 锚点同 GitHub，复用页内链接滚动；脚注小一号、浅色。`TestMarkdownFootnotes`、`TestMarkdownFootnoteLinks`（点引用到脚注、点 ↩ 回来）及截图 |
-| UP-62 | `1010308` Markdown 里的 LaTeX 公式（MathJax 在 goja 里排成 SVG，`previewMath` 关闭） | P | 窗口版再加约 577 KB 脚本；需审许可、体积、只执行打包脚本、行内与块公式排版 |
-| UP-63 | `64bd32c` 「在右侧打开预览」放到旁边已有的未锁定列，只有一列时才拆分 | P | 与砚锁定列、列宽规则逐项对照 |
-| UP-64 | `d888678` 关闭其他项目前先问一次 | P | 砚现在只对有未保存修改的项目逐个问；是否加一次总确认另定 |
+| UP-62 | `1010308` Markdown LaTeX 公式预览 | V | `ui/gui/math.go`、`markdown.go`、`markdownview.go`：MathJax 3.2.2 本地 SVG，行内/块/`math` 围栏、深浅色、表格对齐、源码复制与编辑撤销；`[ui] preview_math` 支持用户/项目配置和热重载。输入/时间/数量上限、宏隔离、超时恢复；依赖固定 `4bd079439ee7`，终端回归及真实 macOS 窗口验收通过。详见 `docs/up62-math-acceptance.md`；原生 Windows/Linux 尚未验收 |
+| UP-63 | `64bd32c` 「在右侧打开预览」复用右侧最近的未锁定列，否则左侧；没有其他未锁定列时才拆分 | V | 2026-10-28：`core/app/preview.go` 保留源码焦点、共享文档和既有标签，跳过锁列；`TestPreviewReusesUnlockedSideColumn` 覆盖左右优先级、锁列、已有标签、列宽和重复调用，`TestPreviewSkipsLockedExistingPreview` 防止复用锁定的预览列；原有会话恢复/双向滚动回归保留。macOS 原生中英文窗口通过右侧 Markdown 复用、源码焦点与重复调用验证（`SelfTestLanguage`）；左侧/锁列/其他格式的原生布局验收及 Windows/Linux 桌面验收仍开放；未发布 |
+| UP-64 | `d888678` 关闭其他项目前先问一次 | V | 默认取消的总确认；逐个处理未保存文件，取消或保存失败停止后续关闭；新增项目不被关闭。自动测试覆盖取消/保存/冲突/新增项目，macOS 原生验证总确认及保存冲突保留项目 |
 | UP-65 | `58b5041`/`68ee016` 面板、列表、跳转落点淡入，每帧少做事 | P | 动效属设计取舍；其中的性能改动（作用域查找、词法一次读行）可单独评估 |
 | UP-66 | `8122013`/`f914000` MyGo 0.7.1（需 Go 1.27.3）与非 ASCII 文本每帧减负 | P | 依赖升级单独一批：砚用 sorrycc/mygo 分支，需重新核对补丁与体积 |
 | UP-67 | [#89](https://github.com/sorrycc/Mayoi/pull/89) 标签菜单「复制相对路径」 | P | 上游未合并，头 `93f6d75`；砚已有复制相对路径命令，核对标签右键菜单 |
@@ -484,3 +484,5 @@ B3 第一批（分支 `codex/columns-panels`）：LY-04～07、ED-05 转 V，移
 ## Contributor workflow
 
 Read AGENTS.md, this ledger, docs/MAYOI.md and CONTRIBUTING.md before choosing an open batch. Verify exact upstream and Yan revisions before editing, and preserve unrelated work. Track each contract by ID, reproduce partial gaps before fixing them, keep the headless core and Windows/Linux seams, and distinguish local tests from native/cloud acceptance. Qoder/Qoduck remain excluded. Run make check before committing and follow the contribution and release workflow. Do not claim completion for external-service or native-platform work without the necessary evidence.
+
+UP-62 本批接入本地 MathJax、用户/项目配置开关、公式源码复制与编辑；验收记录见 `docs/up62-math-acceptance.md`。原生 Windows/Linux 窗口尚未验收。

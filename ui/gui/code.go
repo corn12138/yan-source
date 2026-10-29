@@ -1,7 +1,6 @@
 package gui
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -10,6 +9,7 @@ import (
 	"github.com/egoist/mygo/ui"
 
 	"github.com/corn12138/yan-source/core/app"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/keymap"
 	"github.com/corn12138/yan-source/core/style"
 	"github.com/corn12138/yan-source/core/text/width"
@@ -114,14 +114,14 @@ func (f *Frontend) peekBox(c *ui.Context, pf *view.PaneFrame, pk *view.Peek) ui.
 	top := codePadY + float32(pk.After+1)*lh
 	left := float32(pf.Gutter) * f.font.charW
 	box := ui.Column(c.Key("hunk-peek")).Absolute().Top(top).Left(left).Right(12).Radius(6).Clip().
-		Background(p.chrome).Border(1, p.border).Cursor(ui.CursorDefault).Label("改动 " + pk.Title)
+		Background(p.chrome).Border(1, p.border).Cursor(ui.CursorDefault).Label(i18n.F("Change %s", pk.Title))
 	box.Children(func() {
 		ui.Row(c).Height(26).Padding(0, 6, 0, 10).Gap(4).AlignItems(ui.Center).BorderWidth(0, 0, 1, 0).BorderColor(p.border).Children(func() {
 			ui.Text(c, pk.Title).FontSize(11.5).TextColor(p.muted).SingleLine().Shrink(1)
 			ui.Spacer(c)
-			for _, b := range []struct{ label, cmd string }{{"还原", "git.revertSelectedRanges"}, {"暂存", "git.stageSelectedRanges"}} {
+			for _, b := range []struct{ label, cmd string }{{i18n.T("Revert"), "git.revertSelectedRanges"}, {i18n.T("Stage"), "git.stageSelectedRanges"}} {
 				btn := ui.Box(c.Key("peek:"+b.cmd)).Height(20).Padding(0, 8).Radius(4).Justify(ui.Center).AlignItems(ui.Center).
-					Label(b.label).Tooltip(b.label + "这处改动 (" + f.ed.KeyHint(b.cmd) + ")")
+					Label(b.label).Tooltip(i18n.F("%s This Change (%s)", b.label, f.ed.KeyHint(b.cmd)))
 				if btn.Hovered() {
 					btn.Background(p.hover)
 				}
@@ -133,7 +133,7 @@ func (f *Frontend) peekBox(c *ui.Context, pf *view.PaneFrame, pk *view.Peek) ui.
 			for _, b := range []struct {
 				icon      *ui.SVG
 				label, id string
-			}{{iconArrowUp, "上一处改动", "editor.action.dirtydiff.previous"}, {iconArrowDown, "下一处改动", "editor.action.dirtydiff.next"}, {iconX, "关掉", "yan.hunk.close"}} {
+			}{{iconArrowUp, i18n.T("Previous Change"), "editor.action.dirtydiff.previous"}, {iconArrowDown, i18n.T("Next Change"), "editor.action.dirtydiff.next"}, {iconX, i18n.T("Close"), "yan.hunk.close"}} {
 				if f.iconButton(c, b.icon, b.label, false).Clicked() {
 					f.ed.Run(b.id)
 				}
@@ -141,12 +141,12 @@ func (f *Frontend) peekBox(c *ui.Context, pf *view.PaneFrame, pk *view.Peek) ui.
 		})
 		ui.Column(c).Padding(4, 10).Children(func() {
 			if len(pk.Removed) == 0 {
-				ui.Text(c, "HEAD 里没有这几行：是新加的").FontSize(12).TextColor(p.muted).Height(lh)
+				ui.Text(c, i18n.T("These lines are not in HEAD: they are new")).FontSize(12).TextColor(p.muted).Height(lh)
 				return
 			}
 			for i, l := range pk.Removed {
 				if i == peekMaxLines {
-					ui.Text(c, fmt.Sprintf("…还有 %d 行", len(pk.Removed)-i)).FontSize(12).TextColor(p.muted).Height(lh)
+					ui.Text(c, i18n.F("…%d more lines", len(pk.Removed)-i)).FontSize(12).TextColor(p.muted).Height(lh)
 					break
 				}
 				ui.Text(c, strings.ReplaceAll(l, "\t", "    ")).Font(f.opts.FontFamily).FontSize(f.opts.FontSize).

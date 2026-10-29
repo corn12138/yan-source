@@ -2,9 +2,12 @@
 package keymap
 
 import (
+	"errors"
 	"fmt"
 	"runtime"
 	"strings"
+
+	"github.com/corn12138/yan-source/core/i18n"
 )
 
 // Mod 是修饰键位掩码。
@@ -133,7 +136,7 @@ func Parse(seq string, mod Mod) ([]Chord, error) {
 			case "mod":
 				c.Mods |= mod
 			default:
-				return nil, fmt.Errorf("未知修饰键 %q（在 %q 中）", t, seq)
+				return nil, fmt.Errorf(i18n.T("Unknown modifier %q (in %q)"), t, seq)
 			}
 		}
 		last := toks[len(toks)-1]
@@ -145,12 +148,12 @@ func Parse(seq string, mod Mod) ([]Chord, error) {
 		} else if r := []rune(last); len(r) == 1 {
 			c.Key, c.Rune = KeyRune, r[0]
 		} else {
-			return nil, fmt.Errorf("未知按键 %q（在 %q 中）", last, seq)
+			return nil, fmt.Errorf(i18n.T("Unknown key %q (in %q)"), last, seq)
 		}
 		out = append(out, c)
 	}
 	if len(out) == 0 {
-		return nil, fmt.Errorf("空按键序列")
+		return nil, errors.New(i18n.T("Empty key sequence"))
 	}
 	return out, nil
 }
@@ -296,7 +299,7 @@ func (k *Keymap) Bind(ctx Context, seq, cmd string, mod Mod) error {
 	}
 	for i, c := range chords {
 		if n.cmd != "" {
-			return fmt.Errorf("%q 的前缀已绑定到 %s", seq, n.cmd)
+			return fmt.Errorf(i18n.T("The prefix of %q is already bound to %s"), seq, n.cmd)
 		}
 		if n.next == nil {
 			n.next = map[Chord]*node{}
@@ -308,7 +311,7 @@ func (k *Keymap) Bind(ctx Context, seq, cmd string, mod Mod) error {
 		}
 		n = child
 		if i == len(chords)-1 && len(n.next) > 0 {
-			return fmt.Errorf("%q 是其他连按的前缀，不能单独绑定", seq)
+			return fmt.Errorf(i18n.T("%q is a prefix of other chords and can't be bound on its own"), seq)
 		}
 	}
 	n.cmd = cmd

@@ -67,12 +67,12 @@ func TestGuideStepHowAndUnreleasedBadges(t *testing.T) {
 	if s := h.f.frame.Sidebar.Learn.Steps; s[0].Unreleased || !s[1].Unreleased {
 		t.Fatalf("badges %+v", s)
 	}
-	if got := h.f.menuPath("workbench.action.toggleMaximizeEditorGroup"); got == "" || strings.Contains(got, unreleasedSuffix) {
+	if got := h.f.menuPath("workbench.action.toggleMaximizeEditorGroup"); got == "" || strings.Contains(got, unreleasedSuffix()) {
 		t.Fatalf("menu path %q", got)
 	}
 	labels := map[string]string{}
 	menuCommands(h.f.menu().Items(), "", labels)
-	if !strings.HasSuffix(labels["workbench.action.toggleMaximizeEditorGroup"], unreleasedSuffix) {
+	if !strings.HasSuffix(labels["workbench.action.toggleMaximizeEditorGroup"], unreleasedSuffix()) {
 		t.Fatal("the menu item is not marked unreleased")
 	}
 	// The real steps, from the menu bar's commands: split, maximize, restore.

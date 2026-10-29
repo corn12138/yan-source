@@ -12,6 +12,7 @@ import (
 
 	"github.com/corn12138/yan-source/core/git"
 	"github.com/corn12138/yan-source/core/git/linediff"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/view"
 )
 
@@ -341,7 +342,7 @@ func (e *Editor) stepChange(by int) error {
 	}
 	g := &t.doc.marks
 	if len(g.hunks) == 0 {
-		e.status = "没有改动"
+		e.status = i18n.T("No changes")
 		return nil
 	}
 	s := t.doc.buf.Snapshot()
@@ -419,9 +420,9 @@ func (e *Editor) scheduleBlame() {
 // blameText 写出行尾的说明：「你，3 天前 • 提交摘要」；还没提交的行写「还没提交的修改」。
 func blameText(b git.Blame, now time.Time) string {
 	if b.Commit == "" {
-		return "还没提交的修改"
+		return i18n.T("Uncommitted changes")
 	}
-	return fmt.Sprintf("%s，%s • %s", b.Author, relTime(b.Time, now), b.Summary)
+	return i18n.F("%s, %s • %s", b.Author, relTime(b.Time, now), b.Summary)
 }
 
 // relTime 把时间写成「刚才」「5 分钟前」「3 天前」这样。
@@ -429,17 +430,17 @@ func relTime(t, now time.Time) string {
 	d := now.Sub(t)
 	switch {
 	case d < time.Minute:
-		return "刚才"
+		return i18n.T("just now")
 	case d < time.Hour:
-		return fmt.Sprintf("%d 分钟前", int(d.Minutes()))
+		return i18n.F("%d min ago", int(d.Minutes()))
 	case d < 24*time.Hour:
-		return fmt.Sprintf("%d 小时前", int(d.Hours()))
+		return i18n.F("%d hr ago", int(d.Hours()))
 	case d < 30*24*time.Hour:
-		return fmt.Sprintf("%d 天前", int(d.Hours()/24))
+		return i18n.F("%d days ago", int(d.Hours()/24))
 	case d < 365*24*time.Hour:
-		return fmt.Sprintf("%d 个月前", int(d.Hours()/24/30))
+		return i18n.F("%d months ago", int(d.Hours()/24/30))
 	}
-	return fmt.Sprintf("%d 年前", int(d.Hours()/24/365))
+	return i18n.F("%d years ago", int(d.Hours()/24/365))
 }
 
 // statusBranch 写出状态栏上的分支：领先上游几个提交（↑），落后几个（↓）。

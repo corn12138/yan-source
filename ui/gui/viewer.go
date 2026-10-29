@@ -7,6 +7,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/view"
 )
 
@@ -40,7 +41,7 @@ func (f *Frontend) imageOf(pf *view.PaneFrame) *imageEntry {
 				im.svg, im.src, im.err = s, src, ""
 				im.w, im.h = 0, 0
 			} else if im.svg == nil {
-				im.err = "SVG 解析不了：" + err.Error()
+				im.err = i18n.F("Couldn't parse the SVG: %s", err.Error())
 			}
 		}
 		return im
@@ -60,7 +61,7 @@ func (f *Frontend) imageOf(pf *view.PaneFrame) *imageEntry {
 				f.do(func() {
 					im.loading, im.mod = false, mod
 					if err != nil {
-						im.err = "图片读不了：" + err.Error()
+						im.err = i18n.F("Couldn't read the image: %s", err.Error())
 						return
 					}
 					w, h := bmp.Size()

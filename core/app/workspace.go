@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/corn12138/yan-source/core/edit"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/text"
 	"github.com/corn12138/yan-source/core/view"
 	"github.com/corn12138/yan-source/core/workspace"
@@ -101,7 +102,7 @@ func (e *Editor) reindex() {
 			if e.ws == w && ctx.Err() == nil {
 				w.indexing = false
 				if err != nil {
-					e.status = "索引出错：" + err.Error()
+					e.status = i18n.F("Indexing error: %s", err.Error())
 				}
 				if e.fs.query != "" { // 索引建完了：搜索结果补全
 					e.fs.key = ""
@@ -181,9 +182,11 @@ type userError string
 
 func (u userError) Error() string { return string(u) }
 
-func errNotFile(p string) error { return userError(filepath.Base(p) + " 不是普通文件") }
+func errNotFile(p string) error {
+	return userError(i18n.F("%s is not a regular file", filepath.Base(p)))
+}
 func errBinary(p string) error {
-	return userError(filepath.Base(p) + " 是二进制文件，不打开")
+	return userError(i18n.F("%s is a binary file: not opened", filepath.Base(p)))
 }
 
 // ---- 资源管理器命令 ----
@@ -369,16 +372,16 @@ func (e *Editor) SwitchFolder(dir string) error {
 	if fi, err := os.Stat(abs); err != nil {
 		return err
 	} else if !fi.IsDir() {
-		return userError("不是文件夹：" + abs)
+		return userError(i18n.F("Not a folder: %s", abs))
 	}
 	if e.ws != nil && e.ws.root == abs {
 		return nil
 	}
 	e.saveDirty()
 	if dirty, kept := e.Unsaved(); dirty {
-		msg := "有没保存的修改：先保存或关掉那些文件，再换文件夹"
+		msg := i18n.T("There are unsaved changes: save or close those files before switching folders")
 		if kept != nil {
-			msg += "（未命名的文件没能留到下次：" + kept.Error() + "）"
+			msg += i18n.F(" (untitled files couldn't be kept for next time: %s)", kept.Error())
 		}
 		return userError(msg)
 	}
@@ -483,7 +486,7 @@ func (e *Editor) recentFolderItems(q string) {
 		}})
 	}
 	if len(ov.items) == 0 {
-		ov.footer = "没有最近打开的文件夹"
+		ov.footer = i18n.T("No recently opened folders")
 	}
 }
 

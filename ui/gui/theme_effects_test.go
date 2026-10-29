@@ -73,19 +73,20 @@ func TestMatrixRainLifecycle(t *testing.T) {
 	h.f.focusChanged(false)
 	h.settle()
 	step := h.f.rain.step
-	time.Sleep(rainStep)
+	h.tt.Advance(rainStep)
 	h.tt.Frame()
 	if h.f.rain.moving || step != h.f.rain.step {
 		t.Fatal("blurred rain advances")
 	}
 	h.f.focusChanged(true)
+	h.tt.Advance(rainStep)
 	h.settle()
 	if !h.f.rain.moving || step == h.f.rain.step {
 		t.Fatal("rain did not resume")
 	}
 	h.tt.SetPreferences(ui.Preferences{ReduceMotion: true})
 	step = h.f.rain.step
-	time.Sleep(rainStep)
+	h.tt.Advance(rainStep)
 	h.tt.Frame()
 	if h.f.rain.moving || step != h.f.rain.step {
 		t.Fatal("reduced-motion rain advances")

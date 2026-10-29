@@ -3,6 +3,7 @@ package app
 import (
 	"slices"
 
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/style"
 	"github.com/corn12138/yan-source/core/text"
 	"github.com/corn12138/yan-source/core/view"
@@ -136,9 +137,9 @@ func (e *Editor) toggleTabWrap() error {
 	t.scrollX = 0
 	e.reveal()
 	if t.wrap > 0 {
-		e.status = "这个标签自动换行：开"
+		e.status = i18n.T("Word wrap for this tab: On")
 	} else {
-		e.status = "这个标签自动换行：关"
+		e.status = i18n.T("Word wrap for this tab: Off")
 	}
 	return nil
 }
@@ -158,9 +159,9 @@ func (e *Editor) toggleWordWrap() error {
 	}
 	e.reveal()
 	if e.cfg.WordWrap {
-		e.status = "自动换行：开"
+		e.status = i18n.T("Word Wrap: On")
 	} else {
-		e.status = "自动换行：关"
+		e.status = i18n.T("Word Wrap: Off")
 	}
 	return nil
 }

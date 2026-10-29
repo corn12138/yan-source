@@ -10,6 +10,7 @@ import (
 	"strconv"
 
 	"github.com/corn12138/yan-source/core/git"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/view"
 )
 
@@ -87,7 +88,7 @@ func scmPickedStatus(n int) string {
 	if n <= 1 {
 		return ""
 	}
-	return "选了 " + strconv.Itoa(n) + " 个文件：空格暂存或取消暂存，Delete 放弃修改"
+	return i18n.F("%s files selected: Space stages or unstages, Delete discards changes", strconv.Itoa(n))
 }
 
 // scmSelectAll chooses every file of Source Control.

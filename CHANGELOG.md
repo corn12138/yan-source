@@ -8,6 +8,25 @@ version's section, and that section becomes the "What's new" of the release note
 - Yan's own source is licensed under MIT; see `LICENSE` for reuse terms and `THIRD_PARTY_NOTICES.md` for included third-party code. To build from source, follow the clone and `make build` steps in `README.md`.
 - On macOS and Linux, saved sessions (including recent paths and review notes) and crash logs are now readable only by your account. Existing session permissions are tightened when the session is next saved; crash-log permissions are tightened when the app next starts.
 
+## 0.1.0-alpha.34
+
+- Preview LaTeX formulas in Markdown with `$…$`, `$$…$$`, or fenced `math` blocks. Formulas render locally in the current theme; hover a display formula to copy its TeX or view its source. Unsupported formulas keep their source with an explanation. Set `[ui] preview_math = false` in `config.toml` or `.yan.toml` to show formulas as source.
+
+## 0.1.0-alpha.33
+
+- **Close Other Projects** asks for confirmation before stopping the other projects and their terminals. Unsaved files are handled one project at a time; Cancel or a failed save stops the remaining closes, and the project you keep remains open.
+
+- Sidebar view names wrap onto another row when space is tight, so every view stays accessible in either language even with a large change count.
+
+- **Open Preview to the Side** reuses the nearest unlocked column on the right, or otherwise on the left. It creates a new column only when no other unlocked column is available, keeps the source focused, and reuses an existing tab for the same document.
+
+- yan now speaks English as well as Simplified Chinese. Choose the interface language under **Settings → General → Interface Language** (设置 → 通用 → 界面语言): open Settings with Cmd+, on macOS (Ctrl+, on Windows and Linux), from the application menu, or with **Preferences: Open Settings** / **Preferences: Interface Language…** in the command palette. The default, **Follow System**, takes the first of your system's preferred languages that yan supports and otherwise uses English; the panel shows which language that is. Each language keeps its own name in the list, so you can always find your way back.
+- A language change is saved at once and applies the next time yan starts. Until then every window keeps its current language, and Settings says **Restart Yan to apply the language change**. yan never quits or restarts on its own, so unsaved work and terminals are safe. On macOS, a language chosen for yan in System Settings is followed too.
+- The language can also be set with `[ui] language = "system"`, `"zh-Hans"` or `"en"` in your user `config.toml`. A choice made in Settings wins over it. A project's `.yan.toml` cannot change the interface language: it is ignored there with a warning, and the project's other settings still apply. The terminal app uses the same choice, and with Follow System it reads `LANGUAGE`, `LC_ALL`, `LC_MESSAGES` and `LANG`.
+- Menus, the command palette, Settings, Source Control, diffs and merges, search, previews, the feature tour, Yan’s dialog text and the update window are translated; controls supplied by macOS inside native file panels still follow the system language. File names, document text, terminal output and Git's own messages are shown as they are.
+- `workbench.action.openSettings` in your keybindings (VS Code's Cmd+,) now opens Settings. **Open User Configuration File**, **Preferences: Open Keyboard Shortcuts (keybindings.json)** and `workbench.action.openSettingsJson` still open the files, and Settings links to both.
+
+
 ## 0.1.0-alpha.32
 
 - The feature guide (sidebar **学习**, **Help → 功能导览（学习）**, or "Learn: Feature Guide" in the command palette) is now a hands-on tour. New lessons cover going to a definition by key or by link-click, moving editors between columns, maximizing and restoring the editor area, a three-way merge, and Markdown footnotes and Mermaid diagrams. Each step shows the shortcut your keymap has, the command's palette name and its menu path, and completes when you actually do it.

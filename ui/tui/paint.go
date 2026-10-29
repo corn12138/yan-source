@@ -10,6 +10,7 @@ import (
 	"github.com/gdamore/tcell/v3/color"
 
 	"github.com/corn12138/yan-source/core/app"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/style"
 	"github.com/corn12138/yan-source/core/text/width"
 	"github.com/corn12138/yan-source/core/view"
@@ -115,7 +116,7 @@ func (f *Frontend) layout(w, h int, hidden []bool, sidebar, right bool) layout {
 func overlayRect(w, h int, o *view.Overlay) view.Rect {
 	ow := min(w-4, 90)
 	ow = max(ow, min(w, 30))
-	n := min(len(o.Items)-o.Top, view.MaxOverlayItems)
+	n := len(overlayRows(o))
 	oh := 3 + max(n, 0)
 	return view.Rect{X: view.Unit((w - ow) / 2), Y: 1, W: view.Unit(ow), H: view.Unit(min(oh, h-1))}
 }
@@ -204,7 +205,7 @@ func (f *Frontend) draw(ed *app.Editor) {
 	caretX, caretY, caret := 0, 0, false
 	if fr.Review != nil {
 		d := fr.Review
-		o := view.Overlay{Title: "评审：" + d.Ref, Input: "", Footer: "Ctrl+S 保存 · Esc 取消"}
+		o := view.Overlay{Title: i18n.F("Review: %s", d.Ref), Input: "", Footer: i18n.T("Ctrl+S Save · Esc Cancel")}
 		lines := strings.Split(d.Text, "\n")
 		for _, line := range lines {
 			o.Items = append(o.Items, view.OverlayItem{Label: line})
@@ -304,13 +305,13 @@ func (f *Frontend) drawSidebar(sb *view.Sidebar, r view.Rect, focused bool) (car
 	case view.SideSCM:
 		return f.drawSCM(&sb.SCM, sb.Changes, r, focused)
 	}
-	header := " 资源管理器: " + strings.ToUpper(sb.Title)
+	header := i18n.F(" Explorer: %s", strings.ToUpper(sb.Title))
 	if sb.Busy {
 		header += " …"
 	}
 	f.drawText(x0, 0, w, header, style.Tab)
 	if len(sb.Rows) == 0 && !sb.Busy {
-		f.drawText(x0+1, 1, w-2, "这个文件夹是空的：命令面板里「资源管理器：新建文件…」", style.Dim)
+		f.drawText(x0+1, 1, w-2, i18n.T("This folder is empty: \"Explorer: New File…\" in the Command Palette"), style.Dim)
 		return caret, false
 	}
 	rows := int(r.H) - 1
@@ -412,7 +413,7 @@ func (f *Frontend) drawSearch(s *view.Search, r view.Rect, focused bool) (caret 
 			opts += " " + o.label + " "
 		}
 	}
-	f.drawText(x0, 0, w, " 搜索", style.Tab)
+	f.drawText(x0, 0, w, i18n.T(" Search"), style.Tab)
 	f.drawText(x0+w-width.String(opts)-1, 0, width.String(opts), opts, style.Tab)
 	y := 1
 	put := func(label, value, ph string, fieldID view.SearchField) {
@@ -422,17 +423,17 @@ func (f *Frontend) drawSearch(s *view.Search, r view.Rect, focused bool) (caret 
 		}
 		y++
 	}
-	put("查找 ", s.Query, "", view.SearchQuery)
+	put(i18n.T("Find    "), s.Query, "", view.SearchQuery)
 	if s.Replacing {
-		put("替换 ", s.With, "", view.SearchReplace)
+		put(i18n.T("Replace "), s.With, "", view.SearchReplace)
 	}
 	if s.Details {
-		put("包含 ", s.Include, "*.go, src/**", view.SearchInclude)
-		put("排除 ", s.Exclude, "testdata", view.SearchExclude)
+		put(i18n.T("Include "), s.Include, "*.go, src/**", view.SearchInclude)
+		put(i18n.T("Exclude "), s.Exclude, "testdata", view.SearchExclude)
 	}
 	sum := s.Summary
 	if s.Running && s.Query != "" {
-		sum = "搜索中… " + sum
+		sum = i18n.F("Searching… %s", sum)
 	}
 	f.drawText(x0+1, y, w-2, sum, style.Dim)
 	y++
@@ -477,13 +478,13 @@ func (f *Frontend) drawSCM(s *view.SCM, changes int, r view.Rect, focused bool) 
 		return f.drawRepositories(s, changes, r, focused)
 	}
 	x0, w := int(r.X), int(r.W)
-	f.drawText(x0, 0, w, fmt.Sprintf(" 源代码管理 (%d)", changes), style.Tab)
+	f.drawText(x0, 0, w, i18n.F(" Source Control (%d)", changes), style.Tab)
 	if s.NoRepo {
 		if s.RepositoryLoading || s.RepositoryError != "" || len(s.Repositories) > 0 {
-			f.drawText(x0+1, 1, w-2, "文件夹中的仓库 · 回车打开", style.Dim)
-			message := "命令面板：Git：刷新仓库列表"
+			f.drawText(x0+1, 1, w-2, i18n.T("Repositories in folder · Enter to open"), style.Dim)
+			message := i18n.T("Command Palette: Git: Refresh Repository List")
 			if s.RepositoryLoading {
-				message = "正在查找仓库…"
+				message = i18n.T("Looking for repositories…")
 			}
 			if s.RepositoryError != "" {
 				message = s.RepositoryError
@@ -502,8 +503,8 @@ func (f *Frontend) drawSCM(s *view.SCM, changes int, r view.Rect, focused bool) 
 			}
 			return caret, false
 		}
-		f.drawText(x0+1, 2, w-2, "这个文件夹不在 git 仓库里", style.Dim)
-		f.drawText(x0+1, 3, w-2, "命令面板「Git：初始化仓库」", style.Dim)
+		f.drawText(x0+1, 2, w-2, i18n.T("This folder is not in a Git repository"), style.Dim)
+		f.drawText(x0+1, 3, w-2, i18n.T("Command Palette \"Git: Initialize Repository\""), style.Dim)
 		return caret, false
 	}
 	branch := "⎇ " + s.Branch
@@ -519,26 +520,26 @@ func (f *Frontend) drawSCM(s *view.SCM, changes int, r view.Rect, focused bool) 
 	f.drawText(x0+1, 1, w-2, branch, style.Text)
 	y := 2
 	if s.Op != "" { // 命令面板里有「继续」「中止」
-		f.drawText(x0+1, y, w-2, s.Op+"遇到冲突：解决并暂存后在命令面板里「Git：继续…」或「Git：中止…」", style.StatusAccent)
+		f.drawText(x0+1, y, w-2, i18n.F("%s hit conflicts: resolve and stage them, then \"Git: Continue…\" or \"Git: Abort…\" in the Command Palette", s.Op), style.StatusAccent)
 		y++
 	}
-	label := "说明 "
+	label := i18n.T("Message ")
 	if s.Amend {
-		label = "修改 "
+		label = i18n.T("Amend   ")
 	}
 	lines := strings.Split(s.Message, "\n")
 	for i, l := range lines {
 		if y >= int(r.H)-1 || i >= 4 {
 			break
 		}
-		x, on := f.field(x0+1, y, w-2, label, l, "写提交说明（"+"Tab 进来）", focused && s.MessageFocused && i == len(lines)-1)
+		x, on := f.field(x0+1, y, w-2, label, l, i18n.T("Write a commit message (Tab to enter)"), focused && s.MessageFocused && i == len(lines)-1)
 		if on {
 			caret, ok = [2]int{x, y}, true
 		}
 		label = "     "
 		y++
 	}
-	f.drawText(x0+1, y, w-2, "⌃K C "+s.CommitLabel+" · 空格 暂存 · Del 放弃", style.Dim)
+	f.drawText(x0+1, y, w-2, i18n.F("⌃K C %s · Space Stage · Del Discard", s.CommitLabel), style.Dim)
 	y++
 	i := 0
 	for _, g := range s.Groups {
@@ -582,7 +583,7 @@ func (f *Frontend) drawSCM(s *view.SCM, changes int, r view.Rect, focused bool) 
 		}
 	}
 	if y < int(r.H) && s.CommitsFolded {
-		f.drawText(x0, y, w, " ▸ 提交", style.Dim)
+		f.drawText(x0, y, w, i18n.T(" ▸ Commits"), style.Dim)
 		y++
 	} else if y < int(r.H) && (len(s.Commits) > 0 || s.HistoryLoading) {
 		count := 0
@@ -591,12 +592,12 @@ func (f *Frontend) drawSCM(s *view.SCM, changes int, r view.Rect, focused bool) 
 				count++
 			}
 		}
-		title := fmt.Sprintf(" ▾ 提交 (%d)", count)
+		title := i18n.F(" ▾ Commits (%d)", count)
 		if s.AllBranches {
-			title += " · 所有分支"
+			title += i18n.T(" · all branches")
 		}
 		if s.HistoryLoading {
-			title += " · 读取中…"
+			title += i18n.T(" · reading…")
 		}
 		f.drawText(x0, y, w, title, style.Dim)
 		y++
@@ -654,7 +655,7 @@ func (f *Frontend) drawSCM(s *view.SCM, changes int, r view.Rect, focused bool) 
 		i++
 	}
 	if s.MoreCommits && y < int(r.H) {
-		f.drawText(x0+3, y, w-3, "… 显示更多提交：命令面板「Git：显示更多提交」", style.Dim)
+		f.drawText(x0+3, y, w-3, i18n.T("… Show more commits: Command Palette \"Git: Show More Commits\""), style.Dim)
 	}
 	return caret, ok
 }
@@ -715,7 +716,7 @@ func (f *Frontend) drawTabs(col int, c *view.Column, r view.Rect, focused bool) 
 		case t.Dirty:
 			s += " ●"
 		case t.ReadOnly:
-			s += " [只读]"
+			s += i18n.T(" [Read-only]")
 		}
 		s += " "
 		segs[i] = seg{s, width.String(s)}
@@ -758,7 +759,7 @@ func (f *Frontend) drawStatus(st *view.Status, r view.Rect) {
 	if st.Message != "" {
 		left = " " + st.Message
 		if a := st.Action; a.Command != "" { // 终端里没有按钮：说去命令面板
-			left += "（" + a.Label + "：命令面板）"
+			left += i18n.F(" (%s: Command Palette)", a.Label)
 		}
 	}
 	var right strings.Builder
@@ -801,20 +802,36 @@ func (f *Frontend) drawOverlay(o *view.Overlay, b view.Rect) {
 	s.Put(x0, y0+h-1, "╰", bs)
 	s.Put(x0+w-1, y0+h-1, "╯", bs)
 	title := " " + o.Title + " "
+	if o.Section != "" {
+		title = " " + o.Title + " › " + o.Section + " "
+	}
 	f.drawText(x0+2, y0, min(width.String(title), w-4), title, style.Overlay)
 	f.drawText(x0+2, y0+1, w-4, "› "+o.Input, style.Overlay)
 	inner := w - 4
-	for i := o.Top; i < len(o.Items) && i < o.Top+view.MaxOverlayItems; i++ {
-		y := y0 + 2 + i - o.Top
+	for r, row := range overlayRows(o) {
+		y := y0 + 2 + r
 		if y >= y0+h-1 {
 			break
 		}
+		if row.item < 0 {
+			f.drawText(x0+2, y, inner, row.text, row.style)
+			continue
+		}
+		i := row.item
 		base := style.Overlay
 		if i == o.Selected {
 			base = style.OverlaySelected
 			s.FillArea(x0+1, y, w-2, 1, ' ', f.pal.theme[style.OverlaySelected])
 		}
-		txt, spans := itemRow(&o.Items[i], inner)
+		it := o.Items[i]
+		if o.Kind == view.OverlaySettings {
+			mark := "  "
+			if it.Checked {
+				mark = "✓ "
+			}
+			it.Label = mark + it.Label
+		}
+		txt, spans := itemRow(&it, inner)
 		f.drawRow(x0+2, y, inner, txt, base, spans)
 	}
 	if o.Footer != "" {
@@ -824,6 +841,33 @@ func (f *Frontend) drawOverlay(o *view.Overlay, b view.Rect) {
 			f.drawText(x0+w-2-fw, y0+h-1, fw, ft, style.Dim)
 		}
 	}
+}
+
+// overlayRow is a row of an overlay's list: item is the index of the item it shows, -1 for a
+// line of text (a heading or what Settings says is in effect).
+type overlayRow struct {
+	item  int
+	text  string
+	style style.ID
+}
+
+// overlayRows are the rows under an overlay's input line: the screen of items from Top, and in
+// Settings what is in effect, the restart notice and a heading over each group of items.
+func overlayRows(o *view.Overlay) []overlayRow {
+	var rows []overlayRow
+	if o.Kind == view.OverlaySettings {
+		rows = append(rows, overlayRow{-1, o.Status, style.Dim})
+		if o.Notice != "" {
+			rows = append(rows, overlayRow{-1, o.Notice, style.Overlay})
+		}
+	}
+	for i := o.Top; i < len(o.Items) && i < o.Top+view.MaxOverlayItems; i++ {
+		if g := o.Items[i].Group; g != "" && (i == o.Top || o.Items[i-1].Group != g) {
+			rows = append(rows, overlayRow{-1, g, style.Dim})
+		}
+		rows = append(rows, overlayRow{item: i})
+	}
+	return rows
 }
 
 // itemRow 把候选项排成一行：名字、灰色的目录或命令 ID、右对齐的快捷键。
@@ -894,7 +938,7 @@ func (f *Frontend) drawPane(p *view.PaneFrame, r view.Rect) {
 }
 
 func (f *Frontend) drawWelcome(p *view.PaneFrame, r view.Rect) {
-	lines := []string{"砚 yan", ""}
+	lines := []string{i18n.T("Yan"), ""}
 	for _, h := range p.Hints {
 		k := h.Keys
 		if pad := 12 - width.String(k); pad > 0 {
@@ -1064,9 +1108,9 @@ func (f *Frontend) drawFind(fd *view.Find, code view.Rect) [2]int {
 		}
 	}
 	right := fd.Count + " " + opts
-	row(y, "查找", fd.Query, fd.Focus == view.FindQuery, right)
+	row(y, i18n.T("Find"), fd.Query, fd.Focus == view.FindQuery, right)
 	if fd.Replacing {
-		row(y+1, "替换", fd.With, fd.Focus == view.FindReplace, "")
+		row(y+1, i18n.T("Replace"), fd.With, fd.Focus == view.FindReplace, "")
 	}
 	return caret
 }
@@ -1084,11 +1128,11 @@ func (f *Frontend) drawPeek(p *view.PaneFrame, r view.Rect) {
 	if y >= bottom || w < 10 {
 		return
 	}
-	f.drawText(x, y, w, "┤ "+pk.Title+" · ⌃K R 还原 · ⌃K S 暂存 · ⌥F3 下一处 · Esc 关", style.Overlay)
+	f.drawText(x, y, w, i18n.F("┤ %s · ⌃K R Revert · ⌃K S Stage · ⌥F3 Next · Esc Close", pk.Title), style.Overlay)
 	y++
 	lines := pk.Removed
 	if len(lines) == 0 {
-		lines = []string{"（HEAD 里没有这几行：是新加的）"}
+		lines = []string{i18n.T("(These lines are not in HEAD: they are new)")}
 	}
 	for i, l := range lines {
 		if y >= bottom || i == 10 {
@@ -1110,7 +1154,7 @@ func (f *Frontend) drawLearn(lg *view.Learn, r view.Rect, focused bool) {
 		}
 		y++
 	}
-	line(fmt.Sprintf(" 学习：功能导览  %d/%d", lg.Done, len(lg.Lessons)), style.Tab)
+	line(i18n.F(" Learn: Feature Tour  %d/%d", lg.Done, len(lg.Lessons)), style.Tab)
 	if lg.Active >= 0 && lg.Active < len(lg.Lessons) {
 		line(" "+lg.Lessons[lg.Active].Title, style.Text)
 		for _, s := range lg.Steps {
@@ -1154,5 +1198,5 @@ func (f *Frontend) drawLearn(lg *view.Learn, r view.Rect, focused bool) {
 		line(mark+l.Title, st)
 	}
 	line("", style.Text)
-	line(" 提示："+lg.Tip, style.Dim)
+	line(i18n.F(" Tip: %s", lg.Tip), style.Dim)
 }

@@ -312,11 +312,15 @@ func TestMultiRepositoryRemovalClearsPendingDiff(t *testing.T) {
 	nestedFixture(t, e.root, "a")
 	writeRepoFile(t, a, "replacement\n")
 	e.gitChanged()
-	pump(t, e, func() bool { rc := e.repositoryForRoot(a); return rc != nil && rc.git.status != nil })
+	// Discovery can report the new repository before its watcher observes the write.
+	pump(t, e, func() bool {
+		rc := e.repositoryForRoot(a)
+		return rc != nil && rc.git.status != nil && len(rc.git.status.Entries) > 0
+	})
 	e.repositories.selected = b
 	e.refreshChanges(tab)
 	pump(t, e, func() bool { return !tab.diff.loading })
 	if tab.diff.loadError != "" || !strings.Contains(tabText(tab), "replacement") {
-		t.Fatal("rediscovered repository did not refresh its changes")
+		t.Fatalf("rediscovered repository did not refresh its changes: error=%q text=%q", tab.diff.loadError, tabText(tab))
 	}
 }

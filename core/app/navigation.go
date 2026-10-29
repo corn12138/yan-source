@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/corn12138/yan-source/core/edit"
+	"github.com/corn12138/yan-source/core/i18n"
 )
 
 // 后退、前进（VS Code 的 workbench.action.navigateBack / navigateForward）：转到定义前记下的位置。
@@ -85,9 +86,9 @@ func (e *Editor) navigate(back bool) error {
 		return nil
 	}
 	if back {
-		e.status = "没有可以后退的位置"
+		e.status = i18n.T("No position to go back to")
 	} else {
-		e.status = "没有可以前进的位置"
+		e.status = i18n.T("No position to go forward to")
 	}
 	return nil
 }

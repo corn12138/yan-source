@@ -15,6 +15,7 @@ import (
 
 	"github.com/corn12138/yan-source/core/edit"
 	"github.com/corn12138/yan-source/core/git/linediff"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/style"
 	"github.com/corn12138/yan-source/core/syntax/highlight"
 	"github.com/corn12138/yan-source/core/text"
@@ -411,9 +412,9 @@ func (e *Editor) toggleSyncScroll() error {
 		}
 	}
 	if e.cfg.DiffSyncScroll {
-		e.status = "并排改动视图：两边一起滚"
+		e.status = i18n.T("Side-by-side diff: both sides scroll together")
 	} else {
-		e.status = "并排改动视图：两边各自滚"
+		e.status = i18n.T("Side-by-side diff: each side scrolls separately")
 	}
 	return nil
 }
@@ -427,9 +428,9 @@ func (e *Editor) toggleAlignedRows() error {
 		e.saveState()
 	}
 	if e.cfg.DiffAlignedRows {
-		e.status = "并排改动视图：两边的行对齐"
+		e.status = i18n.T("Side-by-side diff: rows of both sides aligned")
 	} else {
-		e.status = "并排改动视图：两边的行各自排（不对齐）"
+		e.status = i18n.T("Side-by-side diff: rows laid out separately (not aligned)")
 	}
 	return nil
 }
@@ -444,7 +445,7 @@ func (dt *diffTab) glowLines(path string, from, n int) {
 // clicked, or the right (the left when the right has no line there).
 func (e *Editor) copySplitLine(t *tab) error {
 	if e.host == nil {
-		return errors.New("剪贴板不可用")
+		return errors.New(i18n.T("Clipboard unavailable"))
 	}
 	dt := t.diff
 	i := t.doc.buf.Snapshot().LineAt(t.doc.buf.Selections().Main().Head)
@@ -452,17 +453,17 @@ func (e *Editor) copySplitLine(t *tab) error {
 		return nil
 	}
 	l := dt.lines[i]
-	txt, side := l.rtext, "右边"
+	txt, side := l.rtext, i18n.T("right")
 	if !l.split {
 		s := t.doc.buf.Snapshot()
 		ls, le := s.LineRange(i)
 		txt, side = s.String(ls, le), ""
 	} else if dt.copyLeft && l.left || !l.right {
-		txt, side = l.ltext, "左边"
+		txt, side = l.ltext, i18n.T("left")
 	}
 	if err := e.host.SetClipboard(txt + "\n"); err != nil {
 		return err
 	}
-	e.status = "已复制" + side + "这一行"
+	e.status = i18n.F("Copied this line on the %s", side)
 	return nil
 }

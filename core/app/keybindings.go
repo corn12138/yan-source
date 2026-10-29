@@ -13,6 +13,7 @@ import (
 
 	"github.com/corn12138/yan-source/core/config"
 	"github.com/corn12138/yan-source/core/edit"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/keymap"
 )
 
@@ -98,7 +99,7 @@ func whenContexts(p keymap.Profile, w *keymap.When) []keymap.Context {
 
 // vscodeAliases 是 VS Code 里叫法和砚不同的命令。
 var vscodeAliases = map[string]string{
-	"workbench.action.openSettings":          "yan.config.open",
+	"workbench.action.openSettings":          cmdOpenSettings,
 	"workbench.action.openSettingsJson":      "yan.config.open",
 	"workbench.action.openGlobalKeybindings": cmdOpenKeybindings,
 	"workbench.action.files.openFileFolder":  "workbench.action.files.openFolder",
@@ -149,10 +150,10 @@ func (e *Editor) applyKeybindings(bindings map[keymap.Context]map[string]string,
 	}
 	bs, warns, err := keymap.ParseVSCode(data)
 	if err != nil {
-		return []string{"keybindings.json：" + err.Error()}
+		return []string{i18n.F("%s: %s", "keybindings.json", err.Error())}
 	}
 	for i := range warns {
-		warns[i] = "keybindings.json：" + warns[i]
+		warns[i] = i18n.F("%s: %s", "keybindings.json", warns[i])
 	}
 	var unknown, unknownWhen []string
 	ctxs := []keymap.Context{keymap.CtxGlobal, keymap.CtxEditor, keymap.CtxTree, keymap.CtxOverlay}
@@ -199,7 +200,7 @@ func (e *Editor) applyKeybindings(bindings map[keymap.Context]map[string]string,
 					unknown = append(unknown, b.Command)
 				}
 			} else {
-				warns = append(warns, fmt.Sprintf("keybindings.json：%s：%v", b.Command, err))
+				warns = append(warns, i18n.F("%s: %s: %v", "keybindings.json", b.Command, err))
 			}
 			continue
 		}
@@ -261,15 +262,15 @@ func (e *Editor) applyKeybindings(bindings map[keymap.Context]map[string]string,
 		}
 	}
 	if len(unknown) > 0 {
-		warns = append(warns, fmt.Sprintf("keybindings.json：砚没有这 %d 个命令，跳过了：%s", len(unknown), strings.Join(unknown, "、")))
+		warns = append(warns, i18n.F("keybindings.json: Yan doesn't have these %d commands, skipped: %s", len(unknown), i18n.Join(unknown)))
 	}
 	if len(unknownWhen) > 0 {
-		warns = append(warns, fmt.Sprintf("keybindings.json：when 条件在砚里不会成立（%s），跳过了这些键", strings.Join(unknownWhen, "、")))
+		warns = append(warns, i18n.F("keybindings.json: when conditions never hold in Yan (%s); skipped these keys", i18n.Join(unknownWhen)))
 	}
 	return warns
 }
 
-var errUnknownCommand = errors.New("没有这个命令")
+var errUnknownCommand = i18n.Error("No such command")
 
 // commandOf 返回 VS Code 命令名在砚里的命令 ID。
 func (e *Editor) commandOf(name string) string {
@@ -316,24 +317,24 @@ func (e *Editor) checkBinding(name string, raw json.RawMessage) error {
 		}
 		for _, st := range steps {
 			if err := e.checkBinding(st.name, st.args); err != nil {
-				return fmt.Errorf("runCommands 里的 %s：%w", st.name, err)
+				return fmt.Errorf(i18n.T("%s in runCommands: %w"), st.name, err)
 			}
 		}
 		return nil
 	case "type", "workbench.action.terminal.sendSequence":
 		if textArg(raw) == "" {
-			return errors.New("要有 args.text")
+			return errors.New(i18n.T("args.text is required"))
 		}
 		return nil
 	case "vscode.open":
 		var path string
 		if json.Unmarshal(raw, &path) != nil || path == "" {
-			return errors.New("args 要写文件路径")
+			return errors.New(i18n.T("args must give a file path"))
 		}
 		return nil
 	}
 	if a := strings.TrimSpace(string(raw)); a != "" && a != "null" {
-		return errors.New("砚还不支持带 args 的绑定")
+		return errors.New(i18n.T("Yan doesn't support bindings with args yet"))
 	}
 	if _, ok := e.commands[e.commandOf(name)]; !ok {
 		return errUnknownCommand
@@ -352,7 +353,7 @@ func chainSteps(raw json.RawMessage) ([]chainStep, error) {
 		Commands []json.RawMessage `json:"commands"`
 	}
 	if err := json.Unmarshal(raw, &a); err != nil || len(a.Commands) == 0 {
-		return nil, errors.New("runCommands 要有 args.commands")
+		return nil, errors.New(i18n.T("runCommands requires args.commands"))
 	}
 	steps := make([]chainStep, 0, len(a.Commands))
 	for _, c := range a.Commands {
@@ -363,7 +364,7 @@ func chainSteps(raw json.RawMessage) ([]chainStep, error) {
 				Args    json.RawMessage `json:"args"`
 			}
 			if json.Unmarshal(c, &obj) != nil || obj.Command == "" {
-				return nil, errors.New("runCommands 里每一项要写 command")
+				return nil, errors.New(i18n.T("Each item of runCommands must give command"))
 			}
 			st.name, st.args = obj.Command, obj.Args
 		}
@@ -408,7 +409,7 @@ func (e *Editor) runBinding(name string, raw json.RawMessage) error {
 	id := e.commandOf(name)
 	c, ok := e.commands[id]
 	if !ok {
-		return fmt.Errorf("%s：%w", name, errUnknownCommand)
+		return fmt.Errorf(i18n.T("%s: %w"), name, errUnknownCommand)
 	}
 	if err := c.Run(e); err != nil {
 		return err
@@ -437,7 +438,7 @@ func (e *Editor) sendTerminal(s string) error {
 	if h, ok := e.host.(interface{ SendTerminal(string) bool }); ok && h.SendTerminal(s) {
 		return nil
 	}
-	return errors.New("没有开着的终端")
+	return errors.New(i18n.T("No open terminal"))
 }
 
 // pumpChain runs the commands of runCommands, each once those before it are done: their Git
@@ -578,13 +579,33 @@ func (e *Editor) openKeybindings() error {
 		return err
 	}
 	if t := e.cur(); t != nil && t.doc.buf.Snapshot().Len() == 0 {
-		t.doc.buf.Insert(keybindingsTemplate, edit.OriginCommand)
-		e.status = "新的 keybindings.json：保存后立即生效"
+		t.doc.buf.Insert(keybindingsTemplate(i18n.Current()), edit.OriginCommand)
+		e.status = i18n.T("New keybindings.json: takes effect as soon as it is saved")
 	}
 	return nil
 }
 
-const keybindingsTemplate = `// 砚的键盘快捷方式，VS Code 的 keybindings.json 格式：VS Code、Cursor 里的可以直接粘贴过来。
+// keybindingsTemplate is a new keybindings.json, its comments in the interface language l.
+func keybindingsTemplate(l i18n.Locale) string {
+	if l == i18n.SimplifiedChinese {
+		return keybindingsTemplateZh
+	}
+	return keybindingsTemplateEn
+}
+
+const keybindingsTemplateEn = `// Yan's keyboard shortcuts, in VS Code's keybindings.json format: paste those of VS Code or Cursor.
+// "key" is a key or a chord such as "cmd+k cmd+s"; "command" is a command ID (VS Code's, found in
+// the Command Palette); "when" is where it applies: editorTextFocus (editor), sideBarFocus
+// (sidebar), inQuickOpen (overlays), terminalFocus (terminal), editorHasSelection (a selection),
+// isInDiffEditor (diff view), isMac / isWindows / isLinux, evaluated as the key is pressed.
+// "args" supports runCommands, type, vscode.open and workbench.action.terminal.sendSequence.
+// A "-" before a command removes that key from it. Takes effect when saved, after [keys] in config.toml.
+[
+	// { "key": "cmd+k cmd+s", "command": "workbench.action.files.saveAll" },
+]
+`
+
+const keybindingsTemplateZh = `// 砚的键盘快捷方式，VS Code 的 keybindings.json 格式：VS Code、Cursor 里的可以直接粘贴过来。
 // "key" 是按键或连按，如 "cmd+k cmd+s"；"command" 是命令 ID（与 VS Code 相同，命令面板里能找到）；
 // "when" 是在哪里生效：editorTextFocus（编辑器）、sideBarFocus（侧边栏）、inQuickOpen（浮层）、terminalFocus（终端）、
 // editorHasSelection（有选区）、isInDiffEditor（改动视图）、isMac / isWindows / isLinux；按下键的那一刻求值。

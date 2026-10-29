@@ -1,7 +1,6 @@
 package gui
 
 import (
-	"fmt"
 	"maps"
 	"net/url"
 	"slices"
@@ -12,6 +11,7 @@ import (
 	"github.com/egoist/mygo/ui"
 	east "github.com/yuin/goldmark/extension/ast"
 
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/style"
 	"github.com/corn12138/yan-source/core/syntax/highlight"
 	"github.com/corn12138/yan-source/core/view"
@@ -44,6 +44,8 @@ type markdownState struct {
 	// mermaid 是 blocks 里的 Mermaid 图按什么样式画的，nil 是显示源码；sources 是用户要看源码的图（按行）。
 	mermaid *mermaidStyle
 	sources map[int]bool
+	math    bool
+	places  map[*markdownInline]mathPlacement
 }
 
 func (f *Frontend) markdownOf(path string) *markdownState {
@@ -68,10 +70,14 @@ func (f *Frontend) followMarkdown(pf *view.PaneFrame) *markdownState {
 	}
 	// 换了主题（或关掉了 Mermaid）就按新的样式重画。
 	same := want == nil && m.mermaid == nil || want != nil && m.mermaid != nil && *want == *m.mermaid
-	if same && (m.loaded && m.version == pf.Version && m.root == pf.Root || (m.running || m.wait != nil) && m.pending == pf.Version) {
+	mathEnabled := f.ed.PreviewMath()
+	if !same || m.math != mathEnabled {
+		m.loaded = false
+	}
+	if same && m.math == mathEnabled && (m.loaded && m.version == pf.Version && m.root == pf.Root || (m.running || m.wait != nil) && m.pending == pf.Version) {
 		return m
 	}
-	m.mermaid = want
+	m.mermaid, m.math = want, mathEnabled
 	m.pending = pf.Version
 	gen := m.gen.Add(1)
 	if m.wait != nil {
@@ -88,7 +94,7 @@ func (f *Frontend) followMarkdown(pf *view.PaneFrame) *markdownState {
 		}
 		m.wait, m.running = nil, true
 		// 后台用缓存的一份拷贝，解析完在主线程上换回来。
-		cache := &markdownCache{images: maps.Clone(m.cache.images), code: maps.Clone(m.cache.code), mermaid: want}
+		cache := &markdownCache{images: maps.Clone(m.cache.images), code: maps.Clone(m.cache.code), mermaid: want, math: mathEnabled, formulas: maps.Clone(m.cache.formulas)}
 		if want != nil && m.cache.mermaid != nil && *want == *m.cache.mermaid {
 			cache.diagrams = maps.Clone(m.cache.diagrams)
 		}
@@ -101,7 +107,7 @@ func (f *Frontend) followMarkdown(pf *view.PaneFrame) *markdownState {
 					return
 				}
 				m.blocks, m.root, m.version, m.loaded = blocks, root, ver, true
-				m.slugs, m.tables = map[string]int{}, nil
+				m.slugs, m.tables, m.places = map[string]int{}, nil, nil
 				for i, b := range blocks {
 					if b.slug != "" {
 						m.slugs[b.slug] = i
@@ -152,7 +158,7 @@ func (f *Frontend) markdownPane(c *ui.Context, pane ui.Element, ci int) {
 	defer func() { f.mdClickTaken = false }()
 	pane.Children(func() {
 		ui.List(c.Key("markdown:"+path), &v.list, len(m.blocks)).TrackScroll(&v.scroll).Fill().Background(p.editor).
-			Label("预览 "+path).Padding(mdPadY, mdPadX).Selectable().HandleInput(func(ev ui.InputEvent) bool {
+			Label(i18n.F("Preview %s", path)).Padding(mdPadY, mdPadX).Selectable().HandleInput(func(ev ui.InputEvent) bool {
 			if ev.Kind == ui.InputPointerDown {
 				f.ed.FocusColumn(ci)
 			}
@@ -249,26 +255,34 @@ func (f *Frontend) markdownBlockView(c *ui.Context, m *markdownState, b *markdow
 		paneW := f.cols[ci].pane.Bounds(c).W - 2*mdPadX
 		w := max(1, min(width, paneW)-(b.offset+b.markerWidth)*size-float32(b.quote)*size)
 		f.markdownImage(c, ci, b.runs[0], w, m.root, path)
-	case markdownCodeBlock, markdownHTML:
+	case markdownCodeBlock, markdownHTML, markdownMathBlock:
+		if fml := b.formula; fml != nil && fml.err == "" && !m.sources[b.line] {
+			f.markdownFormula(c, m, b, size, max(1, width-(b.offset+b.markerWidth)*size-float32(b.quote)*size))
+			return
+		}
 		if d := b.diagram; d != nil && d.err == "" && !m.sources[b.line] {
 			f.markdownDiagram(c, m, b, size, max(1, width-(b.offset+b.markerWidth)*size-float32(b.quote)*size))
 			return
 		}
 		ui.Column(c).WidthPercent(100).Padding(size*0.5, size*0.75).Background(p.chrome).Radius(6).Children(func() {
-			if b.kind == markdownCodeBlock {
+			if b.kind == markdownCodeBlock || b.kind == markdownMathBlock {
 				ui.Row(c).WidthPercent(100).AlignItems(ui.Center).Children(func() {
 					ui.Text(c, b.language).FontSize(code * 0.85).TextColor(p.muted)
 					ui.Spacer(c)
-					if d := b.diagram; d != nil && d.err == "" && f.iconButton(c, iconImage, "显示图", false).Clicked() {
+					if fml := b.formula; fml != nil && fml.err == "" && f.iconButton(c, iconImage, i18n.T("Show Formula"), false).Clicked() {
 						f.mdClickTaken = true
 						delete(m.sources, b.line)
 					}
-					if f.iconButton(c, iconCopy, "复制代码", false).Clicked() {
+					if d := b.diagram; d != nil && d.err == "" && f.iconButton(c, iconImage, i18n.T("Show Diagram"), false).Clicked() {
+						f.mdClickTaken = true
+						delete(m.sources, b.line)
+					}
+					if f.iconButton(c, iconCopy, i18n.T("Copy Code"), false).Clicked() {
 						f.mdClickTaken = true
 						if err := (host{f}).SetClipboard(b.codeText); err != nil {
 							f.ed.Notify(err.Error())
 						} else {
-							f.ed.Notify("代码已复制")
+							f.ed.Notify(i18n.T("Code copied"))
 						}
 					}
 				})
@@ -276,7 +290,10 @@ func (f *Frontend) markdownBlockView(c *ui.Context, m *markdownState, b *markdow
 			f.markdownText(c, ci, b.runs, code, b.kind == markdownHTML, m.root, path, true)
 		})
 		if d := b.diagram; d != nil && d.err != "" {
-			ui.Text(c, "画不出这张 Mermaid 图："+d.err).FontSize(size*0.85).TextColor(p.danger).Margin(size*0.4, 0, 0, 0)
+			ui.Text(c, i18n.F("Couldn't draw this Mermaid diagram: %s", d.err)).FontSize(size*0.85).TextColor(p.danger).Margin(size*0.4, 0, 0, 0)
+		}
+		if fml := b.formula; fml != nil && fml.err != "" {
+			ui.Text(c, i18n.F("Couldn't draw this formula: %s", fml.err)).FontSize(size*0.85).TextColor(p.danger).Margin(size*0.4, 0, 0, 0)
 		}
 	case markdownTable, markdownTableHeader:
 		head := b.kind == markdownTableHeader
@@ -316,7 +333,7 @@ func (f *Frontend) markdownBlockView(c *ui.Context, m *markdownState, b *markdow
 								n++
 							}
 							if n > 0 {
-								f.markdownText(c, ci, cell[:n], size, false, m.root, path, false)
+								f.markdownText(c, ci, cell[:n], size, false, m.root, path, false, align)
 							}
 							if n < len(cell) {
 								f.markdownImage(c, ci, cell[n], width/float32(len(b.cells))-size, m.root, path)
@@ -345,24 +362,24 @@ func (f *Frontend) markdownDiagram(c *ui.Context, m *markdownState, b *markdownB
 	card := ui.Column(c.Key("diagram")).WidthPercent(100).Padding(pad).Background(p.editor).Border(1, p.border).Radius(8).AlignItems(ui.Center)
 	over := card.Hovered()
 	card.Children(func() {
-		ui.Box(c).Width(w).Height(h).Label("Mermaid 图").Draw(d.draw)
+		ui.Box(c).Width(w).Height(h).Label(i18n.T("Mermaid diagram")).Draw(d.draw)
 		if !over {
 			return
 		}
 		ui.Row(c).Absolute().Top(size * 0.4).Right(size * 0.4).Gap(2).Background(p.chrome).Radius(4).Children(func() {
-			if f.iconButton(c, iconFileCode, "显示源码", false).Clicked() {
+			if f.iconButton(c, iconFileCode, i18n.T("Show Source"), false).Clicked() {
 				f.mdClickTaken = true
 				if m.sources == nil {
 					m.sources = map[int]bool{}
 				}
 				m.sources[b.line] = true
 			}
-			if f.iconButton(c, iconCopy, "复制代码", false).Clicked() {
+			if f.iconButton(c, iconCopy, i18n.T("Copy Code"), false).Clicked() {
 				f.mdClickTaken = true
 				if err := (host{f}).SetClipboard(b.codeText); err != nil {
 					f.ed.Notify(err.Error())
 				} else {
-					f.ed.Notify("代码已复制")
+					f.ed.Notify(i18n.T("Code copied"))
 				}
 			}
 		})
@@ -378,8 +395,11 @@ func (f *Frontend) syntaxColor(k highlight.Kind) (ui.Color, bool) {
 }
 
 // markdownSpan 把一段行内文字的样式（粗、斜、删除线、代码、链接）都算好。
-func (f *Frontend) markdownSpan(r markdownInline, color ui.Color, blockCode bool) ui.Span {
+func (f *Frontend) markdownSpan(r markdownInline, color ui.Color, size float32, blockCode bool) ui.Span {
 	p := f.pal
+	if r.math != nil && r.math.err == "" {
+		return mathSpan(r.math, size)
+	}
 	span := ui.Span{Text: r.text, Color: color, Italic: r.italic, Strikethrough: r.strike}
 	if p.mono || r.code || blockCode {
 		span.Font = f.opts.FontFamily
@@ -405,6 +425,9 @@ func (f *Frontend) markdownSpan(r markdownInline, color ui.Color, blockCode bool
 	}
 	if r.strike {
 		span.DecorationColor = span.Color
+	}
+	if r.math != nil {
+		span.Color, span.Font = p.danger, f.opts.FontFamily
 	}
 	return span
 }
@@ -439,7 +462,7 @@ func (f *Frontend) markdownSpacing(b markdownBlock) (top, bottom float32) {
 	return top, bottom
 }
 
-func (f *Frontend) markdownText(c *ui.Context, ci int, runs []markdownInline, size float32, muted bool, root, path string, blockCode bool) {
+func (f *Frontend) markdownText(c *ui.Context, ci int, runs []markdownInline, size float32, muted bool, root, path string, blockCode bool, aligns ...ui.Align) {
 	p := f.pal
 	color := p.text
 	if muted {
@@ -449,13 +472,24 @@ func (f *Frontend) markdownText(c *ui.Context, ci int, runs []markdownInline, si
 	if blockCode {
 		lh = f.opts.LineHeight
 	}
-	t := ui.RichText(c).FontSize(size).LineHeight(lh).TextColor(color).DecorationColor(color).WidthPercent(100)
+	align := ui.Start
+	if len(aligns) > 0 {
+		align = aligns[0]
+	}
+	t := ui.RichText(c).TextAlign(align).FontSize(size).LineHeight(lh).TextColor(color).DecorationColor(color).WidthPercent(100)
 	if blockCode || p.mono {
 		t.Font(f.opts.FontFamily)
 	}
+	font := ui.Font{Family: c.Theme().Font, Size: size}
+	if blockCode || p.mono {
+		font.Family = f.opts.FontFamily
+	}
+	if slices.ContainsFunc(runs, func(r markdownInline) bool { return r.math != nil && r.math.err == "" }) {
+		f.markdownMath(f.markdowns[path], t, runs, font, color, blockCode, lh, align)
+	}
 	t.Children(func() {
 		for _, r := range runs {
-			span := f.markdownSpan(r, color, blockCode)
+			span := fitMathSpan(f.markdownSpan(r, color, size, blockCode), t.Bounds().W)
 			if r.link != "" {
 				if e := f.markdownLink(c, ci, r.link, root, path, false); e.Valid() {
 					e.Children(func() { ui.RichText(c, span) })
@@ -488,7 +522,7 @@ func (f *Frontend) markdownLink(c *ui.Context, ci int, dest, root, path string, 
 	} else {
 		e = ui.Link(c, "", "")
 	}
-	e = e.Label("打开链接 " + dest)
+	e = e.Label(i18n.F("Open link %s", dest))
 	if remote {
 		return e.OnClick(func() { f.mdClickTaken = true; c.OpenURL(dest) })
 	}
@@ -561,15 +595,15 @@ func (f *Frontend) markdownColor(k markdownAlert) ui.Color {
 func markdownAlertHead(k markdownAlert) (string, string) {
 	switch k {
 	case alertTip:
-		return "☀", "提示"
+		return "☀", i18n.T("Tip")
 	case alertImportant:
-		return "!", "重要"
+		return "!", i18n.T("Important")
 	case alertWarning:
-		return "⚠", "警告"
+		return "⚠", i18n.T("Warning")
 	case alertCaution:
-		return "!", "注意"
+		return "!", i18n.T("Caution")
 	default:
-		return "ⓘ", "说明"
+		return "ⓘ", i18n.T("Note")
 	}
 }
 
@@ -583,7 +617,94 @@ func (f *Frontend) markdownReadingTime() string {
 		return ""
 	}
 	if m := f.markdowns[p.Path]; m != nil && m.loaded && !isMermaidFile(p.Path) {
-		return fmt.Sprintf("%d 字词 · 约 %d 分钟", m.words, m.minutes)
+		return i18n.F("%d words · about %d min", m.words, m.minutes)
 	}
 	return ""
+}
+
+type mathPlacement struct {
+	font       ui.Font
+	width      float32
+	spanWidth  float32
+	lineHeight float32
+	align      ui.Align
+	places     []ui.Rect
+}
+
+func (f *Frontend) markdownMath(m *markdownState, text ui.Element, runs []markdownInline, font ui.Font, color ui.Color, blockCode bool, lineHeight float32, align ui.Align) {
+	// Spans use the previous layout width; after resize, cache both that width and
+	// the paint width so the next frame cannot reuse geometry from oversized spans.
+	spanWidth := text.Bounds().W
+	var spans []ui.Span
+	var formulas []*mathFormula
+	for _, r := range runs {
+		spans = append(spans, fitMathSpan(f.markdownSpan(r, color, font.Size, blockCode), spanWidth))
+		if r.math != nil && r.math.err == "" {
+			formulas = append(formulas, r.math)
+		}
+	}
+	lh := font.Size * lineHeight
+	text.Draw(func(pt *ui.Painter, r ui.Rect) {
+		var places []ui.Rect
+		if m != nil {
+			if pl, ok := m.places[&runs[0]]; ok && pl.font == font && pl.width == r.W && pl.spanWidth == spanWidth && pl.lineHeight == lh && pl.align == align {
+				places = pl.places
+			}
+		}
+		if places == nil {
+			places = mathPlacesAligned(spans, font, r.W, lh, align)
+			if m != nil {
+				if m.places == nil {
+					m.places = map[*markdownInline]mathPlacement{}
+				}
+				m.places[&runs[0]] = mathPlacement{font, r.W, spanWidth, lh, align, places}
+			}
+		}
+		for i, at := range places {
+			if i < len(formulas) {
+				f := formulas[i]
+				f.draw(pt, ui.Rect{X: r.X + at.X, Y: r.Y + at.Y, W: at.W, H: at.H + f.depth*at.W/f.w}, color)
+			}
+		}
+	})
+}
+
+func (f *Frontend) markdownFormula(c *ui.Context, m *markdownState, b *markdownBlock, size, width float32) {
+	p, formula := f.pal, b.formula
+	size *= 1.1
+	w := min(formula.w*size, max(1, width))
+	h := w * (formula.ascent + formula.depth) / formula.w
+	block := ui.Column(c.Key("math")).WidthPercent(100).AlignItems(ui.Center).Padding(size*0.25, 0)
+	over := block.Hovered()
+	block.Children(func() {
+		ui.Box(c).Width(w).Height(h).Label(i18n.F("Formula: %s", b.codeText)).Draw(func(pt *ui.Painter, r ui.Rect) { formula.draw(pt, r, p.text) })
+		if !over {
+			return
+		}
+		ui.Row(c).Absolute().Top(0).Right(0).Background(p.editor).Radius(4).Children(func() {
+			if f.iconButton(c, iconFileCode, i18n.T("Show Source"), false).Clicked() {
+				f.mdClickTaken = true
+				if m.sources == nil {
+					m.sources = map[int]bool{}
+				}
+				m.sources[b.line] = true
+			}
+			if f.iconButton(c, iconCopy, i18n.T("Copy Code"), false).Clicked() {
+				f.mdClickTaken = true
+				if err := (host{f}).SetClipboard(b.codeText); err != nil {
+					f.ed.Notify(err.Error())
+				} else {
+					f.ed.Notify(i18n.T("Code copied"))
+				}
+			}
+		})
+	})
+}
+
+func fitMathSpan(span ui.Span, width float32) ui.Span {
+	if width > 0 && span.ObjectWidth > width {
+		span.ObjectHeight *= width / span.ObjectWidth
+		span.ObjectWidth = width
+	}
+	return span
 }

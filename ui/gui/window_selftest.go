@@ -12,6 +12,7 @@ import (
 	"github.com/egoist/mygo"
 
 	"github.com/corn12138/yan-source/core/app"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/view"
 )
 
@@ -59,7 +60,7 @@ func (f *Frontend) SelfTestWindowWorkflows(dir string, report func(string)) {
 			f.ed.Frame(&frame)
 			atLine := false
 			for _, it := range frame.Status.Right {
-				if strings.HasPrefix(it.Text, "行 2，") {
+				if strings.HasPrefix(it.Text, i18n.T("Ln 2, ")) {
 					atLine = true
 				}
 			}

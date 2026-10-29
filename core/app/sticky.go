@@ -7,6 +7,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/corn12138/yan-source/core/edit"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/style"
 	"github.com/corn12138/yan-source/core/syntax/symbols"
 	"github.com/corn12138/yan-source/core/text"
@@ -205,7 +206,7 @@ func (e *Editor) symbolItems(q string) {
 	ov.items, ov.footer = ov.items[:0], ""
 	t := e.cur()
 	if t == nil {
-		ov.footer = "先打开一个文件"
+		ov.footer = i18n.T("Open a file first")
 		return
 	}
 	s := t.doc.buf.Snapshot()
@@ -237,7 +238,7 @@ func (e *Editor) symbolItems(q string) {
 		}
 	}
 	if len(ov.items) == 0 {
-		ov.footer = "没有符号"
+		ov.footer = i18n.T("No symbols")
 	}
 }
 
@@ -253,17 +254,17 @@ func shift(hits []int, by int) []int {
 func symbolKind(k string) string {
 	switch k {
 	case "function":
-		return "函数"
+		return i18n.T("Function")
 	case "method":
-		return "方法"
+		return i18n.T("Method")
 	case "class":
-		return "类型"
+		return i18n.T("Type")
 	case "interface":
-		return "接口"
+		return i18n.T("Interface")
 	case "heading":
-		return "标题"
+		return i18n.T("Heading")
 	case "enum":
-		return "枚举"
+		return i18n.T("Enum")
 	}
 	return k
 }

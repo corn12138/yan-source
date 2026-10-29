@@ -6,13 +6,13 @@ package app
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/corn12138/yan-source/core/config"
 	"github.com/corn12138/yan-source/core/git/linediff"
+	"github.com/corn12138/yan-source/core/i18n"
 )
 
 // diffHunks are the changes from base to cur as the diffs show them: compared as the
@@ -73,16 +73,16 @@ func withoutBlankHunks(hs []linediff.Hunk, base, cur []string) []linediff.Hunk {
 }
 
 var diffWhitespaceLabels = []struct{ mode, label string }{
-	{"", "比较全部字符"},
-	{"eol", "忽略行尾空白"},
-	{"all", "忽略所有空白"},
-	{"blank", "忽略空白和空行"},
+	{"", i18n.N("Compare All Characters")},
+	{"eol", i18n.N("Ignore Trailing Whitespace")},
+	{"all", i18n.N("Ignore All Whitespace")},
+	{"blank", i18n.N("Ignore Whitespace and Blank Lines")},
 }
 
 func diffWhitespaceLabel(mode string) string {
 	for _, w := range diffWhitespaceLabels {
 		if w.mode == mode {
-			return w.label
+			return i18n.T(w.label)
 		}
 	}
 	return mode
@@ -92,13 +92,13 @@ func diffWhitespaceLabel(mode string) string {
 func (e *Editor) chooseDiffWhitespace() error {
 	var items []ovItem
 	for _, w := range diffWhitespaceLabels {
-		item := ovItem{label: w.label, run: func(e *Editor) error { return e.setDiffWhitespace(w.mode) }}
+		item := ovItem{label: i18n.T(w.label), run: func(e *Editor) error { return e.setDiffWhitespace(w.mode) }}
 		if w.mode == e.cfg.DiffWhitespace {
-			item.hint = "当前"
+			item.hint = i18n.T("Current")
 		}
 		items = append(items, item)
 	}
-	e.choose("改动视图比较空白", items...)
+	e.choose(i18n.T("Whitespace in Diff Views"), items...)
 	return nil
 }
 
@@ -107,7 +107,7 @@ func (e *Editor) chooseDiffWhitespace() error {
 func (e *Editor) setDiffWhitespace(mode string) error {
 	mode, ok := config.DiffWhitespaceMode(mode)
 	if !ok {
-		return errors.New("未知的空白比较方式")
+		return errors.New(i18n.T("Unknown whitespace comparison"))
 	}
 	e.cfg.DiffWhitespace = mode
 	if e.state != nil {
@@ -116,7 +116,7 @@ func (e *Editor) setDiffWhitespace(mode string) error {
 		e.saveState()
 	}
 	e.refreshAllDiffs()
-	e.status = "改动视图：" + diffWhitespaceLabel(mode)
+	e.status = i18n.F("Diff view: %s", diffWhitespaceLabel(mode))
 	return nil
 }
 
@@ -136,7 +136,7 @@ func (e *Editor) refreshAllDiffs() {
 func (e *Editor) CompareFiles(left, right string) error {
 	left, right = filepath.Clean(left), filepath.Clean(right)
 	if left == right {
-		return errors.New("选两个不同的文件比较")
+		return errors.New(i18n.T("Choose two different files to compare"))
 	}
 	for _, p := range []string{left, right} {
 		if e.docOf(p) != nil {
@@ -145,7 +145,7 @@ func (e *Editor) CompareFiles(left, right string) error {
 		if fi, err := os.Stat(p); err != nil {
 			return err
 		} else if fi.IsDir() {
-			return errors.New(filepath.Base(p) + " 是文件夹，选两个文件比较")
+			return errors.New(i18n.F("%s is a folder: choose two files to compare", filepath.Base(p)))
 		}
 	}
 	ln, rn := filepath.Base(left), filepath.Base(right)
@@ -171,7 +171,7 @@ func (e *Editor) compareFiles() error {
 		return nil
 	}
 	hint := func(s string) string {
-		return "比较 " + strings.TrimSpace(s) + "（相对路径从打开的文件夹算起）"
+		return i18n.F("Compare %s (relative paths start at the open folder)", strings.TrimSpace(s))
 	}
 	abs := func(p string) string {
 		if p = strings.TrimSpace(p); p != "" && !filepath.IsAbs(p) {
@@ -179,9 +179,9 @@ func (e *Editor) compareFiles() error {
 		}
 		return p
 	}
-	e.prompt("比较：左边（旧）的文件", cur, hint, func(e *Editor, left string) error {
+	e.prompt(i18n.T("Compare: left (old) file"), cur, hint, func(e *Editor, left string) error {
 		left = abs(left)
-		e.prompt("比较：右边（新）的文件", "", hint, func(e *Editor, right string) error {
+		e.prompt(i18n.T("Compare: right (new) file"), "", hint, func(e *Editor, right string) error {
 			return e.CompareFiles(left, abs(right))
 		})
 		return nil
@@ -193,24 +193,24 @@ func (e *Editor) compareFiles() error {
 func (e *Editor) selectForCompare() error {
 	path, _, ok := e.treeTarget()
 	if !ok || path == e.root {
-		return errors.New("先在资源管理器里选一个文件")
+		return errors.New(i18n.T("Select a file in the Explorer first"))
 	}
 	if fi, err := os.Stat(path); err != nil || fi.IsDir() {
-		return errors.New("选一个文件，不是文件夹")
+		return errors.New(i18n.T("Choose a file, not a folder"))
 	}
 	e.compareLeft = path
-	e.status = "已选 " + filepath.Base(path) + " 作为比较的左边：在另一个文件上选「与已选文件比较」"
+	e.status = i18n.F("Selected %s as the left side: choose \"Compare with Selected\" on another file", filepath.Base(path))
 	return nil
 }
 
 // compareWithSelected compares the file chosen with selectForCompare with the explorer's file.
 func (e *Editor) compareWithSelected() error {
 	if e.compareLeft == "" {
-		return errors.New("先在一个文件上选「选为比较对象」")
+		return errors.New(i18n.T("Choose \"Select for Compare\" on a file first"))
 	}
 	path, _, ok := e.treeTarget()
 	if !ok || path == e.root {
-		return errors.New("先在资源管理器里选一个文件")
+		return errors.New(i18n.T("Select a file in the Explorer first"))
 	}
 	return e.CompareFiles(e.compareLeft, path)
 }
@@ -219,16 +219,16 @@ func (e *Editor) compareWithSelected() error {
 func (e *Editor) CanCompareWithSelected() bool { return e.compareLeft != "" }
 
 var diffHighlightLabels = []struct{ mode, label string }{
-	{"", "按词标出改了的部分"},
-	{"char", "按字标出改了的部分"},
-	{"line", "只标出改了的行"},
+	{"", i18n.N("Highlight Changed Words")},
+	{"char", i18n.N("Highlight Changed Characters")},
+	{"line", i18n.N("Highlight Changed Lines Only")},
 }
 
 // chooseDiffHighlight asks how changed lines show what changed within them.
 func (e *Editor) chooseDiffHighlight() error {
 	var items []ovItem
 	for _, h := range diffHighlightLabels {
-		item := ovItem{label: h.label, run: func(e *Editor) error {
+		item := ovItem{label: i18n.T(h.label), run: func(e *Editor) error {
 			e.cfg.DiffHighlight = h.mode
 			if e.state != nil {
 				v := h.mode
@@ -236,15 +236,15 @@ func (e *Editor) chooseDiffHighlight() error {
 				e.saveState()
 			}
 			e.refreshAllDiffs()
-			e.status = "改动视图：" + h.label
+			e.status = i18n.F("Diff view: %s", i18n.T(h.label))
 			return nil
 		}}
 		if h.mode == e.cfg.DiffHighlight {
-			item.hint = "当前"
+			item.hint = i18n.T("Current")
 		}
 		items = append(items, item)
 	}
-	e.choose("改动视图怎么标出改动", items...)
+	e.choose(i18n.T("How diff views highlight changes"), items...)
 	return nil
 }
 
@@ -252,7 +252,7 @@ func (e *Editor) chooseDiffHighlight() error {
 func (e *Editor) chooseDiffContext() error {
 	var items []ovItem
 	for n := 0; n <= config.MaxDiffContext; n++ {
-		item := ovItem{label: fmt.Sprintf("改动前后留 %d 行", n), run: func(e *Editor) error {
+		item := ovItem{label: i18n.F("Keep %d lines around changes", n), run: func(e *Editor) error {
 			e.cfg.DiffContext = n
 			if e.state != nil {
 				v := n
@@ -267,14 +267,14 @@ func (e *Editor) chooseDiffContext() error {
 				}
 			}
 			e.refreshAllDiffs()
-			e.status = fmt.Sprintf("改动视图：改动前后留 %d 行没改的", n)
+			e.status = i18n.F("Diff view: keep %d unchanged lines around changes", n)
 			return nil
 		}}
 		if n == e.cfg.DiffContext {
-			item.hint = "当前"
+			item.hint = i18n.T("Current")
 		}
 		items = append(items, item)
 	}
-	e.choose("改动视图的上下文行数", items...)
+	e.choose(i18n.T("Context lines of diff views"), items...)
 	return nil
 }

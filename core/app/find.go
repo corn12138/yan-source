@@ -8,6 +8,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/corn12138/yan-source/core/edit"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/keymap"
 	"github.com/corn12138/yan-source/core/style"
 	"github.com/corn12138/yan-source/core/text"
@@ -75,7 +76,7 @@ func replaceTemplate(with string, regex bool) string {
 // openFind 打开查找框（replace 为真时连替换框一起），选区在一行之内时用它做查询。
 func (e *Editor) openFind(replace bool) error {
 	if t := e.cur(); t != nil && t.term != nil {
-		return userError("请在文件标签中查找")
+		return userError(i18n.T("Find in a file tab"))
 	}
 	f := &e.find
 	if t := e.cur(); t != nil {
@@ -126,7 +127,7 @@ func (e *Editor) search(fromCaret bool) {
 	}
 	re, err := compileQuery(f.query, f.matchCase, f.word, f.regex)
 	if err != nil {
-		f.err, f.cur = "正则写错了", -1
+		f.err, f.cur = i18n.T("Invalid regular expression"), -1
 		return
 	}
 	f.re = re
@@ -232,7 +233,7 @@ func (e *Editor) replaceAll() error {
 	b.Apply(edit.Transaction{Changes: cs, Origin: edit.OriginCommand})
 	b.BreakGroup()
 	e.search(false)
-	e.status = fmt.Sprintf("替换了 %d 处", n)
+	e.status = i18n.F("Replaced %d occurrences", n)
 	return nil
 }
 
@@ -338,7 +339,7 @@ func (e *Editor) findFrame(dst *view.Find) {
 		dst.Count, dst.Error = f.err, true
 	case f.query == "":
 	case len(f.matches) == 0:
-		dst.Count, dst.Error = "无结果", true
+		dst.Count, dst.Error = i18n.T("No results"), true
 	case len(f.matches) >= maxMatches:
 		dst.Count = fmt.Sprintf("%d / %d+", f.cur+1, maxMatches)
 	default:

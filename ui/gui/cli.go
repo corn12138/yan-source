@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"slices"
 
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/internal/cli"
 	"github.com/egoist/mygo"
 )
@@ -20,8 +21,8 @@ func (h host) InstallCLI() {
 		}
 		dir := filepath.Join(home, ".local", "bin")
 		result, err := mygo.Dialog.Message(mygo.MessageOptions{Parent: f.win, Type: mygo.MessageInfo,
-			Message: "安装 yan 命令？", Detail: "将命令安装到 " + filepath.Join(dir, "yan") + "，以后可用 yan 目录 或 yan 文件:行号 打开砚。已有同名命令会保留。",
-			Buttons: []string{"安装", "取消"}, DefaultButton: 0, CancelButton: 1})
+			Message: i18n.T("Install the yan command?"), Detail: i18n.F("The command is installed to %s; afterwards \"yan folder\" or \"yan file:line\" opens Yan. An existing command with the same name is kept.", filepath.Join(dir, "yan")),
+			Buttons: []string{i18n.T("Install"), i18n.T("Cancel")}, DefaultButton: 0, CancelButton: 1})
 		if err != nil || result.Button != 0 {
 			return
 		}
@@ -33,10 +34,10 @@ func (h host) InstallCLI() {
 			f.do(func() { f.ed.Notify(err.Error()) })
 			return
 		}
-		detail := "已安装到 " + filepath.Join(dir, "yan") + "。应用移动位置后，请重新安装。"
+		detail := i18n.F("Installed to %s. Reinstall after moving the app.", filepath.Join(dir, "yan"))
 		if !slices.Contains(filepath.SplitList(os.Getenv("PATH")), dir) {
-			detail += "\n若终端提示找不到命令，请将 ~/.local/bin 加入 PATH；也可以直接使用 ~/.local/bin/yan。"
+			detail += i18n.T("\nIf the terminal says the command is not found, add ~/.local/bin to PATH, or use ~/.local/bin/yan directly.")
 		}
-		mygo.Dialog.Message(mygo.MessageOptions{Parent: f.win, Type: mygo.MessageInfo, Message: "yan 命令已安装", Detail: detail, Buttons: []string{"好"}})
+		mygo.Dialog.Message(mygo.MessageOptions{Parent: f.win, Type: mygo.MessageInfo, Message: i18n.T("yan command installed"), Detail: detail, Buttons: []string{i18n.T("OK")}})
 	}()
 }

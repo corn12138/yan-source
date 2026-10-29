@@ -31,7 +31,7 @@ func TestNativeTerminalPanelSides(t *testing.T) {
 		}
 		return b.X, b.W, b.Y
 	}
-	sidebar, ok := h.tt.Find("资源管理器")
+	sidebar, ok := h.tt.Find("侧边栏")
 	if !ok {
 		t.Fatal("no sidebar")
 	}
@@ -39,6 +39,10 @@ func TestNativeTerminalPanelSides(t *testing.T) {
 
 	h.ed.Run("workbench.action.positionPanelLeft")
 	h.settle()
+	sidebar, ok = h.tt.Find("侧边栏")
+	if !ok {
+		t.Fatal("no sidebar beside left panel")
+	}
 	x, _, y := panel()
 	if x >= sidebar.X || y >= bottomY {
 		t.Fatalf("left panel at x %v (sidebar %v), y %v", x, sidebar.X, y)

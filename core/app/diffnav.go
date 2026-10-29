@@ -7,10 +7,11 @@ package app
 // stays. It never wraps round without a word. Rewritten for yan's diff tabs.
 
 import (
-	"fmt"
+	"errors"
 	"path/filepath"
 
 	"github.com/corn12138/yan-source/core/edit"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/view"
 )
 
@@ -90,14 +91,14 @@ func (e *Editor) diffCross(dt *diffTab, cur, by int, armed bool, from, to string
 	if mode == "always" || mode == "" && armed {
 		return true
 	}
-	where := "最后一"
+	where := i18n.T("last")
 	if by < 0 {
-		where = "第一"
+		where = i18n.T("first")
 	}
-	e.status = fmt.Sprintf("已是 %s 的%s处改动", from, where)
+	e.status = i18n.F("Already at the %[2]s change of %[1]s", from, where)
 	if mode == "" {
 		dt.boundary = &diffBoundary{cur, by}
-		e.status += "，再按一次到 " + to
+		e.status += i18n.F("; press again to go to %s", to)
 	}
 	return false
 }
@@ -105,11 +106,11 @@ func (e *Editor) diffCross(dt *diffTab, cur, by int, armed bool, from, to string
 func diffEndMessage(by int, none bool) string {
 	switch {
 	case none:
-		return "没有改动"
+		return i18n.T("No changes")
 	case by > 0:
-		return "已是改动视图的最后一处改动"
+		return i18n.T("Already at the last change of the diff view")
 	}
-	return "已是改动视图的第一处改动"
+	return i18n.T("Already at the first change of the diff view")
 }
 
 // diffGoChange puts the caret on the change at line i and says which of how many it is.
@@ -119,7 +120,7 @@ func (e *Editor) diffGoChange(t *tab, i int) {
 	heads := diffHeads(t.diff)
 	for k, h := range heads {
 		if h == i {
-			e.status = fmt.Sprintf("第 %d/%d 处改动", k+1, len(heads))
+			e.status = i18n.F("Change %d/%d", k+1, len(heads))
 			if t.diff.changes {
 				e.status += " · " + t.diff.nameAt(i)
 			}
@@ -198,9 +199,9 @@ func (e *Editor) diffStepFile(t *tab, by int) {
 		return
 	}
 	if by > 0 {
-		e.status = "已是最后一个文件"
+		e.status = i18n.T("Already at the last file")
 	} else {
-		e.status = "已是第一个文件"
+		e.status = i18n.T("Already at the first file")
 	}
 }
 
@@ -208,7 +209,7 @@ func (e *Editor) diffStepFile(t *tab, by int) {
 func (e *Editor) diffTabNav(step func(*Editor, *tab, int), by int) error {
 	t := e.cur()
 	if t == nil || t.diff == nil {
-		return fmt.Errorf("先打开一个改动视图")
+		return errors.New(i18n.T("Open a diff view first"))
 	}
 	step(e, t, by)
 	return nil
@@ -237,15 +238,15 @@ func diffStickyLine(t *tab) int {
 func (e *Editor) toggleFullFiles() error {
 	t := e.cur()
 	if t == nil || t.diff == nil {
-		return fmt.Errorf("先打开一个改动视图")
+		return errors.New(i18n.T("Open a diff view first"))
 	}
 	t.diff.full = !t.diff.full
 	clear(t.diff.expanded)
 	e.refreshDiff(t.doc, t.diff)
 	if t.diff.full {
-		e.status = "改动视图：显示整个文件"
+		e.status = i18n.T("Diff view: whole file")
 	} else {
-		e.status = "改动视图：只显示改动附近"
+		e.status = i18n.T("Diff view: only near changes")
 	}
 	return nil
 }

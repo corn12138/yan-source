@@ -8,6 +8,7 @@ import (
 	"github.com/egoist/mygo"
 
 	"github.com/corn12138/yan-source/core/app"
+	"github.com/corn12138/yan-source/core/i18n"
 )
 
 // menu 是原生菜单栏：每一项执行一个内核命令，快捷键取自内核的键位（改了键位，菜单跟着变）。
@@ -15,7 +16,7 @@ import (
 func (f *Frontend) menu() *mygo.Menu {
 	item := func(id, label string) *mygo.MenuItem {
 		if app.CommandUnreleased(id) { // not in the official release yet (core/app/features.json)
-			label += unreleasedSuffix
+			label += unreleasedSuffix()
 		}
 		it := &mygo.MenuItem{ID: id, Label: label, Click: func(_ *mygo.MenuItem, w *mygo.Window) {
 			g := f
@@ -43,119 +44,126 @@ func (f *Frontend) menu() *mygo.Menu {
 		it.Type, it.Checked = mygo.MenuItemRadio, on
 		return it
 	}
-	autoSave := plain("workbench.action.toggleAutoSave", "自动保存")
+	autoSave := plain("workbench.action.toggleAutoSave", i18n.T("Auto Save"))
 	autoSave.Type, autoSave.Checked = mygo.MenuItemCheckbox, f.ed.AutoSave()
-	vimItem := plain("yan.toggleVim", "Vim 模式")
+	vimItem := plain("yan.toggleVim", i18n.T("Vim Mode"))
 	vimItem.Type, vimItem.Checked = mygo.MenuItemCheckbox, f.ed.VimMode()
-	tabsItem := plain("yan.projectTabs.toggle", "项目标签")
+	tabsItem := plain("yan.projectTabs.toggle", i18n.T("Project Tabs"))
 	tabsItem.Type, tabsItem.Checked = mygo.MenuItemCheckbox, f.ed.ProjectTabs()
-	wrapItem := item("editor.action.toggleWordWrap", "自动换行")
+	wrapItem := item("editor.action.toggleWordWrap", i18n.T("Word Wrap"))
 	wrapItem.Type, wrapItem.Checked = mygo.MenuItemCheckbox, f.ed.WordWrap()
-	terminalLocation := plain("view.terminalLocation", "默认在编辑区新建终端")
+	terminalLocation := plain("view.terminalLocation", i18n.T("Create New Terminals in the Editor Area"))
 	terminalLocation.Type, terminalLocation.Checked = mygo.MenuItemCheckbox, f.ed.TerminalLocation() == "editor"
-	effects := plain("yan.toggleThemeEffects", "装饰效果")
+	effects := plain("yan.toggleThemeEffects", i18n.T("Decorations"))
 	effects.Type, effects.Checked = mygo.MenuItemCheckbox, f.ed.ThemeEffects()
+	settings := item("yan.settings.open", i18n.T("Settings…"))
+	fileSettings := []*mygo.MenuItem{settings}
+	if nativeMenuBar() {
+		fileSettings = nil // macOS keeps Settings in the application menu
+	}
 	return mygo.NewMenu([]*mygo.MenuItem{
-		{Role: mygo.RoleAppMenu},
-		{Label: "文件", Submenu: []*mygo.MenuItem{
-			item("workbench.action.files.newUntitledFile", "新建未命名文件"),
-			item("workbench.action.files.newFile", "新建文件…"),
-			item("workbench.action.newWindow", "新建窗口"),
-			item("yan.project.close", "关闭项目"),
-			item("workbench.action.files.openFolder", "打开文件夹…"),
-			item("yan.openFolderNewWindow", "在新窗口中打开文件夹…"),
-			{Label: "打开最近", Submenu: f.recentMenu(plain)},
+		f.appMenu(settings),
+		{Label: i18n.T("File"), Submenu: append([]*mygo.MenuItem{
+			item("workbench.action.files.newUntitledFile", i18n.T("New Untitled File")),
+			item("workbench.action.files.newFile", i18n.T("New File…")),
+			item("workbench.action.newWindow", i18n.T("New Window")),
+			item("yan.project.close", i18n.T("Close Project")),
+			item("workbench.action.files.openFolder", i18n.T("Open Folder…")),
+			item("yan.openFolderNewWindow", i18n.T("Open Folder in New Window…")),
+			{Label: i18n.T("Open Recent"), Submenu: f.recentMenu(plain)},
 			sep(),
-			item("workbench.action.files.save", "保存"),
-			item("workbench.action.files.saveAs", "另存为…"),
-			item("workbench.action.files.saveAll", "全部保存"),
+			item("workbench.action.files.save", i18n.T("Save")),
+			item("workbench.action.files.saveAs", i18n.T("Save As…")),
+			item("workbench.action.files.saveAll", i18n.T("Save All")),
 			autoSave,
-			item("yan.files.overwrite", "覆盖磁盘上的版本"),
-			item("workbench.action.files.revert", "还原为磁盘上的版本"),
+			item("yan.files.overwrite", i18n.T("Overwrite the Version on Disk")),
+			item("workbench.action.files.revert", i18n.T("Revert to the Version on Disk")),
 			sep(),
-			item("workbench.action.closeActiveEditor", "关闭标签"),
-			item("workbench.action.reopenClosedEditor", "重新打开关闭的标签"),
+			item("workbench.action.closeActiveEditor", i18n.T("Close Tab")),
+			item("workbench.action.reopenClosedEditor", i18n.T("Reopen Closed Tab")),
 			sep(),
-			item("yan.installCLI", "安装 yan 命令…"),
-			item("yan.config.open", "打开用户配置文件"),
-			item("workbench.action.openGlobalKeybindingsFile", "打开键盘快捷方式（keybindings.json）"),
+			item("yan.installCLI", i18n.T("Install yan Command…")),
+		}, append(fileSettings,
+			item("yan.config.open", i18n.T("Open User Configuration File")),
+			item("workbench.action.openGlobalKeybindingsFile", i18n.T("Open Keyboard Shortcuts (keybindings.json)")),
+		)...)},
+		{Label: i18n.T("Edit"), Submenu: []*mygo.MenuItem{
+			plain("undo", i18n.T("Undo")), plain("redo", i18n.T("Redo")), sep(),
+			{Role: mygo.RoleCut, Label: i18n.T("Cut")}, {Role: mygo.RoleCopy, Label: i18n.T("Copy")},
+			{Role: mygo.RolePaste, Label: i18n.T("Paste")}, {Role: mygo.RoleSelectAll, Label: i18n.T("Select All")}, sep(),
+			item("actions.find", i18n.T("Find")),
+			item("editor.action.startFindReplaceAction", i18n.T("Replace")),
+			item("editor.action.nextMatchFindAction", i18n.T("Find Next")),
+			item("editor.action.previousMatchFindAction", i18n.T("Find Previous")),
 		}},
-		{Label: "编辑", Submenu: []*mygo.MenuItem{
-			plain("undo", "撤销"), plain("redo", "重做"), sep(),
-			{Role: mygo.RoleCut}, {Role: mygo.RoleCopy}, {Role: mygo.RolePaste}, {Role: mygo.RoleSelectAll}, sep(),
-			item("actions.find", "查找"),
-			item("editor.action.startFindReplaceAction", "替换"),
-			item("editor.action.nextMatchFindAction", "查找下一个"),
-			item("editor.action.previousMatchFindAction", "查找上一个"),
-		}},
-		{Label: "选择", Submenu: []*mygo.MenuItem{
-			item("expandLineSelection", "选中行"),
-			item("editor.action.addSelectionToNextFindMatch", "选中下一个匹配项"),
+		{Label: i18n.T("Selection"), Submenu: []*mygo.MenuItem{
+			item("expandLineSelection", i18n.T("Select Line")),
+			item("editor.action.addSelectionToNextFindMatch", i18n.T("Add Selection to Next Match")),
 			sep(),
-			item("editor.action.commentLine", "切换行注释"),
-			item("editor.action.indentLines", "缩进行"),
-			item("editor.action.outdentLines", "反缩进行"),
+			item("editor.action.commentLine", i18n.T("Toggle Line Comment")),
+			item("editor.action.indentLines", i18n.T("Indent Lines")),
+			item("editor.action.outdentLines", i18n.T("Outdent Lines")),
 			sep(),
-			item("editor.action.moveLinesUpAction", "向上移动行"),
-			item("editor.action.moveLinesDownAction", "向下移动行"),
-			item("editor.action.copyLinesUpAction", "向上复制行"),
-			item("editor.action.copyLinesDownAction", "向下复制行"),
+			item("editor.action.moveLinesUpAction", i18n.T("Move Line Up")),
+			item("editor.action.moveLinesDownAction", i18n.T("Move Line Down")),
+			item("editor.action.copyLinesUpAction", i18n.T("Copy Line Up")),
+			item("editor.action.copyLinesDownAction", i18n.T("Copy Line Down")),
 			sep(),
-			item("editor.action.insertLineAfter", "在下面插入行"),
-			item("editor.action.insertLineBefore", "在上面插入行"),
-			item("editor.action.deleteLines", "删除行"),
+			item("editor.action.insertLineAfter", i18n.T("Insert Line Below")),
+			item("editor.action.insertLineBefore", i18n.T("Insert Line Above")),
+			item("editor.action.deleteLines", i18n.T("Delete Line")),
 			sep(),
-			item("editor.action.sortLinesAscending", "升序排列行"),
-			item("editor.action.sortLinesDescending", "降序排列行"),
-			item("editor.action.transformToCamelcase", "转换为驼峰命名"),
-			{Label: "缩进方式", Submenu: []*mygo.MenuItem{
-				plain("editor.action.indentUsingTabs", "使用制表符"),
-				plain("yan.indentUsingSpaces2", "使用 2 个空格"),
-				plain("yan.indentUsingSpaces4", "使用 4 个空格"),
-				plain("yan.indentUsingSpaces8", "使用 8 个空格"),
+			item("editor.action.sortLinesAscending", i18n.T("Sort Lines Ascending")),
+			item("editor.action.sortLinesDescending", i18n.T("Sort Lines Descending")),
+			item("editor.action.transformToCamelcase", i18n.T("Transform to camelCase")),
+			{Label: i18n.T("Indentation"), Submenu: []*mygo.MenuItem{
+				plain("editor.action.indentUsingTabs", i18n.T("Use Tabs")),
+				plain("yan.indentUsingSpaces2", i18n.T("Use 2 Spaces")),
+				plain("yan.indentUsingSpaces4", i18n.T("Use 4 Spaces")),
+				plain("yan.indentUsingSpaces8", i18n.T("Use 8 Spaces")),
 			}},
 		}},
-		{Label: "显示", Submenu: []*mygo.MenuItem{
-			item("workbench.action.showCommands", "命令面板…"),
-			item("workbench.action.toggleSidebarVisibility", "切换侧边栏"),
-			item("workbench.action.toggleSidebarPosition", "移动侧边栏到另一侧"),
-			item("workbench.view.explorer", "资源管理器"),
+		{Label: i18n.T("View"), Submenu: []*mygo.MenuItem{
+			item("workbench.action.showCommands", i18n.T("Command Palette…")),
+			item("workbench.action.toggleSidebarVisibility", i18n.T("Toggle Sidebar")),
+			item("workbench.action.toggleSidebarPosition", i18n.T("Move Sidebar to the Other Side")),
+			item("workbench.view.explorer", i18n.T("Explorer")),
 			sep(),
-			item("workbench.action.splitEditor", "向右拆分"),
-			item("workbench.action.focusNextGroup", "聚焦到下一列"),
-			item("workbench.action.focusPreviousGroup", "聚焦到上一列"),
-			item("workbench.action.moveEditorToNextGroup", "把标签移到下一列"),
-			item("workbench.action.moveEditorToPreviousGroup", "把标签移到上一列"),
-			plain("workbench.action.toggleMaximizeEditorGroup", "最大化／还原编辑区"),
+			item("workbench.action.splitEditor", i18n.T("Split Right")),
+			item("workbench.action.focusNextGroup", i18n.T("Focus Next Column")),
+			item("workbench.action.focusPreviousGroup", i18n.T("Focus Previous Column")),
+			item("workbench.action.moveEditorToNextGroup", i18n.T("Move Tab to Next Column")),
+			item("workbench.action.moveEditorToPreviousGroup", i18n.T("Move Tab to Previous Column")),
+			plain("workbench.action.toggleMaximizeEditorGroup", i18n.T("Maximize / Restore Editor Area")),
 			sep(),
 			wrapItem,
 			tabsItem,
 			vimItem,
 			sep(),
-			item("workbench.action.terminal.toggleTerminal", "切换终端"),
-			item("workbench.action.terminal.new", "新建终端"),
-			item("workbench.action.createTerminalEditor", "在编辑区新建终端"),
+			item("workbench.action.terminal.toggleTerminal", i18n.T("Toggle Terminal")),
+			item("workbench.action.terminal.new", i18n.T("New Terminal")),
+			item("workbench.action.createTerminalEditor", i18n.T("New Terminal in Editor Area")),
 			terminalLocation,
-			{Label: "终端面板位置", Submenu: []*mygo.MenuItem{
-				radio("workbench.action.positionPanelBottom", "底部", f.ed.PanelPosition() == ""),
-				radio("workbench.action.positionPanelLeft", "左侧", f.ed.PanelPosition() == "left"),
-				radio("workbench.action.positionPanelRight", "右侧", f.ed.PanelPosition() == "right"),
+			{Label: i18n.T("Terminal Panel Position"), Submenu: []*mygo.MenuItem{
+				radio("workbench.action.positionPanelBottom", i18n.T("Bottom"), f.ed.PanelPosition() == ""),
+				radio("workbench.action.positionPanelLeft", i18n.T("Left"), f.ed.PanelPosition() == "left"),
+				radio("workbench.action.positionPanelRight", i18n.T("Right"), f.ed.PanelPosition() == "right"),
 			}},
 			sep(),
-			item("workbench.action.zoomIn", "放大"),
-			item("workbench.action.zoomOut", "缩小"),
-			item("workbench.action.zoomReset", "实际大小"),
-			{Label: "字体", Submenu: []*mygo.MenuItem{
-				item("yan.font.family", "代码字体…"),
-				item("yan.font.size", "字号…"),
-				item("yan.font.lineHeight", "行高…"),
+			item("workbench.action.zoomIn", i18n.T("Zoom In")),
+			item("workbench.action.zoomOut", i18n.T("Zoom Out")),
+			item("workbench.action.zoomReset", i18n.T("Actual Size")),
+			{Label: i18n.T("Font"), Submenu: []*mygo.MenuItem{
+				item("yan.font.family", i18n.T("Code Font…")),
+				item("yan.font.size", i18n.T("Font Size…")),
+				item("yan.font.lineHeight", i18n.T("Line Height…")),
 			}},
-			{Label: "主题", Submenu: []*mygo.MenuItem{
-				item("workbench.action.selectTheme", "颜色主题…"),
+			{Label: i18n.T("Theme"), Submenu: []*mygo.MenuItem{
+				item("workbench.action.selectTheme", i18n.T("Color Theme…")),
 				sep(),
-				radio("yan.appearance.system", "跟随系统", appearance == ""),
-				radio("yan.appearance.light", "浅色", appearance == "light"),
-				radio("yan.appearance.dark", "深色", appearance == "dark"),
+				radio("yan.appearance.system", i18n.T("Follow System"), appearance == ""),
+				radio("yan.appearance.light", i18n.T("Light"), appearance == "light"),
+				radio("yan.appearance.dark", i18n.T("Dark"), appearance == "dark"),
 				sep(),
 				radio("yan.theme.mayoi", "Mayoi", theme == ""),
 				radio("yan.theme.matrix", "The Matrix", theme == "matrix"),
@@ -163,83 +171,102 @@ func (f *Frontend) menu() *mygo.Menu {
 				sep(), effects,
 			}},
 			sep(),
-			{Role: mygo.RoleToggleFullScreen},
+			{Role: mygo.RoleToggleFullScreen, Label: i18n.T("Toggle Full Screen")},
 		}},
-		{Label: "转到", Submenu: []*mygo.MenuItem{
-			item("workbench.action.quickOpen", "快速打开…"),
-			item("workbench.action.gotoLine", "转到行…"),
-			item("editor.action.jumpToBracket", "跳到配对的括号"),
-			item("editor.action.revealDefinition", "转到定义"),
+		{Label: i18n.T("Go"), Submenu: []*mygo.MenuItem{
+			item("workbench.action.quickOpen", i18n.T("Quick Open…")),
+			item("workbench.action.gotoLine", i18n.T("Go to Line…")),
+			item("editor.action.jumpToBracket", i18n.T("Go to Matching Bracket")),
+			item("editor.action.revealDefinition", i18n.T("Go to Definition")),
 			sep(),
-			item("workbench.action.navigateBack", "后退"),
-			item("workbench.action.navigateForward", "前进"),
+			item("workbench.action.navigateBack", i18n.T("Go Back")),
+			item("workbench.action.navigateForward", i18n.T("Go Forward")),
 			sep(),
-			item("workbench.action.nextEditor", "下一个标签"),
-			item("workbench.action.previousEditor", "上一个标签"),
+			item("workbench.action.nextEditor", i18n.T("Next Tab")),
+			item("workbench.action.previousEditor", i18n.T("Previous Tab")),
 			sep(),
-			item("yan.project.next", "下一个项目"),
-			item("yan.project.previous", "上一个项目"),
+			item("yan.project.next", i18n.T("Next Project")),
+			item("yan.project.previous", i18n.T("Previous Project")),
 		}},
-		{Role: mygo.RoleWindowMenu},
+		{Role: mygo.RoleWindowMenu, Label: i18n.T("Window"), Submenu: []*mygo.MenuItem{
+			{Role: mygo.RoleMinimize, Label: i18n.T("Minimize")}, {Role: mygo.RoleZoom, Label: i18n.T("Zoom")},
+			sep(), {Role: mygo.RoleFront, Label: i18n.T("Bring All to Front")},
+		}},
 		{Label: "Git", Submenu: []*mygo.MenuItem{
-			item("git.checkout", "切换分支…"),
-			item("git.renameBranch", "重命名当前分支…"),
-			item("git.deleteBranch", "删除本地分支…"),
+			item("git.checkout", i18n.T("Switch Branch…")),
+			item("git.renameBranch", i18n.T("Rename Current Branch…")),
+			item("git.deleteBranch", i18n.T("Delete Local Branch…")),
 			sep(),
-			item("git.fetch", "抓取"),
-			item("git.pull", "拉取"),
-			item("git.push", "推送"),
+			item("git.fetch", i18n.T("Fetch")),
+			item("git.pull", i18n.T("Pull")),
+			item("git.push", i18n.T("Push")),
 			sep(),
-			{Label: "远程仓库", Submenu: []*mygo.MenuItem{
-				plain("git.addRemote", "添加…"),
-				plain("yan.git.setRemoteURL", "修改地址…"),
-				plain("git.removeRemote", "删除…"),
-				plain("yan.git.pruneRemote", "清理已删除的分支…"),
+			{Label: i18n.T("Remote Repositories"), Submenu: []*mygo.MenuItem{
+				plain("git.addRemote", i18n.T("Add…")),
+				plain("yan.git.setRemoteURL", i18n.T("Change URL…")),
+				plain("git.removeRemote", i18n.T("Remove…")),
+				plain("yan.git.pruneRemote", i18n.T("Prune Deleted Branches…")),
 			}},
 			sep(),
-			plain("yan.diff.compareFiles", "比较两个文件…"),
-			plain("yan.diff.whitespace", "改动视图比较空白…"),
-			plain("yan.diff.highlight", "改动视图标出改动的方式…"),
-			plain("yan.diff.context", "改动视图上下文行数…"),
-			plain("toggle.diff.renderSideBySide", "改动视图换排法"),
-			plain("yan.diff.toggleSyncScroll", "并排两边一起滚动（开关）"),
-			plain("yan.diff.toggleAlignedRows", "并排两边的行对齐（开关）"),
+			plain("yan.diff.compareFiles", i18n.T("Compare Two Files…")),
+			plain("yan.diff.whitespace", i18n.T("Whitespace in Diff Views…")),
+			plain("yan.diff.highlight", i18n.T("How Diff Views Highlight Changes…")),
+			plain("yan.diff.context", i18n.T("Diff View Context Lines…")),
+			plain("toggle.diff.renderSideBySide", i18n.T("Change Diff View Layout")),
+			plain("yan.diff.toggleSyncScroll", i18n.T("Scroll Both Sides Together (Toggle)")),
+			plain("yan.diff.toggleAlignedRows", i18n.T("Align Rows of Both Sides (Toggle)")),
 			sep(),
-			{Label: "合并冲突", Submenu: []*mygo.MenuItem{
-				plain("yan.merge.files", "冲突文件列表…"),
-				plain("yan.merge.open", "打开三方合并"),
-				plain("yan.merge.previousConflict", "上一处冲突"),
-				plain("yan.merge.nextConflict", "下一处冲突"),
+			{Label: i18n.T("Merge Conflicts"), Submenu: []*mygo.MenuItem{
+				plain("yan.merge.files", i18n.T("Conflicted Files…")),
+				plain("yan.merge.open", i18n.T("Open Three-Way Merge")),
+				plain("yan.merge.previousConflict", i18n.T("Previous Conflict")),
+				plain("yan.merge.nextConflict", i18n.T("Next Conflict")),
 				sep(),
-				plain("yan.merge.acceptOurs", "这处用我们的"),
-				plain("yan.merge.acceptTheirs", "这处用他们的"),
-				plain("yan.merge.ignoreOurs", "这处忽略我们的"),
-				plain("yan.merge.ignoreTheirs", "这处忽略他们的"),
-				plain("yan.merge.resolveOurs", "全部用我们的"),
-				plain("yan.merge.resolveTheirs", "全部用他们的"),
-				plain("yan.merge.applyChanges", "应用两边不冲突的改动"),
-				plain("yan.merge.toggleAutoApply", "打开时自动应用不冲突的改动"),
+				plain("yan.merge.acceptOurs", i18n.T("Use Ours Here")),
+				plain("yan.merge.acceptTheirs", i18n.T("Use Theirs Here")),
+				plain("yan.merge.ignoreOurs", i18n.T("Ignore Ours Here")),
+				plain("yan.merge.ignoreTheirs", i18n.T("Ignore Theirs Here")),
+				plain("yan.merge.resolveOurs", i18n.T("Use Ours for All")),
+				plain("yan.merge.resolveTheirs", i18n.T("Use Theirs for All")),
+				plain("yan.merge.applyChanges", i18n.T("Apply Non-Conflicting Changes from Both Sides")),
+				plain("yan.merge.toggleAutoApply", i18n.T("Apply Non-Conflicting Changes on Open")),
 				sep(),
-				plain("yan.merge.markResolved", "标记为已解决"),
-				plain("yan.merge.applyAndNext", "应用并打开下一个冲突文件"),
-				plain("yan.merge.saveAndClose", "保存并关闭"),
-				plain("yan.merge.restoreConflict", "恢复成冲突…"),
+				plain("yan.merge.markResolved", i18n.T("Mark as Resolved")),
+				plain("yan.merge.applyAndNext", i18n.T("Apply and Open Next Conflicted File")),
+				plain("yan.merge.saveAndClose", i18n.T("Save and Close")),
+				plain("yan.merge.restoreConflict", i18n.T("Restore Conflict…")),
 			}},
 		}},
-		{Label: "评审", Submenu: []*mygo.MenuItem{
-			item("review.comment", "添加或编辑意见"), plain("review.list", "查看全部意见"),
-			plain("review.next", "下一条意见"), plain("review.previous", "上一条意见"), sep(),
-			plain("review.copyExcerpt", "复制代码片段与位置"), plain("review.copy", "复制全部意见"), plain("review.send", "发送意见到终端"), sep(),
-			plain("review.clear", "清空意见"), plain("review.undo", "撤销删除或清空"),
+		{Label: i18n.T("Review"), Submenu: []*mygo.MenuItem{
+			item("review.comment", i18n.T("Add or Edit Comment")), plain("review.list", i18n.T("Show All Comments")),
+			plain("review.next", i18n.T("Next Comment")), plain("review.previous", i18n.T("Previous Comment")), sep(),
+			plain("review.copyExcerpt", i18n.T("Copy Code Excerpt and Location")), plain("review.copy", i18n.T("Copy All Comments")), plain("review.send", i18n.T("Send Comments to Terminal")), sep(),
+			plain("review.clear", i18n.T("Clear Comments")), plain("review.undo", i18n.T("Undo Delete or Clear")),
 		}},
-		{Label: "帮助", Submenu: []*mygo.MenuItem{
-			item("yan.guide.open", "功能导览（学习）"),
-			{Label: "关于砚", Click: func(*mygo.MenuItem, *mygo.Window) { go f.about() }},
+		{Label: i18n.T("Help"), Submenu: []*mygo.MenuItem{
+			item("yan.guide.open", i18n.T("Feature Tour (Learn)")),
+			{Label: i18n.T("About Yan"), Click: func(*mygo.MenuItem, *mygo.Window) { go f.about() }},
 			f.updateMenu(),
 			f.automaticUpdatesMenu(),
-			{Label: "第三方声明", Click: func(*mygo.MenuItem, *mygo.Window) { f.showNotices() }},
+			{Label: i18n.T("Third-Party Notices"), Click: func(*mygo.MenuItem, *mygo.Window) { f.showNotices() }},
 		}},
 	})
+}
+
+// appMenu is macOS's application menu, with Yan's labels in the interface language: the menu
+// roles would otherwise give them in English.
+func (f *Frontend) appMenu(settings *mygo.MenuItem) *mygo.MenuItem {
+	name := mygo.App.Name()
+	sep := mygo.Separator
+	return &mygo.MenuItem{Role: mygo.RoleAppMenu, Submenu: []*mygo.MenuItem{
+		{Role: mygo.RoleAbout, Label: i18n.F("About %s", name)},
+		sep(), settings, sep(),
+		{Role: mygo.RoleServices, Label: i18n.T("Services")}, sep(),
+		{Role: mygo.RoleHide, Label: i18n.F("Hide %s", name)},
+		{Role: mygo.RoleHideOthers, Label: i18n.T("Hide Others")},
+		{Role: mygo.RoleUnhide, Label: i18n.T("Show All")}, sep(),
+		{Role: mygo.RoleQuit, Label: i18n.F("Quit %s", name)},
+	}}
 }
 
 // recentMenu 是「打开最近」：最近的文件夹，和找它们的浮层（⌃R）。
@@ -267,6 +294,6 @@ func (f *Frontend) recentMenu(plain func(id, label string) *mygo.MenuItem) []*my
 	if len(items) > 0 {
 		items = append(items, mygo.Separator())
 	}
-	more := plain("workbench.action.openRecent", "更多…")
+	more := plain("workbench.action.openRecent", i18n.T("More…"))
 	return append(items, more)
 }

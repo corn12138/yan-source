@@ -10,6 +10,7 @@ import (
 	"github.com/egoist/mygo/ui"
 
 	"github.com/corn12138/yan-source/core/app"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/keymap"
 	"github.com/corn12138/yan-source/core/view"
 )
@@ -23,7 +24,7 @@ func (f *Frontend) searchView(c *ui.Context) {
 	p := f.pal
 	s := &f.frame.Sidebar.Search
 	if s.Running && s.Query != "" {
-		ui.Progress(c.Key("search-activity"), -1).Height(2).Radius(0).Label("搜索中")
+		ui.Progress(c.Key("search-activity"), -1).Height(2).Radius(0).Label(i18n.T("Searching"))
 	} else {
 		ui.Box(c.Key("search-activity")).Height(2)
 	}
@@ -49,7 +50,7 @@ func (f *Frontend) searchView(c *ui.Context) {
 				arrow = iconChevronDown
 			}
 			b := ui.Box(c.Key("toggle-replace")).Width(18).Radius(4).Justify(ui.Center).AlignItems(ui.Center).
-				Label("切换替换").Tooltip("切换替换 (" + f.ed.KeyHint("workbench.action.replaceInFiles") + ")")
+				Label(i18n.T("Toggle Replace")).Tooltip(i18n.F("Toggle Replace (%s)", f.ed.KeyHint("workbench.action.replaceInFiles")))
 			if b.Hovered() {
 				b.Background(p.hover)
 			}
@@ -58,10 +59,10 @@ func (f *Frontend) searchView(c *ui.Context) {
 				f.ed.ToggleSearchOption(3)
 			}
 			ui.Column(c).Grow(1).MinWidth(0).Gap(5).Children(func() {
-				in := f.searchField(c, 0, "搜索", func() {
-					f.searchToggle(c, iconCase, "区分大小写", s.MatchCase, 0)
-					f.searchToggle(c, iconWord, "全字匹配", s.Word, 1)
-					f.searchToggle(c, iconRegex, "使用正则表达式", s.Regex, 2)
+				in := f.searchField(c, 0, i18n.T("Search"), func() {
+					f.searchToggle(c, iconCase, i18n.T("Match Case"), s.MatchCase, 0)
+					f.searchToggle(c, iconWord, i18n.T("Match Whole Word"), s.Word, 1)
+					f.searchToggle(c, iconRegex, i18n.T("Use Regular Expression"), s.Regex, 2)
 				})
 				if in.Shortcut(0, ui.KeyDown) && len(s.Rows) > 0 {
 					f.ed.FocusSearch(int(view.SearchResults) - 1)
@@ -70,8 +71,8 @@ func (f *Frontend) searchView(c *ui.Context) {
 				if !s.Replacing {
 					return
 				}
-				with := f.searchField(c, 1, "替换", func() {
-					if f.smallButton(c, iconReplaceAll, "全部替换") {
+				with := f.searchField(c, 1, i18n.T("Replace"), func() {
+					if f.smallButton(c, iconReplaceAll, i18n.T("Replace All")) {
 						f.confirmReplaceAll(s)
 					}
 				})
@@ -86,7 +87,7 @@ func (f *Frontend) searchView(c *ui.Context) {
 				col = p.danger
 			}
 			ui.Text(c, s.Summary).FontSize(11.5).TextColor(col).Grow(1).SingleLine().Shrink(1)
-			if f.iconButton(c, iconMore, "显示包含、排除的文件", s.Details).Size(22, 18).Clicked() {
+			if f.iconButton(c, iconMore, i18n.T("Show Files to Include and Exclude"), s.Details).Size(22, 18).Clicked() {
 				f.ed.ToggleSearchOption(4)
 			}
 		})
@@ -94,10 +95,10 @@ func (f *Frontend) searchView(c *ui.Context) {
 			return
 		}
 		ui.Column(c).Gap(4).Padding(0, 0, 0, 20).Children(func() {
-			ui.Text(c, "包含的文件").FontSize(11).TextColor(p.muted)
-			f.searchField(c, 2, "例如 *.go, src/**", nil)
-			ui.Text(c, "排除的文件").FontSize(11).TextColor(p.muted).Margin(2, 0, 0, 0)
-			f.searchField(c, 3, "例如 *.test.ts, testdata", nil)
+			ui.Text(c, i18n.T("Files to include")).FontSize(11).TextColor(p.muted)
+			f.searchField(c, 2, i18n.T("e.g. *.go, src/**"), nil)
+			ui.Text(c, i18n.T("Files to exclude")).FontSize(11).TextColor(p.muted).Margin(2, 0, 0, 0)
+			f.searchField(c, 3, i18n.T("e.g. *.test.ts, testdata"), nil)
 		})
 	})
 	f.searchResults(c, s)
@@ -150,8 +151,8 @@ func (f *Frontend) searchResults(c *ui.Context, s *view.Search) {
 	if len(s.Rows) == 0 {
 		if s.Query == "" {
 			ui.Column(c).Padding(10, 14, 0, 26).Gap(6).Children(func() {
-				ui.Text(c, "在文件夹的文件里找文字。").FontSize(12).TextColor(p.muted)
-				for _, k := range [][2]string{{"↓", "到结果里"}, {"↩", "打开匹配"}, {f.ed.KeyHint("workbench.action.replaceInFiles"), "替换"}} {
+				ui.Text(c, i18n.T("Find text in the folder's files.")).FontSize(12).TextColor(p.muted)
+				for _, k := range [][2]string{{"↓", i18n.T("To results")}, {"↩", i18n.T("Open match")}, {f.ed.KeyHint("workbench.action.replaceInFiles"), i18n.T("Replace")}} {
 					ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
 						ui.Text(c, k[0]).FontSize(11).TextColor(p.muted).Padding(0, 5).Radius(4).Background(p.hover).MinWidth(22).TextAlign(ui.Center)
 						ui.Text(c, k[1]).FontSize(11.5).TextColor(p.faint)
@@ -200,7 +201,7 @@ func (f *Frontend) searchResults(c *ui.Context, s *view.Search) {
 					ui.Text(c, r.Dir).FontSize(11.5).TextColor(p.faint).SingleLine().Shrink(1)
 				}
 				ui.Spacer(c)
-				if hovered && s.Replacing && f.smallButton(c, iconReplaceAll, "替换这个文件里的全部") {
+				if hovered && s.Replacing && f.smallButton(c, iconReplaceAll, i18n.T("Replace All in This File")) {
 					f.ed.ReplaceSearch(i)
 				}
 				ui.Text(c, fmt.Sprint(r.Count)).FontSize(10.5).TextColor(p.muted).Padding(0, 5).Radius(8).Background(p.hover)
@@ -210,7 +211,7 @@ func (f *Frontend) searchResults(c *ui.Context, s *view.Search) {
 		row.Padding(0, 0, 0, 30).Children(func() {
 			ui.RichText(c, f.matchPreview(r)...).FontSize(12.5).SingleLine().Grow(1).Shrink(1).MinWidth(0)
 			if hovered && s.Replacing {
-				if f.smallButton(c, iconReplace, "替换") {
+				if f.smallButton(c, iconReplace, i18n.T("Replace")) {
 					f.ed.ReplaceSearch(i)
 				}
 			} else {
@@ -256,8 +257,8 @@ func (f *Frontend) confirmReplaceAll(s *view.Search) {
 	go func() {
 		res, err := mygo.Dialog.Message(mygo.MessageOptions{
 			Parent: f.win, Type: mygo.MessageWarning,
-			Message: "全部替换吗？", Detail: s.Summary + "。没开的文件会直接改写，不能撤销。",
-			Buttons: []string{"全部替换", "取消"}, DefaultButton: 0, CancelButton: 1,
+			Message: i18n.T("Replace all?"), Detail: i18n.F("%s. Files that aren't open are rewritten directly; this can't be undone.", s.Summary),
+			Buttons: []string{i18n.T("Replace All"), i18n.T("Cancel")}, DefaultButton: 0, CancelButton: 1,
 		})
 		if err == nil && res.Button == 0 {
 			f.do(func() { f.ed.ReplaceSearch(-1) })

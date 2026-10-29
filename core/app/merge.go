@@ -10,7 +10,6 @@ package app
 
 import (
 	"errors"
-	"fmt"
 	"maps"
 	"path/filepath"
 	"slices"
@@ -18,6 +17,7 @@ import (
 
 	"github.com/corn12138/yan-source/core/edit"
 	"github.com/corn12138/yan-source/core/git"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/style"
 	"github.com/corn12138/yan-source/core/syntax/highlight"
 	"github.com/corn12138/yan-source/core/text"
@@ -68,7 +68,7 @@ func (e *Editor) openMerge(path string) error {
 	defer e.bindRepository(e.repositoryForPath(path))()
 	g := e.repository().git
 	if g.repo == nil {
-		return errors.New("不在 git 仓库里")
+		return errors.New(i18n.T("Not in a Git repository"))
 	}
 	for _, c := range e.cols {
 		for i, t := range c.tabs {
@@ -79,7 +79,7 @@ func (e *Editor) openMerge(path string) error {
 		}
 	}
 	if en, ok := g.entries[path]; !ok || !en.Conflicted() {
-		return errors.New(filepath.Base(path) + " 没有冲突")
+		return errors.New(i18n.F("%s has no conflicts", filepath.Base(path)))
 	}
 	r := g.repo
 	base, _, err := r.ConflictStage(1, path)
@@ -95,13 +95,13 @@ func (e *Editor) openMerge(path string) error {
 		return err
 	}
 	if !okOurs || !okTheirs {
-		return errors.New("一边删掉了 " + filepath.Base(path) + "：用暂存（留下）或删除来解决")
+		return errors.New(i18n.F("One side deleted %s: resolve by staging (keep) or deleting it", filepath.Base(path)))
 	}
 	mv := &mergeView{path: path, root: r.Root, ignored: map[int]uint8{}, base: splitText(base), ours: splitText(ours), theirs: splitText(theirs)}
 	if base == "" {
 		mv.base = nil
 	}
-	mv.oursName, mv.theirsName = "HEAD", "合并进来的"
+	mv.oursName, mv.theirsName = "HEAD", i18n.T("Incoming")
 	if st := g.status; st != nil {
 		if st.Branch != "" {
 			mv.oursName = st.Branch
@@ -154,11 +154,11 @@ func hasConflictMarkers(s text.Snapshot) bool {
 
 // mergeSideTab puts a read-only side of mv in column c.
 func (e *Editor) mergeSideTab(c *column, mv *mergeView, theirs bool) *tab {
-	lines, head := mv.ours, "我们的 · "+mv.oursName+"（当前分支，只读）"
-	name := filepath.Base(mv.path) + " · 我们的"
+	lines, head := mv.ours, i18n.F("Ours · %s (current branch, read-only)", mv.oursName)
+	name := i18n.F("%s · Ours", filepath.Base(mv.path))
 	if theirs {
-		lines, head = mv.theirs, "他们的 · "+mv.theirsName+"（合并进来的，只读）"
-		name = filepath.Base(mv.path) + " · 他们的"
+		lines, head = mv.theirs, i18n.F("Theirs · %s (incoming, read-only)", mv.theirsName)
+		name = i18n.F("%s · Theirs", filepath.Base(mv.path))
 	}
 	vpath := filepath.Join(filepath.Dir(mv.path), name)
 	d := &document{buf: edit.NewBuffer(text.FromString(head+"\n"+strings.Join(lines, "\n"), text.Meta{Path: vpath, ReadOnly: true}))}
@@ -215,11 +215,11 @@ func (mv *mergeView) summary() string {
 	n := mv.unresolved()
 	switch {
 	case len(mv.conflicts) == 0:
-		return filepath.Base(mv.path) + "：两边的改动没有冲突，已经合进结果；保存后标记为已解决"
+		return i18n.F("%s: the changes of both sides don't conflict and are already in the result; save to mark it resolved", filepath.Base(mv.path))
 	case n == 0:
-		return fmt.Sprintf("%s：%d 处冲突都处理了，可以标记为已解决", filepath.Base(mv.path), len(mv.conflicts))
+		return i18n.F("%s: all %d conflicts handled; it can be marked resolved", filepath.Base(mv.path), len(mv.conflicts))
 	}
-	return fmt.Sprintf("%s：%d 处冲突，还有 %d 处没处理", filepath.Base(mv.path), len(mv.conflicts), n)
+	return i18n.F("%s: %d conflicts, %d not yet handled", filepath.Base(mv.path), len(mv.conflicts), n)
 }
 
 // mergeOf is the merge view of the tab t, of its result or a side.
@@ -241,11 +241,11 @@ func (e *Editor) mergeCurrent() (*mergeView, int, error) {
 	t := e.cur()
 	mv := mergeOf(t)
 	if mv == nil {
-		return nil, -1, errors.New("先打开一个冲突文件的三方合并")
+		return nil, -1, errors.New(i18n.T("Open a conflicted file's three-way merge first"))
 	}
 	e.mergeSync(mv)
 	if len(mv.conflicts) == 0 {
-		return mv, -1, errors.New("这个文件没有冲突要处理")
+		return mv, -1, errors.New(i18n.T("This file has no conflicts to handle"))
 	}
 	line := t.doc.buf.Snapshot().LineAt(t.doc.buf.Selections().Main().Head)
 	for k, i := range mv.conflicts {
@@ -301,7 +301,7 @@ func (e *Editor) mergeAct(mv *mergeView, set map[int][]string, flags func(map[in
 // handled.
 func (e *Editor) mergeTell(mv *mergeView) {
 	if len(mv.conflicts) > 0 && mv.unresolved() == 0 {
-		e.tell(mv.summary(), "标记为已解决", "yan.merge.markResolved")
+		e.tell(mv.summary(), i18n.T("Mark as Resolved"), "yan.merge.markResolved")
 		return
 	}
 	e.status = mv.summary()
@@ -390,7 +390,7 @@ func (e *Editor) mergeHistory(mv *mergeView, undo bool) {
 		_, ok = d.buf.Redo()
 	}
 	if !ok {
-		e.status = map[bool]string{true: "没有可撤销的操作", false: "没有可重做的操作"}[undo]
+		e.status = map[bool]string{true: i18n.T("Nothing to undo"), false: i18n.T("Nothing to redo")}[undo]
 		return
 	}
 	e.mergeSync(mv)
@@ -420,7 +420,7 @@ func (e *Editor) mergeGo(mv *mergeView, k int) {
 		st.doc.buf.SetSelections(st.sels)
 		st.scrollY = max(at-3, 0)
 	}
-	e.status = fmt.Sprintf("冲突 %d/%d：%s · %s", k+1, len(mv.conflicts), mv.state(k).label(), mv.summary())
+	e.status = i18n.F("Conflict %d/%d: %s · %s", k+1, len(mv.conflicts), mv.state(k).label(), mv.summary())
 }
 
 // mergeStepConflict goes to the next (or previous) conflict, unresolved ones first.
@@ -453,9 +453,9 @@ func (e *Editor) mergeStepConflict(by int) error {
 		}
 	}
 	if by > 0 {
-		e.status = "已是最后一处冲突 · " + mv.summary()
+		e.status = i18n.F("Already at the last conflict · %s", mv.summary())
 	} else {
-		e.status = "已是第一处冲突 · " + mv.summary()
+		e.status = i18n.F("Already at the first conflict · %s", mv.summary())
 	}
 	return nil
 }
@@ -475,17 +475,17 @@ func (e *Editor) mergeCommand(do func(e *Editor, mv *mergeView, k int)) error {
 func (e *Editor) mergeMarkResolved() error {
 	mv := mergeOf(e.cur())
 	if mv == nil {
-		return errors.New("先打开一个冲突文件的三方合并")
+		return errors.New(i18n.T("Open a conflicted file's three-way merge first"))
 	}
 	e.mergeSync(mv)
 	if hasConflictMarkers(mv.result.doc.buf.Snapshot()) {
-		return errors.New("结果里还有冲突标记（<<<<<<<）：先处理它们")
+		return errors.New(i18n.T("The result still has conflict markers (<<<<<<<): handle them first"))
 	}
 	do := func(e *Editor) error { return e.mergeStage(mv) }
 	if n := mv.unresolved(); n > 0 {
-		e.choose(fmt.Sprintf("还有 %d 处冲突没处理（留着共同祖先的样子），仍标记为已解决？", n),
-			ovItem{label: "标记为已解决", run: do},
-			ovItem{label: "取消", run: func(*Editor) error { return nil }})
+		e.choose(i18n.F("%d conflicts are not handled yet (left as the common ancestor); mark as resolved anyway?", n),
+			ovItem{label: i18n.T("Mark as Resolved"), run: do},
+			ovItem{label: i18n.T("Cancel"), run: func(*Editor) error { return nil }})
 		return nil
 	}
 	return do(e)
@@ -497,9 +497,9 @@ func (e *Editor) mergeStage(mv *mergeView) error {
 		return err
 	}
 	path := mv.path
-	return e.gitDo("暂存中…", func(r *git.Repo) error { return r.Stage(path) }, func(e *Editor) {
+	return e.gitDo(i18n.T("Staging…"), func(r *git.Repo) error { return r.Stage(path) }, func(e *Editor) {
 		e.mergeResolvedDone(path)
-		e.status = filepath.Base(path) + " 已标记为已解决（已暂存）"
+		e.status = i18n.F("%s marked as resolved (staged)", filepath.Base(path))
 	})
 }
 
@@ -508,17 +508,17 @@ func (e *Editor) mergeStage(mv *mergeView) error {
 func (e *Editor) mergeRestore() error {
 	mv := mergeOf(e.cur())
 	if mv == nil {
-		return errors.New("先打开一个冲突文件的三方合并")
+		return errors.New(i18n.T("Open a conflicted file's three-way merge first"))
 	}
 	path := mv.path
-	e.choose("把 "+filepath.Base(path)+" 恢复成冲突？结果里的改动会丢掉",
-		ovItem{label: "恢复冲突", run: func(e *Editor) error {
+	e.choose(i18n.F("Restore %s to a conflict? Changes in the result are lost", filepath.Base(path)),
+		ovItem{label: i18n.T("Restore Conflict"), run: func(e *Editor) error {
 			defer e.bindRepository(e.repositoryForPath(path))()
-			return e.gitDo("恢复冲突中…", func(r *git.Repo) error { return r.RestoreConflict(path) }, func(e *Editor) {
+			return e.gitDo(i18n.T("Restoring conflict…"), func(r *git.Repo) error { return r.RestoreConflict(path) }, func(e *Editor) {
 				e.mergeRestored(mv)
 			})
 		}},
-		ovItem{label: "取消", run: func(*Editor) error { return nil }})
+		ovItem{label: i18n.T("Cancel"), run: func(*Editor) error { return nil }})
 	return nil
 }
 
@@ -537,20 +537,20 @@ func (e *Editor) mergeRestored(mv *mergeView) {
 	clear(mv.ignored)
 	mv.log, mv.redo, mv.ranges = nil, nil, nil
 	e.mergeSync(mv)
-	e.status = filepath.Base(mv.path) + " 又是冲突了：结果从共同祖先重新开始 · " + mv.summary()
+	e.status = i18n.F("%s is conflicted again: the result starts over from the common ancestor · %s", filepath.Base(mv.path), mv.summary())
 }
 
 // mergeClose saves the result and closes the sides, leaving the file's tab.
 func (e *Editor) mergeClose() error {
 	mv := mergeOf(e.cur())
 	if mv == nil {
-		return errors.New("先打开一个冲突文件的三方合并")
+		return errors.New(i18n.T("Open a conflicted file's three-way merge first"))
 	}
 	if err := e.saveDoc(mv.result.doc); err != nil {
 		return err
 	}
 	e.mergeDetach(mv)
-	e.status = filepath.Base(mv.path) + " 已保存；冲突还没标记为已解决"
+	e.status = i18n.F("%s saved; the conflict is not marked as resolved yet", filepath.Base(mv.path))
 	return nil
 }
 
@@ -782,7 +782,7 @@ func (e *Editor) openMergeCurrent() error {
 	if r, ok := e.scmSelected(); ok {
 		return e.openMerge(r.Path)
 	}
-	return errors.New("先打开或选中一个有冲突的文件")
+	return errors.New(i18n.T("Open or select a conflicted file first"))
 }
 
 // startLines is the result a merge view starts from: the base, with every change no conflict
@@ -821,7 +821,7 @@ func (mv *mergeView) applied(i int) bool {
 func (e *Editor) mergeApplySide(which int) error {
 	mv := mergeOf(e.cur())
 	if mv == nil {
-		return errors.New("先打开一个冲突文件的三方合并")
+		return errors.New(i18n.T("Open a conflicted file's three-way merge first"))
 	}
 	e.mergeSync(mv)
 	set := map[int][]string{}
@@ -832,11 +832,11 @@ func (e *Editor) mergeApplySide(which int) error {
 		set[i] = slices.Clone(mv.sideOf(i))
 	}
 	if len(set) == 0 {
-		e.status = "没有要应用的不冲突改动"
+		e.status = i18n.T("No non-conflicting changes to apply")
 		return nil
 	}
 	e.mergeAct(mv, set, func(map[int]uint8) {})
-	e.status = fmt.Sprintf("已应用 %d 处不冲突的改动 · %s", len(set), mv.summary())
+	e.status = i18n.F("Applied %d non-conflicting changes · %s", len(set), mv.summary())
 	return nil
 }
 
@@ -854,7 +854,7 @@ func (e *Editor) mergeApplyAt(mv *mergeView, theirs bool, line int) error {
 			return nil
 		}
 	}
-	return errors.New("这里没有要应用的改动")
+	return errors.New(i18n.T("No changes to apply here"))
 }
 
 // toggleMergeAutoApply turns applying the changes no conflict holds on or off for the merge
@@ -866,9 +866,9 @@ func (e *Editor) toggleMergeAutoApply() error {
 		e.saveState()
 	}
 	if e.mergeManual {
-		e.status = "三方合并打开时不再自动应用不冲突的改动（用「应用两边不冲突的改动」）"
+		e.status = i18n.T("Three-way merges no longer apply non-conflicting changes on open (use \"Apply Non-Conflicting Changes from Both Sides\")")
 	} else {
-		e.status = "三方合并打开时自动应用不冲突的改动"
+		e.status = i18n.T("Three-way merges apply non-conflicting changes on open")
 	}
 	return nil
 }

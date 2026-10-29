@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/keymap"
 )
 
@@ -74,7 +75,7 @@ type Setting struct {
 func VSCodeSettings(data []byte) (sets []Setting, skipped []string, err error) {
 	var raw map[string]json.RawMessage
 	if err := json.Unmarshal(keymap.StripJSONC(data), &raw); err != nil {
-		return nil, nil, fmt.Errorf("settings.json：%v", err)
+		return nil, nil, fmt.Errorf(i18n.T("%s: %v"), "settings.json", err)
 	}
 	str := func(k string) (string, bool) {
 		var s string
@@ -98,7 +99,7 @@ func VSCodeSettings(data []byte) (sets []Setting, skipped []string, err error) {
 	if hasSize && size >= 9 && size <= 28 {
 		add("ui", "font_size", formatNum(size), "editor.fontSize")
 	} else if hasSize {
-		skipped = append(skipped, "editor.fontSize（砚支持 9～28）")
+		skipped = append(skipped, i18n.T("editor.fontSize (Yan supports 9–28)"))
 	}
 	if lh, ok := num("editor.lineHeight"); ok && lh > 0 {
 		if lh >= 8 { // pixels, as VS Code reads values from 8 up
@@ -232,7 +233,7 @@ func SetTOML(src, table, key, value string) string {
 func MergeKeybindings(own, imported []byte, from string) ([]byte, int, error) {
 	bs, _, err := keymap.ParseVSCode(imported)
 	if err != nil {
-		return own, 0, fmt.Errorf("keybindings.json：%v", err)
+		return own, 0, fmt.Errorf(i18n.T("%s: %v"), "keybindings.json", err)
 	}
 	if len(bs) == 0 {
 		return own, 0, nil
@@ -246,9 +247,9 @@ func MergeKeybindings(own, imported []byte, from string) ([]byte, int, error) {
 		return own, 0, nil // imported before
 	}
 	if _, _, err := keymap.ParseVSCode(own); err != nil {
-		return own, 0, fmt.Errorf("砚的 keybindings.json 读不了，先修好它：%v", err)
+		return own, 0, fmt.Errorf(i18n.T("Yan can't read keybindings.json; fix it first: %v"), err)
 	}
-	block := "\t// 从 " + from + " 导入\n\t" + body + "\n"
+	block := i18n.F("\t// Imported from %s\n\t%s\n", from, body)
 	at := strings.LastIndexByte(string(own), ']')
 	if strings.TrimSpace(string(keymap.StripJSONC(own))) == "" || at < 0 {
 		return []byte("[\n" + block + "]\n"), len(bs), nil

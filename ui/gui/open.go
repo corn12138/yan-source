@@ -3,11 +3,13 @@ package gui
 // Folder reuse and Dock recents follow Mayoi v0.8.x (MIT, cmd/mayoi/main.go).
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/internal/launch"
 	"github.com/egoist/mygo"
 )
@@ -71,7 +73,7 @@ func (f *Frontend) openFolder(path string, separate bool) error {
 		return err
 	}
 	if !fi.IsDir() {
-		return fmt.Errorf("不是文件夹：%s", path)
+		return fmt.Errorf(i18n.T("Not a folder: %s"), path)
 	}
 	if found := f.folderProject(path); found != nil {
 		found.bringForward()
@@ -79,7 +81,7 @@ func (f *Frontend) openFolder(path string, separate bool) error {
 	}
 	if separate {
 		if makeWindow == nil {
-			return fmt.Errorf("无法创建窗口")
+			return errors.New(i18n.T("Couldn't create the window"))
 		}
 		ed, next := makeWindow()
 		if err := ed.SwitchFolder(path); err != nil {
@@ -162,7 +164,7 @@ func (f *Frontend) openTarget(t launch.Target, separate bool) error {
 	dest := f.fileProject(t.File)
 	if dest == nil {
 		if makeWindow == nil {
-			return fmt.Errorf("无法创建窗口")
+			return errors.New(i18n.T("Couldn't create the window"))
 		}
 		ed, next := makeWindow()
 		if t.Folder {
@@ -218,7 +220,7 @@ func (f *Frontend) refreshDock() {
 	if f.win == nil {
 		return
 	}
-	items := []*mygo.MenuItem{{Label: "新建窗口", Click: func(*mygo.MenuItem, *mygo.Window) { f.spawn() }}}
+	items := []*mygo.MenuItem{{Label: i18n.T("New Window"), Click: func(*mygo.MenuItem, *mygo.Window) { f.spawn() }}}
 	for _, dir := range f.ed.AllRecentFolders() {
 		label := dir
 		if home, err := os.UserHomeDir(); err == nil && strings.HasPrefix(dir, home+string(filepath.Separator)) {

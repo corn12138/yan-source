@@ -13,6 +13,7 @@ import (
 	"github.com/egoist/mygo/ui"
 
 	"github.com/corn12138/yan-source/core/app"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/style"
 	"github.com/corn12138/yan-source/internal/termsession"
 )
@@ -81,7 +82,7 @@ func (f *Frontend) startTerminal(dir string) *termSession {
 	}
 	t, err := terminal.New(f.terminalOptions(s))
 	if err != nil {
-		f.ed.Notify("开不了终端：" + err.Error())
+		f.ed.Notify(i18n.F("Couldn't open a terminal: %s", err.Error()))
 		s.failed = true
 		return s
 	}
@@ -95,7 +96,7 @@ func (f *Frontend) terminalOptions(s *termSession) terminal.Options {
 		Dir: s.dir, Font: f.termFont(), Theme: light, DarkTheme: dark, Cursor: terminal.CursorBar,
 		// 选中就复制，「全选」也复制，同 Ghostty、iTerm2（照着 Mayoi v0.8.2，MyGo 的 CopyOnSelect）；
 		// 改了配置，开着的终端也跟着改（view 里）。剪贴板里只有图片时 ⌘V 发空的括起来的粘贴，Claude Code 就去读截图。
-		CopyOnSelect: f.ed.TerminalCopyOnSelect(),
+		CopyOnSelect: f.terminalCopyOnSelect(),
 		OnTitle: func(title string) {
 			f.do(func() {
 				if s.closed {
@@ -108,9 +109,9 @@ func (f *Frontend) terminalOptions(s *termSession) terminal.Options {
 			})
 		},
 		// 项目不在眼前时，终端响铃或者发通知（构建、agent 跑完了）给项目的方块做个记号（照着 Mayoi v0.8.1）。
-		OnBell: func() { f.do(func() { f.markAttention("终端响铃：" + s.title) }) },
+		OnBell: func() { f.do(func() { f.markAttention(i18n.F("Terminal bell: %s", s.title)) }) },
 		OnNotify: func(title, body string) {
-			f.do(func() { f.markAttention("终端通知：" + strings.TrimSpace(title+" "+body)) })
+			f.do(func() { f.markAttention(i18n.F("Terminal notification: %s", strings.TrimSpace(title+" "+body))) })
 		},
 		OnExit: func(int) { f.do(func() { f.terminalExited(s) }) },
 		// ⌃` 在终端里也是切换面板；其余 ⌘ 组合键交给菜单。
@@ -122,7 +123,7 @@ func (f *Frontend) terminalOptions(s *termSession) terminal.Options {
 			return false
 		},
 		OpenLink: func(link string) bool { return f.openTerminalFile(s, link) },
-		OnPaste:  func(string) bool { return f.pasteTerminalFiles(s) },
+		OnPaste:  func(transfer.Data) bool { return f.pasteTerminalFiles(s) },
 	}
 }
 
@@ -262,16 +263,16 @@ func (f *Frontend) panel(c *ui.Context, side string) {
 			}
 		}
 		head.Children(func() {
-			ui.Text(c, "终端").FontSize(11).FontWeight(600).LetterSpacing(0.7).TextColor(p.muted).Padding(0, 8, 0, 0)
+			ui.Text(c, i18n.T("Terminal")).FontSize(11).FontWeight(600).LetterSpacing(0.7).TextColor(p.muted).Padding(0, 8, 0, 0)
 			for i, s := range f.terms {
 				on := i == f.termActive
 				tab := ui.Row(c.Key(s)).Height(24).Padding(0, 8).Gap(6).Radius(5).AlignItems(ui.Center).Label(s.title).
 					Drag(tabDrag{f: f, s: s}) // 拖到编辑区的标签条上：挪进那一列
 				tab.ContextMenu(func(m *ui.Menu) {
-					if m.Item("移到编辑区").Chosen() {
+					if m.Item(i18n.T("Move to Editor Area")).Chosen() {
 						f.panelToColumn(s, f.frame.Active, len(f.frame.Columns[f.frame.Active].Tabs))
 					}
-					if m.Item("结束这个终端").Chosen() {
+					if m.Item(i18n.T("Kill This Terminal")).Chosen() {
 						f.removeTerminal(s)
 					}
 				})
@@ -294,20 +295,20 @@ func (f *Frontend) panel(c *ui.Context, side string) {
 				}
 			}
 			ui.Spacer(c)
-			if f.iconButton(c, iconPlus, "新终端", false).Clicked() {
+			if f.iconButton(c, iconPlus, i18n.T("New Terminal"), false).Clicked() {
 				f.newTerminal(f.ed.Root())
 			}
 			icon := iconMaximize
 			if f.panelMax {
 				icon = iconMinimize
 			}
-			if f.iconButton(c, icon, "最大化面板", f.panelMax).Clicked() {
+			if f.iconButton(c, icon, i18n.T("Maximize Panel"), f.panelMax).Clicked() {
 				f.panelMax = !f.panelMax
 			}
-			if len(f.terms) > 0 && f.iconButton(c, iconTrash, "结束这个终端", false).Clicked() {
+			if len(f.terms) > 0 && f.iconButton(c, iconTrash, i18n.T("Kill This Terminal"), false).Clicked() {
 				f.removeTerminal(f.terms[f.termActive])
 			}
-			if f.iconButton(c, iconX, "收起面板 ("+f.ed.KeyHint("workbench.action.terminal.toggleTerminal")+")", false).Clicked() {
+			if f.iconButton(c, iconX, i18n.F("Hide Panel (%s)", f.ed.KeyHint("workbench.action.terminal.toggleTerminal")), false).Clicked() {
 				f.hidePanel()
 			}
 		})
@@ -395,4 +396,11 @@ func (f *Frontend) allTerminals() []*termSession {
 		}
 	}
 	return sessions
+}
+
+func (f *Frontend) terminalCopyOnSelect() terminal.CopyOnSelect {
+	if f.ed.TerminalCopyOnSelect() {
+		return terminal.CopyOnSelectClipboard
+	}
+	return terminal.CopyOnSelectNone
 }

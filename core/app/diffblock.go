@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/corn12138/yan-source/core/edit"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/text"
 	"github.com/corn12138/yan-source/core/view"
 )
@@ -36,44 +37,44 @@ const (
 // diffBlockAt is the target of action on the change at line i of the diff tab dt.
 func (e *Editor) diffBlockAt(dt *diffTab, i int, act blockAction) (diffBlock, error) {
 	if i < 0 || i >= len(dt.lines) || dt.lines[i].hunk < 0 {
-		return diffBlock{}, errors.New("光标放在一处改动里")
+		return diffBlock{}, errors.New(i18n.T("Put the cursor in a change"))
 	}
 	l := dt.lines[i]
 	if dt.commit != nil || dt.fixed {
-		return diffBlock{}, errors.New("提交里的改动是只读的")
+		return diffBlock{}, errors.New(i18n.T("Changes in a commit are read-only"))
 	}
 	if act == blockAcceptRight && dt.peer == "" {
-		return diffBlock{}, errors.New("只有两个文件的比较能把右边写进左边")
+		return diffBlock{}, errors.New(i18n.T("Only a comparison of two files can write the right side into the left"))
 	}
 	path, base, cur := dt.path, dt.base, []string(nil)
 	if dt.changes {
 		if l.sec < 0 || l.sec >= len(dt.secs) {
-			return diffBlock{}, errors.New("光标放在一处改动里")
+			return diffBlock{}, errors.New(i18n.T("Put the cursor in a change"))
 		}
 		s := dt.secs[l.sec]
 		if s.group != changeUnstaged || !s.baseOK || len(s.cur) == 0 {
-			return diffBlock{}, errors.New("只有没暂存的改动能逐块还原：已暂存的先取消暂存，新文件和删掉的文件整个处理")
+			return diffBlock{}, errors.New(i18n.T("Only unstaged changes can be reverted block by block: unstage staged ones first; new and deleted files are handled whole"))
 		}
 		path, base = s.path, s.base
 		if now, _ := e.currentLines(path); !slices.Equal(now, s.cur) {
-			return diffBlock{}, errors.New("改动视图还没跟上文件：稍等再试")
+			return diffBlock{}, errors.New(i18n.T("The diff view hasn't caught up with the file yet: try again in a moment"))
 		}
 	} else if !dt.hasBase {
 		base = nil
 	}
 	cur, ver := e.currentLines(path)
 	if !dt.changes && (ver != dt.version || dt.peer != "" && e.diffStale(dt.peer, dt.peerVersion)) {
-		return diffBlock{}, errors.New("改动视图还没跟上文件：稍等再试")
+		return diffBlock{}, errors.New(i18n.T("The diff view hasn't caught up with the file yet: try again in a moment"))
 	}
 	hs := e.diffHunks(base, cur)
 	if l.hunk >= len(hs) {
-		return diffBlock{}, errors.New("改动视图还没跟上文件：稍等再试")
+		return diffBlock{}, errors.New(i18n.T("The diff view hasn't caught up with the file yet: try again in a moment"))
 	}
 	h := hs[l.hunk]
 	switch act {
 	case blockAppend:
 		if h.ALen == 0 {
-			return diffBlock{}, errors.New("对侧没有行可以追加")
+			return diffBlock{}, errors.New(i18n.T("The other side has no lines to append"))
 		}
 		return diffBlock{path: path, at: h.B + h.BLen, lines: base[h.A : h.A+h.ALen]}, nil
 	case blockAcceptRight:
@@ -108,7 +109,7 @@ func replaceLines(s text.Snapshot, at, n int, lines []string) text.Change {
 func (e *Editor) diffBlockAction(act blockAction) error {
 	t := e.cur()
 	if t == nil || t.diff == nil {
-		return errors.New("先打开一个改动视图")
+		return errors.New(i18n.T("Open a diff view first"))
 	}
 	dt := t.diff
 	line := t.doc.buf.Snapshot().LineAt(t.doc.buf.Selections().Main().Head)
@@ -121,7 +122,7 @@ func (e *Editor) diffBlockAction(act blockAction) error {
 		return err
 	}
 	if d.buf.Snapshot().Meta().ReadOnly {
-		return errors.New("只读文件，不能改")
+		return errors.New(i18n.T("Read-only file: can't change it"))
 	}
 	d.buf.BreakGroup()
 	d.buf.Apply(edit.Transaction{Changes: text.ChangeSet{replaceLines(d.buf.Snapshot(), b.at, b.n, b.lines)}, Origin: edit.OriginCommand})
@@ -133,12 +134,12 @@ func (e *Editor) diffBlockAction(act blockAction) error {
 	e.rediff(t)
 	e.diffGo(t, line)
 	e.status = map[blockAction]string{
-		blockRevert:      "已还原这处改动（可以撤销）",
-		blockAppend:      "已在这处改动后追加对侧的行（可以撤销）",
-		blockAcceptRight: "已把右边这处写进左边的文件（可以撤销）",
+		blockRevert:      i18n.T("Reverted this change (can be undone)"),
+		blockAppend:      i18n.T("Appended the other side's lines after this change (can be undone)"),
+		blockAcceptRight: i18n.T("Wrote this right-side change into the left file (can be undone)"),
 	}[act]
 	if dt.peer != "" && act == blockRevert {
-		e.status = "已把左边这处写进右边的文件（可以撤销）"
+		e.status = i18n.T("Wrote this left-side change into the right file (can be undone)")
 	}
 	return nil
 }
@@ -158,14 +159,14 @@ func (e *Editor) blockDoc(path string) (*document, error) {
 	if d := e.docOf(path); d != nil {
 		return d, nil
 	}
-	return nil, errors.New("打不开 " + path)
+	return nil, errors.New(i18n.F("Couldn't open %s", path))
 }
 
 // diffHistory is undo (or redo) in a diff tab: of the document its block actions edited.
 func (e *Editor) diffHistory(t *tab, undo bool) {
 	d := t.diff.editTarget
 	if d == nil || !slices.Contains(e.docs, d) {
-		e.status = "改动视图里没有可撤销的操作"
+		e.status = i18n.T("Nothing to undo in the diff view")
 		return
 	}
 	var ok bool
@@ -175,7 +176,7 @@ func (e *Editor) diffHistory(t *tab, undo bool) {
 		_, ok = d.buf.Redo()
 	}
 	if !ok {
-		e.status = map[bool]string{true: "没有可撤销的操作", false: "没有可重做的操作"}[undo]
+		e.status = map[bool]string{true: i18n.T("Nothing to undo"), false: i18n.T("Nothing to redo")}[undo]
 		return
 	}
 	line := t.doc.buf.Snapshot().LineAt(t.doc.buf.Selections().Main().Head)
@@ -259,20 +260,20 @@ func (e *Editor) diffDiscardFile(t *tab, i int) error {
 	defer e.bindDiff(dt)()
 	s := dt.secs[dt.lines[i].sec]
 	if s.group == changeStaged || s.group == changeConflict {
-		return errors.New("已暂存的改动先取消暂存，冲突在三方合并里解决")
+		return errors.New(i18n.T("Unstage staged changes first; resolve conflicts in the three-way merge"))
 	}
 	row := view.SCMRow{Path: s.path, Name: filepath.Base(s.path), Letter: byte(e.secLetter(&s))}
-	title, label := "放弃 "+row.Name+" 的修改？不能撤销", "放弃修改"
+	title, label := i18n.F("Discard changes to %s? This can't be undone", row.Name), i18n.T("Discard Changes")
 	switch {
 	case s.group == changeUntracked:
 		row.Letter = 'U'
-		title, label = "把 "+row.Name+" 移到"+e.trashName()+"？", "删除文件"
+		title, label = i18n.F("Move %s to %s?", row.Name, e.trashName()), i18n.T("Delete File")
 	case s.baseOK && len(s.cur) == 0:
-		title, label = "从暂存区恢复 "+row.Name+"？", "恢复文件"
+		title, label = i18n.F("Restore %s from the index?", row.Name), i18n.T("Restore File")
 	}
 	e.choose(title,
 		ovItem{label: label, run: func(e *Editor) error { return e.discard([]view.SCMRow{row}) }},
-		ovItem{label: "取消", run: func(*Editor) error { return nil }})
+		ovItem{label: i18n.T("Cancel"), run: func(*Editor) error { return nil }})
 	return nil
 }
 
@@ -282,7 +283,7 @@ func (e *Editor) diffDiscardFile(t *tab, i int) error {
 func (e *Editor) diffEditBeside(t *tab) error {
 	dt := t.diff
 	if dt.commit != nil || dt.fixed {
-		return errors.New("提交里的版本是只读的")
+		return errors.New(i18n.T("The version in a commit is read-only"))
 	}
 	i := t.doc.buf.Snapshot().LineAt(t.doc.buf.Selections().Main().Head)
 	if i < 0 || i >= len(dt.lines) {
@@ -290,7 +291,7 @@ func (e *Editor) diffEditBeside(t *tab) error {
 	}
 	l := dt.lines[i]
 	if dt.changes && (l.sec < 0 || l.sec >= len(dt.secs) || dt.secs[l.sec].group == changeStaged || dt.secs[l.sec].lazy) {
-		return errors.New("只有工作区这一边能编辑：已暂存的先取消暂存")
+		return errors.New(i18n.T("Only the working tree side can be edited: unstage staged changes first"))
 	}
 	path := dt.pathOf(l)
 	line := l.line
@@ -318,6 +319,6 @@ func (e *Editor) diffEditBeside(t *tab) error {
 		return err
 	}
 	e.GotoLine(line + 1)
-	e.status = "在旁边编辑 " + filepath.Base(path) + "：改动视图跟着更新，保存、撤销都是这个文件自己的"
+	e.status = i18n.F("Editing %s alongside: the diff view follows it; saving and undo belong to that file", filepath.Base(path))
 	return nil
 }

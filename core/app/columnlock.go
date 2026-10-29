@@ -3,6 +3,8 @@ package app
 import (
 	"errors"
 	"slices"
+
+	"github.com/corn12138/yan-source/core/i18n"
 )
 
 // Locked columns follow Mayoi (MIT, cmd/mayoi/columnlock.go and columns.go removeColumn at 46990a1):
@@ -145,7 +147,7 @@ func (e *Editor) moveTerminalToLockedRight() error {
 	}
 	h, ok := e.host.(interface{ MovePanelTerminal(col, at int) bool })
 	if !ok {
-		return errors.New("没有开着的终端")
+		return errors.New(i18n.T("No open terminal"))
 	}
 	to := e.lockedTerminalColumn(nil)
 	at := slices.Index(e.cols, to)
@@ -154,7 +156,7 @@ func (e *Editor) moveTerminalToLockedRight() error {
 			to.locked = false
 			e.removeColumn(to)
 		}
-		return errors.New("没有开着的终端")
+		return errors.New(i18n.T("No open terminal"))
 	}
 	return nil
 }

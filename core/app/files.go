@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/corn12138/yan-source/core/i18n"
 )
 
 // 资源管理器里的文件操作，照着 Mayoi：新建文件、新建文件夹、改名、移到废纸篓、在访达中显示、复制路径。
@@ -32,11 +34,11 @@ func (e *Editor) treeTarget() (path, dir string, ok bool) {
 func validName(dir, name string) (string, error) {
 	name = strings.TrimSpace(name)
 	if name == "" || name == "." || name == ".." || strings.ContainsRune(name, 0) {
-		return "", errors.New("名字不对")
+		return "", errors.New(i18n.T("Invalid name"))
 	}
 	p := filepath.Join(dir, filepath.FromSlash(name))
 	if _, err := os.Lstat(p); err == nil {
-		return "", fmt.Errorf("%s 已经有了", name)
+		return "", fmt.Errorf(i18n.T("%s already exists"), name)
 	}
 	return p, nil
 }
@@ -44,11 +46,11 @@ func validName(dir, name string) (string, error) {
 func (e *Editor) newEntry(folder bool) error {
 	_, dir, ok := e.treeTarget()
 	if !ok {
-		return errors.New("没有打开文件夹")
+		return errors.New(i18n.T("No folder open"))
 	}
-	title, verb := "新建文件", "新建文件"
+	title, verb := i18n.T("New File"), i18n.T("New File")
 	if folder {
-		title, verb = "新建文件夹", "新建文件夹"
+		title, verb = i18n.T("New Folder"), i18n.T("New Folder")
 	}
 	rel := e.rel(dir)
 	if rel == e.root || rel == "." {
@@ -56,7 +58,7 @@ func (e *Editor) newEntry(folder bool) error {
 	} else {
 		rel += "/"
 	}
-	e.prompt(title+"（在 "+filepath.Base(dir)+" 里，名字里可以带 /）", "", func(in string) string { return verb + " " + rel + in },
+	e.prompt(i18n.F("%s (in %s; the name can include /)", title, filepath.Base(dir)), "", func(in string) string { return verb + " " + rel + in },
 		func(e *Editor, in string) error {
 			p, err := validName(dir, in)
 			if err != nil {
@@ -110,10 +112,10 @@ func (e *Editor) afterFileOp(p string) {
 func (e *Editor) renameEntry() error {
 	path, _, ok := e.treeTarget()
 	if !ok || path == e.root {
-		return errors.New("选中一个文件或文件夹再改名")
+		return errors.New(i18n.T("Select a file or folder to rename"))
 	}
 	old := filepath.Base(path)
-	e.prompt("改名："+old, old, func(in string) string { return old + " → " + in }, func(e *Editor, in string) error {
+	e.prompt(i18n.F("Rename: %s", old), old, func(in string) string { return old + " → " + in }, func(e *Editor, in string) error {
 		if strings.TrimSpace(in) == old {
 			return nil
 		}
@@ -140,12 +142,12 @@ func (e *Editor) renameEntry() error {
 func (e *Editor) trashEntry() error {
 	path, _, ok := e.treeTarget()
 	if !ok || path == e.root {
-		return errors.New("选中一个文件或文件夹再删除")
+		return errors.New(i18n.T("Select a file or folder to delete"))
 	}
 	id := e.running
 	if e.armed != id {
 		e.armed = id
-		return fmt.Errorf("再按一次 %s 把 %s 移到%s", e.hintOr(id, "Delete"), filepath.Base(path), e.trashName())
+		return fmt.Errorf(i18n.T("Press %s again to move %s to %s"), e.hintOr(id, "Delete"), filepath.Base(path), e.trashName())
 	}
 	e.armed = ""
 	return e.TrashPath(path)
@@ -156,10 +158,10 @@ func (e *Editor) TrashPath(path string) error {
 	e.sync()
 	defer e.sync()
 	if e.host == nil {
-		return errors.New("当前前端不能移到" + e.trashName())
+		return errors.New(i18n.F("This frontend can't move files to %s", e.trashName()))
 	}
 	if err := e.host.Trash(path); err != nil {
-		return fmt.Errorf("移到%s失败：%w", e.trashName(), err)
+		return fmt.Errorf(i18n.T("Couldn't move to %s: %w"), e.trashName(), err)
 	}
 	for _, c := range e.cols {
 		for i := len(c.tabs) - 1; i >= 0; i-- {
@@ -169,7 +171,7 @@ func (e *Editor) TrashPath(path string) error {
 		}
 	}
 	e.afterFileOp("")
-	e.status = filepath.Base(path) + " 已移到" + e.trashName()
+	e.status = i18n.F("%s moved to %s", filepath.Base(path), e.trashName())
 	return nil
 }
 
@@ -178,10 +180,10 @@ func (e *Editor) copyPath(relative bool) error {
 	if e.area != areaTree || !ok {
 		t := e.cur()
 		if t == nil {
-			return errors.New("没有打开的文件")
+			return errors.New(i18n.T("No open file"))
 		}
 		if t.doc.untitled() {
-			return userError(t.doc.title + " 还没存过，没有路径")
+			return userError(i18n.F("%s has never been saved: no path", t.doc.title))
 		}
 		path = t.doc.buf.Path()
 	}
@@ -189,9 +191,9 @@ func (e *Editor) copyPath(relative bool) error {
 		path = e.rel(path)
 	}
 	if e.host == nil {
-		return errors.New("剪贴板不可用")
+		return errors.New(i18n.T("Clipboard unavailable"))
 	}
-	e.status = "已复制 " + path
+	e.status = i18n.F("Copied %s", path)
 	return e.host.SetClipboard(path)
 }
 
@@ -201,14 +203,14 @@ func (e *Editor) revealInOS() error {
 	if e.area != areaTree || !ok {
 		if t := e.cur(); t != nil {
 			if t.doc.untitled() {
-				return userError(t.doc.title + " 还没存过，没有文件可以显示")
+				return userError(i18n.F("%s has never been saved: no file to reveal", t.doc.title))
 			}
 			path = t.doc.buf.Path()
 		}
 	}
 	h, can := e.host.(interface{ Reveal(path string) })
 	if !can {
-		return errors.New("终端版不能在" + FileManager(e.profile.OS) + "中显示：路径已复制到剪贴板")
+		return errors.New(i18n.F("The terminal version can't reveal in %s: path copied to the clipboard", FileManager(e.profile.OS)))
 	}
 	h.Reveal(path)
 	return nil
@@ -297,14 +299,14 @@ func (e *Editor) SetImageZoom(col int, z float64) {
 func (e *Editor) togglePreview() error {
 	t := e.cur()
 	if t == nil || t.diff != nil {
-		return errors.New("只有 SVG、Markdown 和 Mermaid 文件能预览")
+		return errors.New(i18n.T("Only SVG, Markdown and Mermaid files can be previewed"))
 	}
 	switch strings.ToLower(filepath.Ext(t.doc.buf.Path())) {
 	case ".svg":
 		t.svg = !t.svg
 	case ".md", ".markdown", ".mmd", ".mermaid":
 		if !e.profile.GUI {
-			return errors.New("Markdown 和 Mermaid 预览在窗口版里看（yan-app）")
+			return errors.New(i18n.T("Markdown and Mermaid previews are in the window version (yan-app)"))
 		}
 		// 原位切换时阅读位置跟着走：文字顶上的那一行成了预览的顶，预览的顶成了文字的顶（照着 Mayoi 0580cb5）。
 		if t.markdown {
@@ -315,7 +317,7 @@ func (e *Editor) togglePreview() error {
 		}
 		t.markdown = !t.markdown
 	default:
-		return errors.New("只有 SVG、Markdown 和 Mermaid 文件能预览")
+		return errors.New(i18n.T("Only SVG, Markdown and Mermaid files can be previewed"))
 	}
 	return nil
 }

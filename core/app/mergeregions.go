@@ -11,6 +11,7 @@ import (
 	"sort"
 
 	"github.com/corn12138/yan-source/core/git/linediff"
+	"github.com/corn12138/yan-source/core/i18n"
 )
 
 // mergeRegion is a run of the base that ours, theirs or both changed: base[baseLo:baseHi] is
@@ -110,7 +111,7 @@ const (
 )
 
 func (s regionState) label() string {
-	return [...]string{"未处理", "用了我们的", "用了他们的", "两边都用了", "忽略了两边的改动", "手改过"}[s]
+	return [...]string{i18n.T("Unhandled"), i18n.T("Used Ours"), i18n.T("Used Theirs"), i18n.T("Used Both"), i18n.T("Ignored Both Sides' Changes"), i18n.T("Edited by Hand")}[s]
 }
 
 // stateOf is how region r stands with lines in the result; ignored are the sides ignored.

@@ -4,6 +4,7 @@ import (
 	"github.com/egoist/mygo/plugins/terminal"
 	"github.com/egoist/mygo/ui"
 
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/view"
 )
 
@@ -30,7 +31,7 @@ func (f *Frontend) termPane(c *ui.Context, pane ui.Element, ci int) {
 	pane.Background(f.pal.panel)
 	if s.failed {
 		pane.Children(func() {
-			ui.Text(c, "终端未能启动，请关闭此标签后重试").Padding(24).TextColor(f.pal.muted)
+			ui.Text(c, i18n.T("The terminal didn't start; close this tab and try again")).Padding(24).TextColor(f.pal.muted)
 		})
 		return
 	}

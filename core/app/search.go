@@ -19,6 +19,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/corn12138/yan-source/core/edit"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/keymap"
 	"github.com/corn12138/yan-source/core/search/glob"
 	"github.com/corn12138/yan-source/core/text"
@@ -109,7 +110,7 @@ func (s *fileSearch) searchKey() string {
 // showSearch 显示搜索视图，键盘到查询框；选区在一行之内时用它做查询。
 func (e *Editor) showSearch(replace bool) error {
 	if e.ws == nil {
-		return errors.New("没有打开文件夹")
+		return errors.New(i18n.T("No folder open"))
 	}
 	s := &e.fs
 	if t := e.cur(); t != nil {
@@ -182,7 +183,7 @@ func (e *Editor) startSearch() {
 	}
 	re, err := compileQuery(s.query, s.matchCase, s.word, s.regex)
 	if err != nil {
-		s.err = "正则写错了"
+		s.err = i18n.T("Invalid regular expression")
 		return
 	}
 	s.re = re
@@ -457,7 +458,7 @@ func (e *Editor) DropSearchMatch(col, i, line, split int) {
 	f := e.fs.files[rows[i].file]
 	m := f.matches[rows[i].match]
 	if m.line != line {
-		e.status = "搜索结果刚更新过：请重新拖动"
+		e.status = i18n.T("The search results just changed: drag again")
 		return
 	}
 	c := e.cols[col]
@@ -492,7 +493,7 @@ func (e *Editor) replaceIn(f *searchFile, only *searchMatch) (int, error) {
 		return 0, err
 	}
 	if snap.Meta().ReadOnly {
-		return 0, fmt.Errorf("%s 是只读的", filepath.Base(f.path))
+		return 0, fmt.Errorf(i18n.T("%s is read-only"), filepath.Base(f.path))
 	}
 	// The file can change between validating a result and loading its replacement.
 	if only != nil && sha256.Sum256([]byte(snap.String(0, snap.Len()))) != f.digest {
@@ -547,7 +548,7 @@ func (e *Editor) replaceSearch(all bool) error {
 		return nil
 	}
 	if s.key != s.searchKey() {
-		e.status = "搜索条件改了：等新的结果出来再替换"
+		e.status = i18n.T("The search changed: wait for the new results before replacing")
 		e.searchSoon(0)
 		return nil
 	}
@@ -565,11 +566,11 @@ func (e *Editor) replaceSearch(all bool) error {
 	}
 	for _, f := range files {
 		if filepath.IsAbs(e.rel(f.path)) {
-			return userError(f.path + " 不在当前文件夹里：不替换")
+			return userError(i18n.F("%s is not in the current folder: not replaced", f.path))
 		}
 	}
 	if only != nil && !e.current(files[0]) {
-		e.status = "这一处所在的文件已经变了：已重新搜索，确认后再替换"
+		e.status = i18n.T("The file of this match changed: searched again; confirm before replacing")
 		s.key = ""
 		e.searchSoon(0)
 		return nil
@@ -586,11 +587,11 @@ func (e *Editor) replaceSearch(all bool) error {
 	}
 	switch {
 	case only != nil && n == 0:
-		e.status = "这一处已经变了：重新搜索一下"
+		e.status = i18n.T("This match changed: search again")
 	case only != nil:
-		e.status = "替换了 1 处"
+		e.status = i18n.T("Replaced 1 occurrence")
 	default:
-		e.status = fmt.Sprintf("在 %d 个文件里替换了 %d 处", nf, n)
+		e.status = i18n.F("Replaced %[2]d occurrences in %[1]d files", nf, n)
 	}
 	e.checkDisk()
 	s.key = "" // 重新搜索
@@ -616,11 +617,11 @@ func (e *Editor) searchFrame(dst *view.Search) {
 		dst.Summary = s.err
 	case s.query == "":
 	case s.count == 0 && !dst.Running:
-		dst.Summary = "没有结果"
+		dst.Summary = i18n.T("No results")
 	case s.count > 0:
-		dst.Summary = fmt.Sprintf("%d 个文件中有 %d 个结果", len(s.files), s.count)
+		dst.Summary = i18n.F("%[2]d results in %[1]d files", len(s.files), s.count)
 		if s.stopped {
-			dst.Summary += "（只显示前 20000 个）"
+			dst.Summary += i18n.T(" (showing the first 20000 only)")
 		}
 	}
 	for _, r := range e.searchRows() {

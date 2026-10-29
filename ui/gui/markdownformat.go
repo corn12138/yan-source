@@ -4,6 +4,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/corn12138/yan-source/core/i18n"
 )
 
 // Formatting keys of the Markdown edit box. They work on the box's text and its selection, in
@@ -173,17 +175,20 @@ type mdBlockKind struct {
 	label, keys, insert string
 }
 
-var mdBlockKinds = []mdBlockKind{
-	{"一级标题", "h1 heading title biaoti", "# |"},
-	{"二级标题", "h2 heading biaoti", "## |"},
-	{"三级标题", "h3 heading biaoti", "### |"},
-	{"无序列表", "bullet list ul liebiao", "- |"},
-	{"有序列表", "numbered list ol liebiao", "1. |"},
-	{"待办", "todo task checkbox daiban", "- [ ] |"},
-	{"引用", "quote blockquote yinyong", "> |"},
-	{"代码块", "code fence daima", "```\n|\n```"},
-	{"表格", "table biaoge", "| 列 1 | 列 2 |\n| --- | --- |\n| | |"},
-	{"分割线", "divider rule hr fengexian", "---\n|"},
+// mdBlockKinds are in the interface language: names and the table's headers are Yan's.
+func mdBlockKinds() []mdBlockKind {
+	return []mdBlockKind{
+		{i18n.T("Heading 1"), "h1 heading title biaoti", "# |"},
+		{i18n.T("Heading 2"), "h2 heading biaoti", "## |"},
+		{i18n.T("Heading 3"), "h3 heading biaoti", "### |"},
+		{i18n.T("Bulleted List"), "bullet list ul liebiao", "- |"},
+		{i18n.T("Numbered List"), "numbered list ol liebiao", "1. |"},
+		{i18n.T("To-Do"), "todo task checkbox daiban", "- [ ] |"},
+		{i18n.T("Quote"), "quote blockquote yinyong", "> |"},
+		{i18n.T("Code Block"), "code fence daima", "```\n|\n```"},
+		{i18n.T("Table"), "table biaoge", i18n.T("| Column 1 | Column 2 |\n| --- | --- |\n| | |")},
+		{i18n.T("Divider"), "divider rule hr fengexian", "---\n|"},
+	}
 }
 
 // mdSlash reports the slash command the caret ends, "/" and what follows it at the start of a
@@ -207,8 +212,8 @@ func mdSlash(text string, caret int) (query string, at int, ok bool) {
 // mdBlockMatches returns the blocks a slash query finds: by name, or by the start of a keyword.
 func mdBlockMatches(query string) []mdBlockKind {
 	var out []mdBlockKind
-	for _, k := range mdBlockKinds {
-		hit := query == "" || strings.Contains(k.label, query)
+	for _, k := range mdBlockKinds() {
+		hit := query == "" || strings.Contains(strings.ToLower(k.label), query)
 		for _, w := range strings.Fields(k.keys) {
 			hit = hit || strings.HasPrefix(w, query)
 		}

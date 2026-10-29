@@ -55,6 +55,7 @@ func TestKeybindingsJSON(t *testing.T) {
 	{ "key": "cmd+u", "command": "cursor.generateGitCommitMessage" },
 	{ "key": "cmd+i", "command": "workbench.action.terminal.focus", "when": "terminalFocus" },
 	{ "key": "cmd+,", "command": "workbench.action.openSettings" },
+	{ "key": "cmd+k cmd+,", "command": "workbench.action.openSettingsJson" },
 ]`)
 	for _, tc := range []struct {
 		ctx       keymap.Context
@@ -66,7 +67,8 @@ func TestKeybindingsJSON(t *testing.T) {
 		{keymap.CtxEditor, "cmd+d", ""},                               // 拿掉了
 		{keymap.CtxEditor, "cmd+l", "workbench.action.quickOpen"},     // 全局的赢过编辑器里内置的「选中行」
 		{keymap.CtxGlobal, "ctrl+k", "workbench.action.showCommands"}, // 内置的 ctrl+k 连按让开
-		{keymap.CtxGlobal, "cmd+,", "yan.config.open"},                // VS Code 的叫法
+		{keymap.CtxGlobal, "cmd+,", cmdOpenSettings},                  // VS Code 的叫法：设置面板
+		{keymap.CtxGlobal, "cmd+k cmd+,", "yan.config.open"},          // 指明打开文件的叫法仍打开文件
 	} {
 		if got := resolve(t, e, tc.ctx, tc.seq); got != tc.want {
 			t.Errorf("%s in %v = %q, want %q", tc.seq, tc.ctx, got, tc.want)

@@ -5,6 +5,7 @@ import (
 	"slices"
 
 	"github.com/corn12138/yan-source/core/git"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/view"
 )
 
@@ -33,7 +34,7 @@ func (e *Editor) SCMOpenRepository(path string) {
 
 func (e *Editor) openNestedRepository(path string) error {
 	if !slices.Contains(e.git.nested, path) && e.repositoryForRoot(path) == nil {
-		return userError("仓库列表已变化，请重新选择")
+		return userError(i18n.T("The repository list changed; select again"))
 	}
 	post := e.postHere()
 	go func() {
@@ -42,7 +43,7 @@ func (e *Editor) openNestedRepository(path string) error {
 			// A removed repository may now resolve to an ancestor; never open that
 			// ancestor as if it were the project the user chose.
 			if err != nil || filepath.Clean(r.Root) != filepath.Clean(path) {
-				e.status = "这个仓库已不可用，请刷新仓库列表"
+				e.status = i18n.T("This repository is no longer available; refresh the repository list")
 				e.gitChanged()
 				return
 			}

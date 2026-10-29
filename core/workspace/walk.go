@@ -2,12 +2,13 @@ package workspace
 
 import (
 	"context"
-	"errors"
 	"io/fs"
 	"path/filepath"
 	"sync"
 
 	"github.com/charlievieth/fastwalk"
+
+	"github.com/corn12138/yan-source/core/i18n"
 )
 
 // batchSize 是一批送回所有者的路径数：太小唤醒太频繁，太大首批出现得慢。
@@ -17,7 +18,7 @@ const batchSize = 512
 const MaxFiles = 200_000
 
 // ErrTooMany 表示文件数超过 MaxFiles，索引只含前一部分。
-var ErrTooMany = errors.New("文件过多，快速打开只索引了前 20 万个")
+var ErrTooMany = i18n.Error("Too many files: Quick Open indexed only the first 200,000")
 
 // Walk 并行遍历 root，跳过永远隐藏的目录和被 gitignore 忽略的条目，
 // 把相对路径分批交给 emit。emit 可能在任意 goroutine 上调用，调用方应该用 Post 转交所有者。

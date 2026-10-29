@@ -13,8 +13,12 @@ type Request struct {
 
 func Parse(args []string, wd string) Request {
 	var r Request
-	literal := false
+	literal, skip := false, false
 	for _, arg := range args {
+		if skip {
+			skip = false
+			continue
+		}
 		if !literal {
 			if arg == "--" {
 				literal = true
@@ -22,6 +26,10 @@ func Parse(args []string, wd string) Request {
 			}
 			if arg == "--new-window" || arg == "-n" {
 				r.NewWindow = true
+				continue
+			}
+			if appleDefault(arg) {
+				skip = true // its value: "-AppleLanguages (en)" sets the languages for this launch
 				continue
 			}
 			if strings.HasPrefix(arg, "-") {
@@ -41,4 +49,10 @@ func Parse(args []string, wd string) Request {
 		r.Targets = append(r.Targets, t)
 	}
 	return r
+}
+
+// appleDefault reports whether arg sets a macOS user default for this launch, "-AppleLanguages"
+// or "-NSDocumentRevisionsDebugMode" followed by its value, which Foundation reads by itself.
+func appleDefault(arg string) bool {
+	return len(arg) > 3 && (strings.HasPrefix(arg, "-Apple") || strings.HasPrefix(arg, "-NS")) && !strings.Contains(arg, "=")
 }

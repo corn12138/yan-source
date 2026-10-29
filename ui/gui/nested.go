@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/view"
 	"github.com/egoist/mygo/ui"
 )
@@ -21,26 +22,26 @@ func (f *Frontend) nestedRepositories(c *ui.Context, s *view.SCM) bool {
 	}
 	p := f.pal
 	ui.Column(c).Grow(1).MinHeight(0).Padding(12, 10).Gap(8).Children(func() {
-		ui.Text(c, "文件夹中的仓库").FontSize(13).FontWeight(600).TextColor(p.text)
-		ui.Text(c, "打开一个项目，管理它的改动和提交").FontSize(11.5).TextColor(p.muted)
+		ui.Text(c, i18n.T("Repositories in Folder")).FontSize(13).FontWeight(600).TextColor(p.text)
+		ui.Text(c, i18n.T("Open a project to manage its changes and commits")).FontSize(11.5).TextColor(p.muted)
 		if s.RepositoryLoading {
-			ui.Text(c, "正在查找仓库…").FontSize(12).TextColor(p.muted)
+			ui.Text(c, i18n.T("Looking for repositories…")).FontSize(12).TextColor(p.muted)
 		}
 		if s.RepositoryError != "" {
 			ui.Text(c, s.RepositoryError).FontSize(11.5).TextColor(p.muted)
 		}
-		refresh := ui.Row(c.Key("refresh-repositories")).Padding(4, 6).Radius(4).Label("刷新仓库列表")
+		refresh := ui.Row(c.Key("refresh-repositories")).Padding(4, 6).Radius(4).Label(i18n.T("Refresh Repository List"))
 		if refresh.Hovered() {
 			refresh.Background(p.hover)
 		}
-		refresh.Children(func() { ui.Text(c, "刷新仓库列表").FontSize(12).TextColor(p.accent) })
+		refresh.Children(func() { ui.Text(c, i18n.T("Refresh Repository List")).FontSize(12).TextColor(p.accent) })
 		if refresh.Clicked() {
 			f.ed.Run("yan.scm.refreshRepositories")
 		}
 		ui.Scroll(c.Key("nested-repositories")).Grow(1).Children(func() {
 			for i, repo := range s.Repositories {
 				row := ui.Row(c.Key(repo.Path)).Height(32).Gap(8).Padding(0, 8).Radius(4).AlignItems(ui.Center).
-					Label("打开仓库 " + repo.Name).Tooltip(repo.Path)
+					Label(i18n.F("Open repository %s", repo.Name)).Tooltip(repo.Path)
 				if i == s.Selected && f.frame.Focus == view.FocusSidebar {
 					row.Background(p.active)
 				} else if row.Hovered() {

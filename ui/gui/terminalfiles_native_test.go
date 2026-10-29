@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/egoist/mygo/plugins/terminal"
+	"github.com/egoist/mygo/transfer"
 	"github.com/egoist/mygo/ui"
 )
 
@@ -78,7 +79,8 @@ func TestNativeTerminalFilePaste(t *testing.T) {
 	tt.Command("paste")
 	want += "\x1b[200~ordinary text\x1b[201~"
 	waitTerminalInput(t, conn, want)
-	tt.SetClipboard("")
+	// Image-only paste must notify programs such as Claude Code without submitting text.
+	tt.SetClipboardData(transfer.New(transfer.NewItem(transfer.Bytes(transfer.PNG, []byte("image fixture")))))
 	tt.Command("paste")
 	want += "\x1b[200~\x1b[201~"
 	waitTerminalInput(t, conn, want)
@@ -95,5 +97,22 @@ func waitTerminalInput(t *testing.T, conn *termTestConn, want string) {
 	}
 	if got := conn.text(); got != want {
 		t.Fatalf("terminal input %q, want %q", got, want)
+	}
+}
+
+func TestNativeTerminalCopyOnSelectCompatibility(t *testing.T) {
+	h := newHarness(t, sample, Options{})
+	s, _, tt := newFileTestTerminal(t, h)
+	s.t.Feed([]byte("copy-on-select fixture"))
+	tt.Frame()
+	tt.Command("selectAll")
+	if got := tt.Clipboard(); !strings.Contains(got, "copy-on-select fixture") {
+		t.Fatalf("default selection not copied: %q", got)
+	}
+	s.t.SetCopyOnSelect(terminal.CopyOnSelectNone)
+	tt.SetClipboard("keep clipboard")
+	tt.Command("selectAll")
+	if got := tt.Clipboard(); got != "keep clipboard" {
+		t.Fatalf("disabled selection copied: %q", got)
 	}
 }

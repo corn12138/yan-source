@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"syscall"
 	"unicode/utf8"
+
+	"github.com/corn12138/yan-source/core/i18n"
 )
 
 const (
@@ -22,7 +24,7 @@ const (
 var bom = []byte{0xEF, 0xBB, 0xBF}
 
 // ErrTooLarge 表示文件超过 LargeMax。
-var ErrTooLarge = errors.New("文件超过 256 MB，Yan 不打开")
+var ErrTooLarge = i18n.Error("The file is larger than 256 MB: Yan doesn't open it")
 
 // Load 只读一次文件，识别编码与换行，切成叶子。文件不存在时返回空的新文档。
 // 叶子直接切自读入的缓冲区（零拷贝）；之后的修改只会新建叶子，绝不写回这块缓冲区。
@@ -40,7 +42,7 @@ func Load(path string) (Snapshot, error) {
 		return Snapshot{}, err
 	}
 	if fi.IsDir() {
-		return Snapshot{}, fmt.Errorf("%s 是目录（文件树在 M3 实现）", path)
+		return Snapshot{}, fmt.Errorf(i18n.T("%s is a directory"), path)
 	}
 	if fi.Size() > LargeMax {
 		return Snapshot{}, ErrTooLarge

@@ -22,6 +22,7 @@ import (
 	"github.com/egoist/mygo/ui"
 
 	"github.com/corn12138/yan-source/core/app"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/keymap"
 	"github.com/corn12138/yan-source/core/style"
 	"github.com/corn12138/yan-source/core/view"
@@ -370,6 +371,9 @@ var closeDialog = mygo.Dialog.Message
 // mayClose 决定窗口能不能关：开着自动保存的先存；未命名的文件留到下次（留不住就也算未保存）；
 // 还有没保存的才问。
 func (g *group) mayClose() bool {
+	if g.confirming {
+		return false
+	}
 	dirty := false
 	var lost error // 没能留到下次的未命名文件：它们也要问
 	for _, pf := range g.projects {
@@ -392,15 +396,15 @@ func (g *group) confirmClose(lost error) bool {
 	}
 	g.confirming = true
 	defer func() { g.confirming = false }()
-	detail := "不保存的话，修改会丢失。"
+	detail := i18n.T("If you don't save, your changes will be lost.")
 	if lost != nil {
-		detail = "未命名的文件没能留到下次（" + lost.Error() + "）：先另存为它们，或者选「不保存」放弃。" + detail
+		detail = i18n.F("Untitled files couldn't be kept for next time (%s): save them as files first, or choose \"Don't Save\" to discard them. %s", lost.Error(), detail)
 	}
 	res, err := closeDialog(mygo.MessageOptions{
 		Parent: g.win, Type: mygo.MessageWarning,
-		Message: "有文件还没保存，要先保存吗？",
+		Message: i18n.T("Some files are not saved. Save them first?"),
 		Detail:  detail,
-		Buttons: []string{"全部保存", "不保存", "取消"}, DefaultButton: 0, CancelButton: 2,
+		Buttons: []string{i18n.T("Save All"), i18n.T("Don't Save"), i18n.T("Cancel")}, DefaultButton: 0, CancelButton: 2,
 	})
 	if err != nil || res.Button == 2 {
 		return false
@@ -419,6 +423,15 @@ func (g *group) confirmClose(lost error) bool {
 
 // host 用 MyGo 实现 app.Host。
 type host struct{ f *Frontend }
+
+// SettingsChanged redraws the other windows: their Settings show the choices all windows share.
+func (h host) SettingsChanged() {
+	for _, g := range groups {
+		if f := g.cur(); f != nil && f != h.f {
+			f.do(func() {})
+		}
+	}
+}
 
 // 剪贴板经视图的 Services（照着 Mayoi）：窗口里和不开窗口的测试里都能用。
 func (h host) SetClipboard(t string) error {
@@ -507,7 +520,7 @@ func (h host) chooseFolder(newWindow bool) {
 	f := h.f
 	go func() {
 		paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{
-			Parent: f.win, Title: "打开文件夹", ButtonLabel: "打开", Directory: true, CreateDirectories: true,
+			Parent: f.win, Title: i18n.T("Open Folder"), ButtonLabel: i18n.T("Open"), Directory: true, CreateDirectories: true,
 		})
 		if err == nil && len(paths) > 0 {
 			f.do(func() {
@@ -525,14 +538,14 @@ func (h host) CompareFilesDialog(dir string) {
 	f := h.f
 	go func() {
 		paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{
-			Parent: f.win, Title: "比较两个文件", Message: "选两个文件（或先选左边的一个）", ButtonLabel: "比较", DefaultPath: dir, Multiple: true,
+			Parent: f.win, Title: i18n.T("Compare Two Files"), Message: i18n.T("Choose two files (or first the left one)"), ButtonLabel: i18n.T("Compare"), DefaultPath: dir, Multiple: true,
 		})
 		if err != nil || len(paths) == 0 {
 			return
 		}
 		if len(paths) == 1 {
 			more, err := mygo.Dialog.Open(mygo.OpenDialogOptions{
-				Parent: f.win, Title: "比较两个文件", Message: "和 " + filepath.Base(paths[0]) + " 比较的文件", ButtonLabel: "比较", DefaultPath: filepath.Dir(paths[0]),
+				Parent: f.win, Title: i18n.T("Compare Two Files"), Message: i18n.F("File to compare with %s", filepath.Base(paths[0])), ButtonLabel: i18n.T("Compare"), DefaultPath: filepath.Dir(paths[0]),
 			})
 			if err != nil || len(more) == 0 {
 				return
@@ -552,7 +565,7 @@ func (h host) NewFileDialog(dir string) {
 	f := h.f
 	go func() {
 		path, err := mygo.Dialog.Save(mygo.SaveDialogOptions{
-			Parent: f.win, Title: "新建文件", DefaultPath: filepath.Join(dir, "未命名.txt"), CreateDirectories: true,
+			Parent: f.win, Title: i18n.T("New File"), DefaultPath: filepath.Join(dir, i18n.T("Untitled.txt")), CreateDirectories: true,
 		})
 		if err == nil && path != "" {
 			f.do(func() {
@@ -569,7 +582,7 @@ var saveAsDialog = mygo.Dialog.Save
 
 func (h host) SaveAsDialog(path string, done func(string, error)) {
 	go func() {
-		path, err := saveAsDialog(mygo.SaveDialogOptions{Parent: h.f.win, Title: "另存为", DefaultPath: path, CreateDirectories: true})
+		path, err := saveAsDialog(mygo.SaveDialogOptions{Parent: h.f.win, Title: i18n.T("Save As"), DefaultPath: path, CreateDirectories: true})
 		done(path, err)
 	}()
 }
@@ -593,9 +606,9 @@ func (f *Frontend) paletteFor(dark bool) *palette {
 func (f *Frontend) about() {
 	mygo.Dialog.Message(mygo.MessageOptions{
 		Parent: f.win, Type: mygo.MessageInfo,
-		Message: "砚 " + version.String(),
-		Detail:  "macOS 预览版。第三方代码的版权与许可见「帮助 › 第三方声明」。",
-		Buttons: []string{"好"},
+		Message: i18n.F("Yan %s", version.String()),
+		Detail:  i18n.T("macOS preview. For third-party copyrights and licenses, see Help › Third-Party Notices."),
+		Buttons: []string{i18n.T("OK")},
 	})
 }
 
@@ -610,6 +623,8 @@ func (f *Frontend) showNotices() {
 		err = mygo.Shell.OpenPath(p)
 	}
 	if err != nil {
-		f.do(func() { f.ed.Notify("找不到第三方声明：开发构建里没有，打包的 yan.app 里有") })
+		f.do(func() {
+			f.ed.Notify(i18n.T("Third-party notices not found: development builds don't have them; the packaged yan.app does"))
+		})
 	}
 }

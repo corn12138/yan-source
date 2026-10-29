@@ -5,6 +5,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/keymap"
 	"github.com/corn12138/yan-source/core/view"
 )
@@ -36,14 +37,14 @@ func (f *Frontend) findView(c *ui.Context) {
 		}
 	}
 	box := f.floating(c, ui.Column(c.Key("find")).Absolute().Top(4).Right(22).Width(430).Padding(5, 6).Gap(4).Radius(8)).
-		Role(ui.RoleToolbar).Label("查找")
+		Role(ui.RoleToolbar).Label(i18n.T("Find"))
 	box.Children(func() {
 		ui.Row(c).Gap(4).AlignItems(ui.Center).Children(func() {
 			arrow := iconChevronRight
 			if fd.Replacing {
 				arrow = iconChevronDown
 			}
-			if f.iconButton(c, arrow, "切换替换", false).Size(18, 22).Clicked() {
+			if f.iconButton(c, arrow, i18n.T("Toggle Replace"), false).Size(18, 22).Clicked() {
 				if fd.Replacing {
 					f.ed.Run("actions.find")
 				} else {
@@ -54,7 +55,7 @@ func (f *Frontend) findView(c *ui.Context) {
 				Background(p.editor).Border(1, p.border)
 			field.Children(func() {
 				in := ui.TextInputBase(c.Key("find-query"), &f.findQuery).Bind(&f.findQueryIn).Grow(1).FontSize(12.5).
-					Placeholder("查找").Label("查找")
+					Placeholder(i18n.T("Find")).Label(i18n.T("Find"))
 				if selectField && fd.Focus == view.FindQuery {
 					in.Focus().SetTextSelection(0, utf8.RuneCountInString(f.findQuery))
 					f.findSelectGen = fd.SelectGen
@@ -78,22 +79,22 @@ func (f *Frontend) findView(c *ui.Context) {
 				} else if in.Submitted() {
 					f.ed.Run("editor.action.nextMatchFindAction")
 				}
-				f.findToggle(c, iconCase, "区分大小写", fd.MatchCase, "toggleFindCaseSensitive")
-				f.findToggle(c, iconWord, "全字匹配", fd.Word, "toggleFindWholeWord")
-				f.findToggle(c, iconRegex, "使用正则表达式", fd.Regex, "toggleFindRegex")
+				f.findToggle(c, iconCase, i18n.T("Match Case"), fd.MatchCase, "toggleFindCaseSensitive")
+				f.findToggle(c, iconWord, i18n.T("Match Whole Word"), fd.Word, "toggleFindWholeWord")
+				f.findToggle(c, iconRegex, i18n.T("Use Regular Expression"), fd.Regex, "toggleFindRegex")
 			})
 			col := p.muted
 			if fd.Error {
 				col = p.danger
 			}
 			ui.Text(c, fd.Count).FontSize(11.5).TextColor(col).Width(findCountW).SingleLine().TextAlign(ui.Center)
-			if f.iconButton(c, iconArrowUp, "上一个匹配 ("+f.chordHint(keymap.Chord{Mods: keymap.ModShift, Key: keymap.KeyEnter})+")", false).Clicked() {
+			if f.iconButton(c, iconArrowUp, i18n.F("Previous Match (%s)", f.chordHint(keymap.Chord{Mods: keymap.ModShift, Key: keymap.KeyEnter})), false).Clicked() {
 				f.ed.Run("editor.action.previousMatchFindAction")
 			}
-			if f.iconButton(c, iconArrowDown, "下一个匹配 ("+f.chordHint(keymap.Chord{Key: keymap.KeyEnter})+")", false).Clicked() {
+			if f.iconButton(c, iconArrowDown, i18n.F("Next Match (%s)", f.chordHint(keymap.Chord{Key: keymap.KeyEnter})), false).Clicked() {
 				f.ed.Run("editor.action.nextMatchFindAction")
 			}
-			if f.iconButton(c, iconX, "关闭 (Esc)", false).Clicked() {
+			if f.iconButton(c, iconX, i18n.T("Close (Esc)"), false).Clicked() {
 				f.ed.Run("yan.find.close")
 			}
 		})
@@ -105,7 +106,7 @@ func (f *Frontend) findView(c *ui.Context) {
 				Background(p.editor).Border(1, p.border)
 			field.Children(func() {
 				in := ui.TextInputBase(c.Key("find-with"), &f.findWith).Bind(&f.findWithIn).Grow(1).FontSize(12.5).
-					Placeholder("替换为").Label("替换为")
+					Placeholder(i18n.T("Replace with")).Label(i18n.T("Replace with"))
 				if selectField && fd.Focus == view.FindReplace {
 					in.Focus().SetTextSelection(0, utf8.RuneCountInString(f.findWith))
 					f.findSelectGen = fd.SelectGen
@@ -127,10 +128,10 @@ func (f *Frontend) findView(c *ui.Context) {
 					f.ed.Run("editor.action.replaceOne")
 				}
 			})
-			if f.iconButton(c, iconReplace, "替换 (↩)", false).Clicked() {
+			if f.iconButton(c, iconReplace, i18n.T("Replace (↩)"), false).Clicked() {
 				f.ed.Run("editor.action.replaceOne")
 			}
-			if f.iconButton(c, iconReplaceAll, "全部替换", false).Clicked() {
+			if f.iconButton(c, iconReplaceAll, i18n.T("Replace All"), false).Clicked() {
 				f.ed.Run("editor.action.replaceAll")
 			}
 			ui.Box(c).Width(findCountW + 3*26 + 4*4 - (2*26 + 3*4))

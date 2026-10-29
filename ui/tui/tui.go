@@ -14,6 +14,7 @@ import (
 	"github.com/gdamore/tcell/v3"
 
 	"github.com/corn12138/yan-source/core/app"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/keymap"
 	"github.com/corn12138/yan-source/core/style"
 	"github.com/corn12138/yan-source/core/view"
@@ -312,8 +313,10 @@ func (f *Frontend) click(ed *app.Editor, x, y view.Unit, mods keymap.Mod) {
 			ed.CloseOverlay()
 			return
 		}
-		if i := f.frame.Overlay.Top + int(y-b.Y) - 2; y > b.Y+1 && i < len(f.frame.Overlay.Items) { // 边框 + 输入行
-			ed.ChooseOverlay(i)
+		if rows := overlayRows(&f.frame.Overlay); y > b.Y+1 && int(y-b.Y)-2 < len(rows) { // 边框 + 输入行
+			if i := rows[int(y-b.Y)-2].item; i >= 0 {
+				ed.ChooseOverlay(i)
+			}
 		}
 		return
 	}
@@ -408,7 +411,7 @@ func (h host) Shell(dir string) error {
 	if sh == "" {
 		sh = "/bin/zsh"
 	}
-	fmt.Printf("\x1b[2J\x1b[H\x1b[36m── yan 终端 · %s ──\x1b[0m\n输入 exit 或按 Ctrl+D 回到编辑器。\n\n", dir)
+	fmt.Printf(i18n.T("\x1b[2J\x1b[H\x1b[36m── yan terminal · %s ──\x1b[0m\nType exit or press Ctrl+D to return to the editor.\n\n"), dir)
 	cmd := exec.Command(sh, "-i")
 	cmd.Dir = dir
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr

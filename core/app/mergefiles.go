@@ -16,6 +16,7 @@ import (
 	"strings"
 
 	"github.com/corn12138/yan-source/core/git"
+	"github.com/corn12138/yan-source/core/i18n"
 )
 
 // mergeRecordName is the record of the resolved files, in the work tree's Git folder.
@@ -135,7 +136,7 @@ func (e *Editor) mergeFiles() []mergeFile {
 func (e *Editor) showMergeFiles() error {
 	files := e.mergeFiles()
 	if len(files) == 0 {
-		return errors.New("没有停下来的合并、变基、拣选或还原，或者它没有冲突文件")
+		return errors.New(i18n.T("No merge, rebase, cherry-pick or revert is in progress, or it has no conflicted files"))
 	}
 	r := e.repository().git.repo
 	left := 0
@@ -144,19 +145,19 @@ func (e *Editor) showMergeFiles() error {
 		rel := r.Rel(f.path)
 		if !f.resolved {
 			left++
-			items = append(items, ovItem{label: "● " + rel, detail: "冲突", run: func(e *Editor) error { return e.openMerge(f.path) }})
+			items = append(items, ovItem{label: "● " + rel, detail: i18n.T("Conflict"), run: func(e *Editor) error { return e.openMerge(f.path) }})
 			continue
 		}
-		items = append(items, ovItem{label: "✓ " + rel, detail: "已解决", run: func(e *Editor) error {
-			e.choose(rel+" 已解决",
-				ovItem{label: "打开文件", run: func(e *Editor) error { return e.openPath(f.path) }},
-				ovItem{label: "恢复成冲突…", run: func(e *Editor) error { return e.restoreResolved(f.path) }})
+		items = append(items, ovItem{label: "✓ " + rel, detail: i18n.T("Resolved"), run: func(e *Editor) error {
+			e.choose(i18n.F("%s resolved", rel),
+				ovItem{label: i18n.T("Open File"), run: func(e *Editor) error { return e.openPath(f.path) }},
+				ovItem{label: i18n.T("Restore Conflict…"), run: func(e *Editor) error { return e.restoreResolved(f.path) }})
 			return nil
 		}})
 	}
-	title := "冲突文件：还有 " + strconv.Itoa(left) + " 个没解决"
+	title := i18n.F("Conflicted files: %s unresolved", strconv.Itoa(left))
 	if left == 0 {
-		title = "冲突文件都解决了：可以「继续」"
+		title = i18n.T("All conflicted files resolved: you can \"Continue\"")
 	}
 	e.choose(title, items...)
 	return nil
@@ -164,16 +165,16 @@ func (e *Editor) showMergeFiles() error {
 
 // restoreResolved puts a file resolved before back in conflict, after asking.
 func (e *Editor) restoreResolved(path string) error {
-	e.choose("把 "+filepath.Base(path)+" 恢复成冲突？解决的结果会丢掉",
-		ovItem{label: "恢复冲突", run: func(e *Editor) error {
+	e.choose(i18n.F("Restore %s to a conflict? The resolution is lost", filepath.Base(path)),
+		ovItem{label: i18n.T("Restore Conflict"), run: func(e *Editor) error {
 			defer e.bindRepository(e.repositoryForPath(path))()
-			return e.gitDo("恢复冲突中…", func(r *git.Repo) error { return r.RestoreConflict(path) }, func(e *Editor) {
+			return e.gitDo(i18n.T("Restoring conflict…"), func(r *git.Repo) error { return r.RestoreConflict(path) }, func(e *Editor) {
 				e.mergeResolvedUndone(path)
 				e.reloadDocs(path)
-				e.status = filepath.Base(path) + " 又是冲突了"
+				e.status = i18n.F("%s is conflicted again", filepath.Base(path))
 			})
 		}},
-		ovItem{label: "取消", run: func(*Editor) error { return nil }})
+		ovItem{label: i18n.T("Cancel"), run: func(*Editor) error { return nil }})
 	return nil
 }
 
@@ -181,21 +182,21 @@ func (e *Editor) restoreResolved(path string) error {
 func (e *Editor) mergeApplyAndNext() error {
 	mv := mergeOf(e.cur())
 	if mv == nil {
-		return errors.New("先打开一个冲突文件的三方合并")
+		return errors.New(i18n.T("Open a conflicted file's three-way merge first"))
 	}
 	e.mergeSync(mv)
 	if n := mv.unresolved(); n > 0 {
-		return errors.New("还有冲突没处理：处理完再应用，或者用「标记为已解决」")
+		return errors.New(i18n.T("Conflicts remain: handle them before applying, or use \"Mark as Resolved\""))
 	}
 	if hasConflictMarkers(mv.result.doc.buf.Snapshot()) {
-		return errors.New("结果里还有冲突标记（<<<<<<<）：先处理它们")
+		return errors.New(i18n.T("The result still has conflict markers (<<<<<<<): handle them first"))
 	}
 	defer e.bindRepository(e.repositoryForPath(mv.path))()
 	if err := e.saveDoc(mv.result.doc); err != nil {
 		return err
 	}
 	path := mv.path
-	return e.gitDo("暂存中…", func(r *git.Repo) error { return r.Stage(path) }, func(e *Editor) {
+	return e.gitDo(i18n.T("Staging…"), func(r *git.Repo) error { return r.Stage(path) }, func(e *Editor) {
 		e.mergeResolvedDone(path)
 		e.mergeDetach(mv)
 		for _, f := range e.mergeFiles() {
@@ -206,6 +207,6 @@ func (e *Editor) mergeApplyAndNext() error {
 				return
 			}
 		}
-		e.status = filepath.Base(path) + " 已解决：冲突文件都解决了，可以「继续」"
+		e.status = i18n.F("%s resolved: all conflicted files are resolved, you can \"Continue\"", filepath.Base(path))
 	})
 }

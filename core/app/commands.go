@@ -13,6 +13,7 @@ import (
 	"github.com/corn12138/yan-source/core/config"
 	"github.com/corn12138/yan-source/core/edit"
 	"github.com/corn12138/yan-source/core/git"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/keymap"
 	"github.com/corn12138/yan-source/core/text"
 	"github.com/corn12138/yan-source/core/view"
@@ -50,6 +51,7 @@ func defaultBindings() map[keymap.Context]map[string]string {
 		"alt+z": "yan.toggleTabWordWrap", "cmd+shift+n": "workbench.action.newWindow",
 		"cmd+alt+o": "yan.openFolderNewWindow",
 		"cmd+o":     "workbench.action.files.openFolder", "cmd+n": "workbench.action.files.newUntitledFile",
+		"cmd+,":       cmdOpenSettings,
 		"cmd+shift+s": "workbench.action.files.saveAs",
 		"cmd+=":       "workbench.action.zoomIn", "cmd+-": "workbench.action.zoomOut", "cmd+0": "workbench.action.zoomReset",
 		"ctrl+k t": "workbench.action.terminal.toggleTerminal",
@@ -130,19 +132,19 @@ func registerBuiltins(e *Editor) {
 		id, title string
 		run       func(*Editor) error
 	}{
-		{"workbench.action.files.save", "文件：保存", (*Editor).save},
-		{cmdOverwrite, "文件：覆盖磁盘上的版本", (*Editor).overwrite},
-		{cmdRevert, "文件：还原为磁盘上的版本", (*Editor).revert},
-		{"workbench.action.files.saveAll", "文件：全部保存", (*Editor).saveAll},
-		{"workbench.action.quit", "退出", (*Editor).quitCmd},
-		{"undo", "撤销", func(e *Editor) error { return e.history(true) }},
-		{"redo", "重做", func(e *Editor) error { return e.history(false) }},
-		{"editor.action.selectAll", "全选", func(e *Editor) error {
+		{"workbench.action.files.save", i18n.T("File: Save"), (*Editor).save},
+		{cmdOverwrite, i18n.T("File: Overwrite the Version on Disk"), (*Editor).overwrite},
+		{cmdRevert, i18n.T("File: Revert to the Version on Disk"), (*Editor).revert},
+		{"workbench.action.files.saveAll", i18n.T("File: Save All"), (*Editor).saveAll},
+		{"workbench.action.quit", i18n.T("Quit"), (*Editor).quitCmd},
+		{"undo", i18n.T("Undo"), func(e *Editor) error { return e.history(true) }},
+		{"redo", i18n.T("Redo"), func(e *Editor) error { return e.history(false) }},
+		{"editor.action.selectAll", i18n.T("Select All"), func(e *Editor) error {
 			return e.withDoc(func(b *edit.Buffer) {
 				b.SetSelections(edit.Single(edit.Range{Anchor: 0, Head: b.Snapshot().Len(), GoalX: -1}))
 			})
 		}},
-		{"removeSecondaryCursors", "只保留主光标", func(e *Editor) error {
+		{"removeSecondaryCursors", i18n.T("Keep Only the Primary Cursor"), func(e *Editor) error {
 			if e.closePeek() {
 				return nil // Esc：先关掉改动的框
 			}
@@ -152,150 +154,150 @@ func registerBuiltins(e *Editor) {
 			}
 			return e.withDoc(func(b *edit.Buffer) { b.SetSelections(edit.Single(b.Selections().Main())) })
 		}},
-		{"actions.find", "查找", func(e *Editor) error { return e.openFind(false) }},
-		{"editor.action.startFindReplaceAction", "替换", func(e *Editor) error { return e.openFind(true) }},
-		{"editor.action.nextMatchFindAction", "查找下一个", func(e *Editor) error { return e.step(1) }},
-		{"editor.action.previousMatchFindAction", "查找上一个", func(e *Editor) error { return e.step(-1) }},
-		{"toggleFindCaseSensitive", "查找：区分大小写", func(e *Editor) error { return e.toggleFindOption(&e.find.matchCase) }},
-		{"toggleFindWholeWord", "查找：全字匹配", func(e *Editor) error { return e.toggleFindOption(&e.find.word) }},
-		{"toggleFindRegex", "查找：使用正则表达式", func(e *Editor) error { return e.toggleFindOption(&e.find.regex) }},
-		{"editor.action.replaceOne", "替换当前匹配", (*Editor).replaceOne},
-		{"editor.action.replaceAll", "全部替换", (*Editor).replaceAll},
-		{"yan.find.close", "关闭查找框", func(e *Editor) error { e.closeFind(); return nil }},
-		{"workbench.action.editor.nextChange", "Git：下一个改动", func(e *Editor) error { return e.stepChange(1) }},
-		{"workbench.action.editor.previousChange", "Git：上一个改动", func(e *Editor) error { return e.stepChange(-1) }},
-		{"yan.git.toggleBlame", "Git：切换行内 blame", func(e *Editor) error {
+		{"actions.find", i18n.T("Find"), func(e *Editor) error { return e.openFind(false) }},
+		{"editor.action.startFindReplaceAction", i18n.T("Replace"), func(e *Editor) error { return e.openFind(true) }},
+		{"editor.action.nextMatchFindAction", i18n.T("Find Next"), func(e *Editor) error { return e.step(1) }},
+		{"editor.action.previousMatchFindAction", i18n.T("Find Previous"), func(e *Editor) error { return e.step(-1) }},
+		{"toggleFindCaseSensitive", i18n.T("Find: Match Case"), func(e *Editor) error { return e.toggleFindOption(&e.find.matchCase) }},
+		{"toggleFindWholeWord", i18n.T("Find: Match Whole Word"), func(e *Editor) error { return e.toggleFindOption(&e.find.word) }},
+		{"toggleFindRegex", i18n.T("Find: Use Regular Expression"), func(e *Editor) error { return e.toggleFindOption(&e.find.regex) }},
+		{"editor.action.replaceOne", i18n.T("Replace Current Match"), (*Editor).replaceOne},
+		{"editor.action.replaceAll", i18n.T("Replace All"), (*Editor).replaceAll},
+		{"yan.find.close", i18n.T("Close Find"), func(e *Editor) error { e.closeFind(); return nil }},
+		{"workbench.action.editor.nextChange", i18n.T("Git: Next Change"), func(e *Editor) error { return e.stepChange(1) }},
+		{"workbench.action.editor.previousChange", i18n.T("Git: Previous Change"), func(e *Editor) error { return e.stepChange(-1) }},
+		{"yan.git.toggleBlame", i18n.T("Git: Toggle Inline Blame"), func(e *Editor) error {
 			e.cfg.Blame = !e.cfg.Blame
 			e.repository().git.blame = blameState{}
 			return nil
 		}},
-		{"yan.edit.newline", "换行", func(e *Editor) error {
+		{"yan.edit.newline", i18n.T("New Line"), func(e *Editor) error {
 			if t := e.cur(); t != nil && t.diff != nil {
 				return e.diffOpen(t) // 改动视图里回车：展开折叠，或打开文件跳到这一行
 			}
 			return e.newline()
 		}},
-		{"git.openChange", "Git：打开改动", func(e *Editor) error {
+		{"git.openChange", i18n.T("Git: Open Changes"), func(e *Editor) error {
 			t := e.cur()
 			if t == nil {
-				return errors.New("没有打开的文件")
+				return errors.New(i18n.T("No open file"))
 			}
 			if t.diff != nil {
 				return e.openPath(t.diff.path)
 			}
 			return e.openChange(t.doc.buf.Path(), false)
 		}},
-		{"tab", "缩进", (*Editor).tabKey},
-		{"outdent", "反缩进", func(e *Editor) error { return e.indentLines(true) }},
-		{"editor.action.indentLines", "行：缩进", func(e *Editor) error { return e.indentLines(false) }},
-		{"editor.action.outdentLines", "行：反缩进", func(e *Editor) error { return e.indentLines(true) }},
-		{"editor.action.commentLine", "切换行注释", (*Editor).toggleComment},
-		{"editor.action.moveLinesUpAction", "向上移动行", func(e *Editor) error { return e.moveLines(false) }},
-		{"editor.action.moveLinesDownAction", "向下移动行", func(e *Editor) error { return e.moveLines(true) }},
-		{"editor.action.copyLinesUpAction", "向上复制行", func(e *Editor) error { return e.copyLines(false) }},
-		{"editor.action.copyLinesDownAction", "向下复制行", func(e *Editor) error { return e.copyLines(true) }},
-		{"editor.action.deleteLines", "删除行", (*Editor).deleteLines},
-		{"editor.action.insertLineAfter", "在下面插入行", func(e *Editor) error { return e.insertLine(false) }},
-		{"editor.action.insertLineBefore", "在上面插入行", func(e *Editor) error { return e.insertLine(true) }},
-		{"expandLineSelection", "选中行", (*Editor).selectLines},
-		{"editor.action.sortLinesAscending", "行：升序排列", func(e *Editor) error { return e.sortLines(false) }},
-		{"editor.action.sortLinesDescending", "行：降序排列", func(e *Editor) error { return e.sortLines(true) }},
-		{"editor.action.transformToCamelcase", "转换为驼峰命名", (*Editor).camelCase},
-		{"yan.indent.choose", "选择缩进方式…", (*Editor).chooseIndent},
-		{"yan.eol.choose", "转换行尾序列…", (*Editor).chooseEOL},
-		{"yan.eol.lf", "行尾序列：LF", func(e *Editor) error { return e.setEOL(text.EOLLF) }},
-		{"yan.eol.crlf", "行尾序列：CRLF", func(e *Editor) error { return e.setEOL(text.EOLCRLF) }},
-		{"editor.action.indentUsingTabs", "缩进：使用制表符", func(e *Editor) error { return e.setIndent(indentStyle{tabs: true, size: max(e.cfg.TabWidth, 1)}) }},
-		{"yan.indentUsingSpaces2", "缩进：使用 2 个空格", func(e *Editor) error { return e.setIndent(indentStyle{size: 2}) }},
-		{"yan.indentUsingSpaces4", "缩进：使用 4 个空格", func(e *Editor) error { return e.setIndent(indentStyle{size: 4}) }},
-		{"yan.indentUsingSpaces8", "缩进：使用 8 个空格", func(e *Editor) error { return e.setIndent(indentStyle{size: 8}) }},
-		{"editor.action.jumpToBracket", "跳到配对的括号", (*Editor).jumpToBracket},
-		{"deleteLeft", "向左删除", func(e *Editor) error {
+		{"tab", i18n.T("Indent"), (*Editor).tabKey},
+		{"outdent", i18n.T("Outdent"), func(e *Editor) error { return e.indentLines(true) }},
+		{"editor.action.indentLines", i18n.T("Lines: Indent"), func(e *Editor) error { return e.indentLines(false) }},
+		{"editor.action.outdentLines", i18n.T("Lines: Outdent"), func(e *Editor) error { return e.indentLines(true) }},
+		{"editor.action.commentLine", i18n.T("Toggle Line Comment"), (*Editor).toggleComment},
+		{"editor.action.moveLinesUpAction", i18n.T("Move Line Up"), func(e *Editor) error { return e.moveLines(false) }},
+		{"editor.action.moveLinesDownAction", i18n.T("Move Line Down"), func(e *Editor) error { return e.moveLines(true) }},
+		{"editor.action.copyLinesUpAction", i18n.T("Copy Line Up"), func(e *Editor) error { return e.copyLines(false) }},
+		{"editor.action.copyLinesDownAction", i18n.T("Copy Line Down"), func(e *Editor) error { return e.copyLines(true) }},
+		{"editor.action.deleteLines", i18n.T("Delete Line"), (*Editor).deleteLines},
+		{"editor.action.insertLineAfter", i18n.T("Insert Line Below"), func(e *Editor) error { return e.insertLine(false) }},
+		{"editor.action.insertLineBefore", i18n.T("Insert Line Above"), func(e *Editor) error { return e.insertLine(true) }},
+		{"expandLineSelection", i18n.T("Select Line"), (*Editor).selectLines},
+		{"editor.action.sortLinesAscending", i18n.T("Lines: Sort Ascending"), func(e *Editor) error { return e.sortLines(false) }},
+		{"editor.action.sortLinesDescending", i18n.T("Lines: Sort Descending"), func(e *Editor) error { return e.sortLines(true) }},
+		{"editor.action.transformToCamelcase", i18n.T("Transform to camelCase"), (*Editor).camelCase},
+		{"yan.indent.choose", i18n.T("Select Indentation…"), (*Editor).chooseIndent},
+		{"yan.eol.choose", i18n.T("Change End of Line Sequence…"), (*Editor).chooseEOL},
+		{"yan.eol.lf", i18n.T("End of Line Sequence: LF"), func(e *Editor) error { return e.setEOL(text.EOLLF) }},
+		{"yan.eol.crlf", i18n.T("End of Line Sequence: CRLF"), func(e *Editor) error { return e.setEOL(text.EOLCRLF) }},
+		{"editor.action.indentUsingTabs", i18n.T("Indentation: Use Tabs"), func(e *Editor) error { return e.setIndent(indentStyle{tabs: true, size: max(e.cfg.TabWidth, 1)}) }},
+		{"yan.indentUsingSpaces2", i18n.T("Indentation: Use 2 Spaces"), func(e *Editor) error { return e.setIndent(indentStyle{size: 2}) }},
+		{"yan.indentUsingSpaces4", i18n.T("Indentation: Use 4 Spaces"), func(e *Editor) error { return e.setIndent(indentStyle{size: 4}) }},
+		{"yan.indentUsingSpaces8", i18n.T("Indentation: Use 8 Spaces"), func(e *Editor) error { return e.setIndent(indentStyle{size: 8}) }},
+		{"editor.action.jumpToBracket", i18n.T("Go to Matching Bracket"), (*Editor).jumpToBracket},
+		{"deleteLeft", i18n.T("Delete Left"), func(e *Editor) error {
 			if t := e.cur(); t != nil && e.writable(t) && e.deletePair(t) {
 				e.reveal()
 				return nil
 			}
 			return e.editDoc(func(b *edit.Buffer) { b.DeleteBackward() })
 		}},
-		{"deleteRight", "向右删除", func(e *Editor) error {
+		{"deleteRight", i18n.T("Delete Right"), func(e *Editor) error {
 			return e.editDoc(func(b *edit.Buffer) { b.DeleteForward() })
 		}},
-		{"deleteWordLeft", "向左删除单词", func(e *Editor) error {
+		{"deleteWordLeft", i18n.T("Delete Word Left"), func(e *Editor) error {
 			return e.editDoc(func(b *edit.Buffer) {
 				e.moveBy(b, true, func(s text.Snapshot, r edit.Range) int { return edit.WordLeft(s, r.Head) })
 				b.DeleteBackward()
 			})
 		}},
-		{"deleteAllLeft", "删除到行首", func(e *Editor) error {
+		{"deleteAllLeft", i18n.T("Delete to Line Start"), func(e *Editor) error {
 			return e.editDoc(func(b *edit.Buffer) {
 				e.moveBy(b, true, func(s text.Snapshot, r edit.Range) int { return s.LineStart(s.LineAt(r.Head)) })
 				b.DeleteBackward()
 			})
 		}},
-		{"editor.action.clipboardCopyAction", "复制", func(e *Editor) error { return e.copy(false) }},
-		{"editor.action.clipboardCutAction", "剪切", func(e *Editor) error { return e.copy(true) }},
-		{"editor.action.clipboardPasteAction", "粘贴", (*Editor).paste},
-		{"editor.action.addSelectionToNextFindMatch", "选中下一个匹配项", (*Editor).addNextMatch},
-		{"workbench.action.terminal.toggleTerminal", "终端：切换终端", (*Editor).shell},
-		{"workbench.action.terminal.new", "终端：新建终端", func(e *Editor) error {
+		{"editor.action.clipboardCopyAction", i18n.T("Copy"), func(e *Editor) error { return e.copy(false) }},
+		{"editor.action.clipboardCutAction", i18n.T("Cut"), func(e *Editor) error { return e.copy(true) }},
+		{"editor.action.clipboardPasteAction", i18n.T("Paste"), (*Editor).paste},
+		{"editor.action.addSelectionToNextFindMatch", i18n.T("Add Selection to Next Match"), (*Editor).addNextMatch},
+		{"workbench.action.terminal.toggleTerminal", i18n.T("Terminal: Toggle Terminal"), (*Editor).shell},
+		{"workbench.action.terminal.new", i18n.T("Terminal: New Terminal"), func(e *Editor) error {
 			return e.openTerminal(e.terminalDir())
 		}},
-		{"view.terminalLocation", "终端：默认在编辑区新建", (*Editor).toggleTerminalLocation},
-		{"openInIntegratedTerminal", "资源管理器：在终端中打开", (*Editor).openTreeTerminal},
-		{"workbench.action.createTerminalEditor", "终端：在编辑区新建终端", (*Editor).newTerminalEditor},
-		{"workbench.action.quickOpen", "转到文件…", func(e *Editor) error { return e.openQuickOpen("") }},
-		{"workbench.action.gotoLine", "转到行…", func(e *Editor) error { return e.openQuickOpen(":") }},
-		{"workbench.action.gotoSymbol", "转到符号…", func(e *Editor) error { return e.openQuickOpen("@") }},
-		{"editor.action.revealDefinition", "转到定义", (*Editor).revealDefinition},
-		{"workbench.action.navigateBack", "后退", func(e *Editor) error { return e.navigate(true) }},
-		{"workbench.action.navigateForward", "前进", func(e *Editor) error { return e.navigate(false) }},
-		{"workbench.action.openRecent", "打开最近的文件夹…", (*Editor).openRecentPicker},
-		{"explorer.newFile", "资源管理器：新建文件…", func(e *Editor) error { return e.newEntry(false) }},
-		{"explorer.newFolder", "资源管理器：新建文件夹…", func(e *Editor) error { return e.newEntry(true) }},
-		{"renameFile", "资源管理器：改名…", (*Editor).renameEntry},
-		{"deleteFile", "资源管理器：移到" + e.trashName(), (*Editor).trashEntry},
-		{"filesExplorer.copy", "资源管理器：复制", (*Editor).copyFiles},
-		{"filesExplorer.paste", "资源管理器：粘贴", (*Editor).pasteFiles},
-		{"copyFilePath", "复制路径", func(e *Editor) error { return e.copyPath(false) }},
-		{"copyRelativeFilePath", "复制相对路径", func(e *Editor) error { return e.copyPath(true) }},
-		{"revealFileInOS", "在" + FileManager(e.profile.OS) + "中显示", (*Editor).revealInOS},
-		{"markdown.showPreviewToSide", "在右侧打开预览（SVG、Markdown、Mermaid）", (*Editor).previewToSide},
-		{"yan.svg.togglePreview", "切换预览（SVG、Markdown、Mermaid）", (*Editor).togglePreview},
-		{"yan.toggleVim", "切换 Vim 模式", (*Editor).toggleVim},
-		{"editor.action.toggleWordWrap", "切换自动换行", (*Editor).toggleWordWrap},
-		{"yan.toggleTabWordWrap", "切换这个标签的自动换行", (*Editor).toggleTabWrap},
-		{"workbench.action.newWindow", "新建窗口", func(e *Editor) error {
+		{"view.terminalLocation", i18n.T("Terminal: Create New Terminals in the Editor Area"), (*Editor).toggleTerminalLocation},
+		{"openInIntegratedTerminal", i18n.T("Explorer: Open in Terminal"), (*Editor).openTreeTerminal},
+		{"workbench.action.createTerminalEditor", i18n.T("Terminal: New Terminal in Editor Area"), (*Editor).newTerminalEditor},
+		{"workbench.action.quickOpen", i18n.T("Go to File…"), func(e *Editor) error { return e.openQuickOpen("") }},
+		{"workbench.action.gotoLine", i18n.T("Go to Line…"), func(e *Editor) error { return e.openQuickOpen(":") }},
+		{"workbench.action.gotoSymbol", i18n.T("Go to Symbol…"), func(e *Editor) error { return e.openQuickOpen("@") }},
+		{"editor.action.revealDefinition", i18n.T("Go to Definition"), (*Editor).revealDefinition},
+		{"workbench.action.navigateBack", i18n.T("Go Back"), func(e *Editor) error { return e.navigate(true) }},
+		{"workbench.action.navigateForward", i18n.T("Go Forward"), func(e *Editor) error { return e.navigate(false) }},
+		{"workbench.action.openRecent", i18n.T("Open Recent Folder…"), (*Editor).openRecentPicker},
+		{"explorer.newFile", i18n.T("Explorer: New File…"), func(e *Editor) error { return e.newEntry(false) }},
+		{"explorer.newFolder", i18n.T("Explorer: New Folder…"), func(e *Editor) error { return e.newEntry(true) }},
+		{"renameFile", i18n.T("Explorer: Rename…"), (*Editor).renameEntry},
+		{"deleteFile", i18n.F("Explorer: Move to %s", e.trashName()), (*Editor).trashEntry},
+		{"filesExplorer.copy", i18n.T("Explorer: Copy"), (*Editor).copyFiles},
+		{"filesExplorer.paste", i18n.T("Explorer: Paste"), (*Editor).pasteFiles},
+		{"copyFilePath", i18n.T("Copy Path"), func(e *Editor) error { return e.copyPath(false) }},
+		{"copyRelativeFilePath", i18n.T("Copy Relative Path"), func(e *Editor) error { return e.copyPath(true) }},
+		{"revealFileInOS", i18n.F("Reveal in %s", FileManager(e.profile.OS)), (*Editor).revealInOS},
+		{"markdown.showPreviewToSide", i18n.T("Open Preview to the Side (SVG, Markdown, Mermaid)"), (*Editor).previewToSide},
+		{"yan.svg.togglePreview", i18n.T("Toggle Preview (SVG, Markdown, Mermaid)"), (*Editor).togglePreview},
+		{"yan.toggleVim", i18n.T("Toggle Vim Mode"), (*Editor).toggleVim},
+		{"editor.action.toggleWordWrap", i18n.T("Toggle Word Wrap"), (*Editor).toggleWordWrap},
+		{"yan.toggleTabWordWrap", i18n.T("Toggle Word Wrap for This Tab"), (*Editor).toggleTabWrap},
+		{"workbench.action.newWindow", i18n.T("New Window"), func(e *Editor) error {
 			if h, ok := e.host.(interface{ NewWindow() }); ok {
 				h.NewWindow()
 				return nil
 			}
-			return errors.New("终端版只有一个窗口：在另一个终端里运行 yan")
+			return errors.New(i18n.T("The terminal version has one window: run yan in another terminal"))
 		}},
-		{"yan.installCLI", "安装 yan 命令…", func(e *Editor) error {
+		{"yan.installCLI", i18n.T("Install yan Command…"), func(e *Editor) error {
 			if h, ok := e.host.(interface{ InstallCLI() }); ok {
 				h.InstallCLI()
 				return nil
 			}
-			return errors.New("请在窗口版的文件菜单安装命令")
+			return errors.New(i18n.T("Install the command from the File menu of the window version"))
 		}},
-		{"yan.openFolderNewWindow", "在新窗口中打开文件夹…", func(e *Editor) error {
+		{"yan.openFolderNewWindow", i18n.T("Open Folder in New Window…"), func(e *Editor) error {
 			if h, ok := e.host.(interface{ OpenFolderNewWindow() }); ok {
 				h.OpenFolderNewWindow()
 				return nil
 			}
-			return errors.New("在另一个终端里运行 yan 目录")
+			return errors.New(i18n.T("Run yan with a folder in another terminal"))
 		}},
-		{"workbench.action.files.openFolder", "打开文件夹…", func(e *Editor) error {
+		{"workbench.action.files.openFolder", i18n.T("Open Folder…"), func(e *Editor) error {
 			if h, ok := e.host.(interface{ OpenFolderDialog() }); ok {
 				h.OpenFolderDialog()
 				return nil
 			}
-			return errors.New("在终端里用「yan 目录」打开文件夹；最近打开的文件夹按 Ctrl+R")
+			return errors.New(i18n.T("Open a folder with \"yan folder\" in the terminal; Ctrl+R lists recent folders"))
 		}},
-		{"workbench.action.files.newUntitledFile", "新建未命名文件", (*Editor).newUntitled},
-		{cmdMaximize, "最大化／还原编辑区（合并视图三栏一起）", (*Editor).toggleMaximize},
-		{"workbench.action.files.saveAs", "另存为…", (*Editor).saveAs},
-		{"workbench.action.files.newFile", "新建文件…", func(e *Editor) error {
+		{"workbench.action.files.newUntitledFile", i18n.T("New Untitled File"), (*Editor).newUntitled},
+		{cmdMaximize, i18n.T("Maximize / Restore Editor Area (the merge view's three panes together)"), (*Editor).toggleMaximize},
+		{"workbench.action.files.saveAs", i18n.T("Save As…"), (*Editor).saveAs},
+		{"workbench.action.files.newFile", i18n.T("New File…"), func(e *Editor) error {
 			if h, ok := e.host.(interface{ NewFileDialog(dir string) }); ok {
 				dir := e.root
 				if t := e.cur(); t != nil && t.diff == nil && t.doc.buf.Path() != "" {
@@ -304,229 +306,231 @@ func registerBuiltins(e *Editor) {
 				h.NewFileDialog(dir)
 				return nil
 			}
-			return errors.New("在终端里用快速打开以外的方式新建：yan 文件名")
+			return errors.New(i18n.T("Outside Quick Open, create a file from the terminal: yan filename"))
 		}},
-		{"workbench.action.showCommands", "显示所有命令", (*Editor).openPalette},
-		{"workbench.action.toggleSidebarPosition", "移动侧边栏到另一侧", (*Editor).toggleSidebarPosition},
-		{"workbench.action.toggleSidebarVisibility", "切换侧边栏可见性", (*Editor).toggleSidebar},
-		{"workbench.view.explorer", "显示资源管理器", (*Editor).focusExplorer},
-		{"workbench.action.focusActiveEditorGroup", "聚焦到编辑器", func(e *Editor) error { e.area = areaEditor; return nil }},
-		{"workbench.action.closeActiveEditor", "关闭编辑器", (*Editor).closeEditor},
-		{"workbench.action.closeOtherEditors", "关闭其他编辑器", func(e *Editor) error {
+		{"workbench.action.showCommands", i18n.T("Show All Commands"), (*Editor).openPalette},
+		{"workbench.action.toggleSidebarPosition", i18n.T("Move Sidebar to the Other Side"), (*Editor).toggleSidebarPosition},
+		{"workbench.action.toggleSidebarVisibility", i18n.T("Toggle Sidebar Visibility"), (*Editor).toggleSidebar},
+		{"workbench.view.explorer", i18n.T("Show Explorer"), (*Editor).focusExplorer},
+		{"workbench.action.focusActiveEditorGroup", i18n.T("Focus Editor"), func(e *Editor) error { e.area = areaEditor; return nil }},
+		{"workbench.action.closeActiveEditor", i18n.T("Close Editor"), (*Editor).closeEditor},
+		{"workbench.action.closeOtherEditors", i18n.T("Close Other Editors"), func(e *Editor) error {
 			c := e.column()
 			return e.closeTabsIn(c, c.tab())
 		}},
-		{"workbench.action.closeEditorsInGroup", "关闭这一列的所有编辑器", func(e *Editor) error { return e.closeTabsIn(e.column(), nil) }},
-		{"workbench.action.reopenClosedEditor", "重新打开关闭的编辑器", (*Editor).reopenClosed},
-		{"view.lockColumn", "锁定/解锁这一列", (*Editor).toggleColumnLock},
-		{"yan.guide.open", "学习：功能导览", (*Editor).openGuide},
-		{"yan.guide.skip", "学习：跳过这一步", (*Editor).skipStep},
-		{"yan.guide.nextTip", "学习：下一条提示", (*Editor).nextTip},
-		{"yan.guide.reset", "学习：清空课程进度", (*Editor).resetGuide},
-		{"yan.guide.back", "学习：回到上一步", (*Editor).backStep},
-		{"yan.guide.restart", "学习：重新开始这一课", (*Editor).restartLesson},
-		{"yan.guide.leave", "学习：离开练习文件夹，回到原来的文件夹", (*Editor).leavePracticeFolder},
-		{"yan.guide.dismissOffer", "学习：不再提示功能导览", (*Editor).dismissGuideOffer},
-		{"yan.project.customize", "自定义项目标识与颜色…", (*Editor).customizeProject},
-		{"workbench.action.positionPanelBottom", "终端面板放在底部", func(e *Editor) error { return e.setPanelPosition("") }},
-		{"workbench.action.positionPanelLeft", "终端面板放在左侧", func(e *Editor) error { return e.setPanelPosition("left") }},
-		{"workbench.action.positionPanelRight", "终端面板放在右侧", func(e *Editor) error { return e.setPanelPosition("right") }},
-		{"yan.config.importVSCode", "导入 VS Code / Cursor 的设置和快捷键", (*Editor).importVSCode},
-		{"yan.config.importSettingsFile", "从文件导入设置（settings.json）", (*Editor).importSettingsFile},
-		{"view.terminalLockRight", "终端：移到右侧锁定列", (*Editor).moveTerminalToLockedRight},
-		{"workbench.action.nextEditor", "打开下一个编辑器", func(e *Editor) error { return e.cycleTab(1) }},
-		{"workbench.action.previousEditor", "打开上一个编辑器", func(e *Editor) error { return e.cycleTab(-1) }},
-		{"workbench.action.splitEditor", "向右拆分编辑器", (*Editor).splitRight},
-		{"workbench.action.focusNextGroup", "聚焦到下一列", func(e *Editor) error { return e.focusColumnBy(1) }},
-		{"workbench.action.focusPreviousGroup", "聚焦到上一列", func(e *Editor) error { return e.focusColumnBy(-1) }},
-		{"workbench.action.moveEditorToNextGroup", "把编辑器移到下一列", func(e *Editor) error { return e.moveTabBy(1) }},
-		{"workbench.action.moveEditorToPreviousGroup", "把编辑器移到上一列", func(e *Editor) error { return e.moveTabBy(-1) }},
-		{"workbench.action.keepEditor", "保留编辑器（预览标签转正）", func(e *Editor) error {
+		{"workbench.action.closeEditorsInGroup", i18n.T("Close All Editors in This Column"), func(e *Editor) error { return e.closeTabsIn(e.column(), nil) }},
+		{"workbench.action.reopenClosedEditor", i18n.T("Reopen Closed Editor"), (*Editor).reopenClosed},
+		{"view.lockColumn", i18n.T("Lock / Unlock This Column"), (*Editor).toggleColumnLock},
+		{"yan.guide.open", i18n.T("Learn: Feature Tour"), (*Editor).openGuide},
+		{"yan.guide.skip", i18n.T("Learn: Skip This Step"), (*Editor).skipStep},
+		{"yan.guide.nextTip", i18n.T("Learn: Next Tip"), (*Editor).nextTip},
+		{"yan.guide.reset", i18n.T("Learn: Reset Lesson Progress"), (*Editor).resetGuide},
+		{"yan.guide.back", i18n.T("Learn: Previous Step"), (*Editor).backStep},
+		{"yan.guide.restart", i18n.T("Learn: Restart Lesson"), (*Editor).restartLesson},
+		{"yan.guide.leave", i18n.T("Learn: Leave Practice Folder"), (*Editor).leavePracticeFolder},
+		{"yan.guide.dismissOffer", i18n.T("Learn: Dismiss Tour Offer"), (*Editor).dismissGuideOffer},
+		{"yan.project.customize", i18n.T("Customize Project Badge and Color…"), (*Editor).customizeProject},
+		{"workbench.action.positionPanelBottom", i18n.T("Terminal Panel at the Bottom"), func(e *Editor) error { return e.setPanelPosition("") }},
+		{"workbench.action.positionPanelLeft", i18n.T("Terminal Panel on the Left"), func(e *Editor) error { return e.setPanelPosition("left") }},
+		{"workbench.action.positionPanelRight", i18n.T("Terminal Panel on the Right"), func(e *Editor) error { return e.setPanelPosition("right") }},
+		{"yan.config.importVSCode", i18n.T("Import Settings and Shortcuts from VS Code / Cursor"), (*Editor).importVSCode},
+		{"yan.config.importSettingsFile", i18n.T("Import Settings from File (settings.json)"), (*Editor).importSettingsFile},
+		{"view.terminalLockRight", i18n.T("Terminal: Move to the Locked Column on the Right"), (*Editor).moveTerminalToLockedRight},
+		{"workbench.action.nextEditor", i18n.T("Open Next Editor"), func(e *Editor) error { return e.cycleTab(1) }},
+		{"workbench.action.previousEditor", i18n.T("Open Previous Editor"), func(e *Editor) error { return e.cycleTab(-1) }},
+		{"workbench.action.splitEditor", i18n.T("Split Editor Right"), (*Editor).splitRight},
+		{"workbench.action.focusNextGroup", i18n.T("Focus Next Column"), func(e *Editor) error { return e.focusColumnBy(1) }},
+		{"workbench.action.focusPreviousGroup", i18n.T("Focus Previous Column"), func(e *Editor) error { return e.focusColumnBy(-1) }},
+		{"workbench.action.moveEditorToNextGroup", i18n.T("Move Editor to Next Column"), func(e *Editor) error { return e.moveTabBy(1) }},
+		{"workbench.action.moveEditorToPreviousGroup", i18n.T("Move Editor to Previous Column"), func(e *Editor) error { return e.moveTabBy(-1) }},
+		{"workbench.action.keepEditor", i18n.T("Keep Editor (Pin the Preview Tab)"), func(e *Editor) error {
 			if t := e.cur(); t != nil {
 				e.keep(t)
 			}
 			return nil
 		}},
-		{"workbench.files.action.refreshFilesExplorer", "刷新资源管理器", func(e *Editor) error {
+		{"workbench.files.action.refreshFilesExplorer", i18n.T("Refresh Explorer"), func(e *Editor) error {
 			e.checkDisk()
 			e.reindex()
 			return nil
 		}},
-		{"workbench.files.action.showActiveFileInExplorer", "在资源管理器中显示当前文件", func(e *Editor) error {
+		{"workbench.files.action.showActiveFileInExplorer", i18n.T("Reveal Current File in Explorer"), func(e *Editor) error {
 			if e.ws == nil {
-				return errors.New("没有打开文件夹")
+				return errors.New(i18n.T("No folder open"))
 			}
 			e.sidebar, e.area = true, areaTree
 			e.revealInTree()
 			return nil
 		}},
-		{"yan.config.open", "打开用户配置文件", (*Editor).openConfig},
-		{cmdOpenKeybindings, "首选项：打开键盘快捷方式（keybindings.json）", (*Editor).openKeybindings},
-		{"yan.toggleThemeEffects", "主题：切换装饰效果", (*Editor).toggleThemeEffects},
-		{"workbench.action.selectTheme", "首选项：颜色主题…", (*Editor).openThemePicker},
-		{"yan.theme.mayoi", "主题：Mayoi", func(e *Editor) error { return e.setTheme("") }},
-		{"yan.theme.matrix", "主题：The Matrix", func(e *Editor) error { return e.setTheme("matrix") }},
-		{"yan.theme.claude", "主题：Claude", func(e *Editor) error { return e.setTheme("claude") }},
-		{"yan.appearance.system", "外观：跟随系统", func(e *Editor) error { return e.setAppearance("") }},
-		{"yan.appearance.light", "外观：浅色", func(e *Editor) error { return e.setAppearance("light") }},
-		{"yan.appearance.dark", "外观：深色", func(e *Editor) error { return e.setAppearance("dark") }},
-		{"yan.font.family", "字体：选择代码字体…", (*Editor).chooseFont},
-		{"yan.font.size", "字体：代码字号…", (*Editor).chooseFontSize},
-		{"yan.font.lineHeight", "字体：行高…", (*Editor).chooseLineHeight},
-		{"workbench.action.zoomIn", "放大", func(e *Editor) error { return e.zoom(1) }},
-		{"workbench.action.zoomOut", "缩小", func(e *Editor) error { return e.zoom(-1) }},
-		{"workbench.action.zoomReset", "重置缩放", func(e *Editor) error { return e.zoom(0) }},
-		{"workbench.action.toggleAutoSave", "切换自动保存", (*Editor).toggleAutoSave},
-		{"workbench.action.findInFiles", "在文件中搜索", func(e *Editor) error { return e.showSearch(false) }},
-		{"workbench.action.replaceInFiles", "在文件中替换", func(e *Editor) error { return e.showSearch(true) }},
-		{"workbench.view.search", "显示搜索", func(e *Editor) error { return e.showSearch(false) }},
-		{"search.action.replaceAll", "搜索：全部替换", func(e *Editor) error { return e.replaceSearch(true) }},
-		{"workbench.view.scm", "显示源代码管理", func(e *Editor) error {
+		{cmdOpenSettings, i18n.T("Preferences: Open Settings"), (*Editor).openSettings},
+		{"yan.settings.language", i18n.T("Preferences: Interface Language…"), (*Editor).openSettings},
+		{"yan.config.open", i18n.T("Open User Configuration File"), (*Editor).openConfig},
+		{cmdOpenKeybindings, i18n.T("Preferences: Open Keyboard Shortcuts (keybindings.json)"), (*Editor).openKeybindings},
+		{"yan.toggleThemeEffects", i18n.T("Theme: Toggle Decorations"), (*Editor).toggleThemeEffects},
+		{"workbench.action.selectTheme", i18n.T("Preferences: Color Theme…"), (*Editor).openThemePicker},
+		{"yan.theme.mayoi", i18n.T("Theme: Mayoi"), func(e *Editor) error { return e.setTheme("") }},
+		{"yan.theme.matrix", i18n.T("Theme: The Matrix"), func(e *Editor) error { return e.setTheme("matrix") }},
+		{"yan.theme.claude", i18n.T("Theme: Claude"), func(e *Editor) error { return e.setTheme("claude") }},
+		{"yan.appearance.system", i18n.T("Appearance: Follow System"), func(e *Editor) error { return e.setAppearance("") }},
+		{"yan.appearance.light", i18n.T("Appearance: Light"), func(e *Editor) error { return e.setAppearance("light") }},
+		{"yan.appearance.dark", i18n.T("Appearance: Dark"), func(e *Editor) error { return e.setAppearance("dark") }},
+		{"yan.font.family", i18n.T("Font: Select Code Font…"), (*Editor).chooseFont},
+		{"yan.font.size", i18n.T("Font: Code Font Size…"), (*Editor).chooseFontSize},
+		{"yan.font.lineHeight", i18n.T("Font: Line Height…"), (*Editor).chooseLineHeight},
+		{"workbench.action.zoomIn", i18n.T("Zoom In"), func(e *Editor) error { return e.zoom(1) }},
+		{"workbench.action.zoomOut", i18n.T("Zoom Out"), func(e *Editor) error { return e.zoom(-1) }},
+		{"workbench.action.zoomReset", i18n.T("Reset Zoom"), func(e *Editor) error { return e.zoom(0) }},
+		{"workbench.action.toggleAutoSave", i18n.T("Toggle Auto Save"), (*Editor).toggleAutoSave},
+		{"workbench.action.findInFiles", i18n.T("Search in Files"), func(e *Editor) error { return e.showSearch(false) }},
+		{"workbench.action.replaceInFiles", i18n.T("Replace in Files"), func(e *Editor) error { return e.showSearch(true) }},
+		{"workbench.view.search", i18n.T("Show Search"), func(e *Editor) error { return e.showSearch(false) }},
+		{"search.action.replaceAll", i18n.T("Search: Replace All"), func(e *Editor) error { return e.replaceSearch(true) }},
+		{"workbench.view.scm", i18n.T("Show Source Control"), func(e *Editor) error {
 			if e.ws == nil {
-				return errors.New("没有打开文件夹")
+				return errors.New(i18n.T("No folder open"))
 			}
 			e.showSide(sideSCM)
 			return nil
 		}},
-		{"git.commit", "Git：提交", func(e *Editor) error { return e.commit(false) }},
-		{"git.commitAndPush", "Git：提交并推送", func(e *Editor) error { return e.commit(true) }},
-		{"git.commitAmend", "Git：修改上次提交", (*Editor).startAmend},
-		{"git.undoCommit", "Git：撤销上次提交", (*Editor).undoCommit},
-		{"editor.action.dirtydiff.next", "Git：看下一处改动", func(e *Editor) error { return e.stepPeek(1) }},
-		{"editor.action.dirtydiff.previous", "Git：看上一处改动", func(e *Editor) error { return e.stepPeek(-1) }},
-		{"git.revertSelectedRanges", "Git：还原这处改动", (*Editor).revertHunk},
-		{"review.comment", "评审：添加或编辑意见", (*Editor).addReviewComment},
-		{"review.save", "评审：保存意见", (*Editor).saveReview},
-		{"review.cancel", "评审：取消编辑", (*Editor).cancelReview},
-		{"review.delete", "评审：删除意见", (*Editor).deleteReview},
-		{"review.clear", "评审：清空意见", (*Editor).clearReview},
-		{"review.undo", "评审：撤销删除或清空", (*Editor).undoReview},
-		{"review.copy", "评审：复制全部意见", (*Editor).copyReview},
-		{"review.copyExcerpt", "评审：复制代码片段与位置", (*Editor).copyReviewExcerpt},
-		{"review.send", "评审：发送意见到终端", (*Editor).sendReview},
-		{"review.list", "评审：查看全部意见", (*Editor).reviewList},
-		{"review.next", "评审：下一条意见", func(e *Editor) error { return e.stepReview(1) }},
-		{"review.previous", "评审：上一条意见", func(e *Editor) error { return e.stepReview(-1) }},
-		{"yan.git.exportPatch", "Git：导出提交补丁…", func(e *Editor) error {
+		{"git.commit", i18n.T("Git: Commit"), func(e *Editor) error { return e.commit(false) }},
+		{"git.commitAndPush", i18n.T("Git: Commit and Push"), func(e *Editor) error { return e.commit(true) }},
+		{"git.commitAmend", i18n.T("Git: Amend Last Commit"), (*Editor).startAmend},
+		{"git.undoCommit", i18n.T("Git: Undo Last Commit"), (*Editor).undoCommit},
+		{"editor.action.dirtydiff.next", i18n.T("Git: View Next Change"), func(e *Editor) error { return e.stepPeek(1) }},
+		{"editor.action.dirtydiff.previous", i18n.T("Git: View Previous Change"), func(e *Editor) error { return e.stepPeek(-1) }},
+		{"git.revertSelectedRanges", i18n.T("Git: Revert This Change"), (*Editor).revertHunk},
+		{"review.comment", i18n.T("Review: Add or Edit Comment"), (*Editor).addReviewComment},
+		{"review.save", i18n.T("Review: Save Comment"), (*Editor).saveReview},
+		{"review.cancel", i18n.T("Review: Cancel Editing"), (*Editor).cancelReview},
+		{"review.delete", i18n.T("Review: Delete Comment"), (*Editor).deleteReview},
+		{"review.clear", i18n.T("Review: Clear Comments"), (*Editor).clearReview},
+		{"review.undo", i18n.T("Review: Undo Delete or Clear"), (*Editor).undoReview},
+		{"review.copy", i18n.T("Review: Copy All Comments"), (*Editor).copyReview},
+		{"review.copyExcerpt", i18n.T("Review: Copy Code Excerpt and Location"), (*Editor).copyReviewExcerpt},
+		{"review.send", i18n.T("Review: Send Comments to Terminal"), (*Editor).sendReview},
+		{"review.list", i18n.T("Review: Show All Comments"), (*Editor).reviewList},
+		{"review.next", i18n.T("Review: Next Comment"), func(e *Editor) error { return e.stepReview(1) }},
+		{"review.previous", i18n.T("Review: Previous Comment"), func(e *Editor) error { return e.stepReview(-1) }},
+		{"yan.git.exportPatch", i18n.T("Git: Export Commit Patch…"), func(e *Editor) error {
 			return e.commitTarget(func(e *Editor, c git.Commit) error { return e.commitPatch(c, true) })
 		}},
-		{"yan.git.copyPatch", "Git：复制提交改动补丁", func(e *Editor) error {
+		{"yan.git.copyPatch", i18n.T("Git: Copy Commit Patch"), func(e *Editor) error {
 			return e.commitTarget(func(e *Editor, c git.Commit) error { return e.commitPatch(c, false) })
 		}},
-		{"yan.git.compareHeadToCommit", "Git：比较 HEAD → 选中提交", func(e *Editor) error {
+		{"yan.git.compareHeadToCommit", i18n.T("Git: Compare HEAD → Selected Commit"), func(e *Editor) error {
 			return e.commitTarget(func(e *Editor, c git.Commit) error { return e.compareRevisions("HEAD", c.Hash) })
 		}},
-		{"yan.git.compareCommitToHead", "Git：比较选中提交 → HEAD", func(e *Editor) error {
+		{"yan.git.compareCommitToHead", i18n.T("Git: Compare Selected Commit → HEAD"), func(e *Editor) error {
 			return e.commitTarget(func(e *Editor, c git.Commit) error { return e.compareRevisions(c.Hash, "HEAD") })
 		}},
-		{"yan.git.selectCompare", "Git：选中提交作为比较起点", func(e *Editor) error {
+		{"yan.git.selectCompare", i18n.T("Git: Select Commit as Comparison Start"), func(e *Editor) error {
 			return e.commitTarget(func(e *Editor, c git.Commit) error { return e.selectComparison(c) })
 		}},
-		{"yan.git.compareSelected", "Git：与选定起点比较", func(e *Editor) error {
+		{"yan.git.compareSelected", i18n.T("Git: Compare with Selected Start"), func(e *Editor) error {
 			return e.commitTarget(func(e *Editor, c git.Commit) error { return e.compareSelectedCommit(c) })
 		}},
-		{"yan.git.openCommitRemote", "Git：在远端打开提交", func(e *Editor) error {
+		{"yan.git.openCommitRemote", i18n.T("Git: Open Commit on Remote"), func(e *Editor) error {
 			return e.commitTarget(func(e *Editor, c git.Commit) error { return e.commitRemote(c) })
 		}},
-		{"git.toggleCommitFiles", "Git：显示或隐藏提交文件列表", (*Editor).toggleCommitFiles},
-		{"git.openAllChanges", "Git：打开所有改动", (*Editor).openAllChanges},
-		{"toggle.diff.renderSideBySide", "改动视图：换排法（自动、并排、一栏）", (*Editor).toggleDiffLayout},
-		{"yan.diff.whitespace", "改动视图：比较空白（全部、忽略行尾、忽略全部、忽略空行）…", (*Editor).chooseDiffWhitespace},
-		{"yan.diff.compareFiles", "比较两个文件…", (*Editor).compareFiles},
-		{"yan.diff.editBeside", "改动视图：在旁边编辑工作区这一边（i）", func(e *Editor) error {
+		{"git.toggleCommitFiles", i18n.T("Git: Show or Hide the Commit's File List"), (*Editor).toggleCommitFiles},
+		{"git.openAllChanges", i18n.T("Git: Open All Changes"), (*Editor).openAllChanges},
+		{"toggle.diff.renderSideBySide", i18n.T("Diff View: Change Layout (Auto, Side by Side, Inline)"), (*Editor).toggleDiffLayout},
+		{"yan.diff.whitespace", i18n.T("Diff View: Compare Whitespace (All, Ignore Line Ends, Ignore All, Ignore Blank Lines)…"), (*Editor).chooseDiffWhitespace},
+		{"yan.diff.compareFiles", i18n.T("Compare Two Files…"), (*Editor).compareFiles},
+		{"yan.diff.editBeside", i18n.T("Diff View: Edit the Working Tree Side Alongside (i)"), func(e *Editor) error {
 			if t := e.cur(); t != nil && t.diff != nil {
 				return e.diffEditBeside(t)
 			}
-			return errors.New("先打开一个改动视图")
+			return errors.New(i18n.T("Open a diff view first"))
 		}},
-		{"yan.diff.toggleSyncScroll", "改动视图：并排两边一起滚／各自滚", (*Editor).toggleSyncScroll},
-		{"yan.diff.toggleAlignedRows", "改动视图：并排两边的行对齐／各自排", (*Editor).toggleAlignedRows},
-		{"yan.diff.toggleFullFiles", "改动视图：显示整个文件／只显示改动附近", (*Editor).toggleFullFiles},
-		{"yan.merge.open", "合并：打开三方合并（冲突文件）", (*Editor).openMergeCurrent},
-		{"yan.merge.acceptOurs", "合并：这处冲突用我们的", func(e *Editor) error {
+		{"yan.diff.toggleSyncScroll", i18n.T("Diff View: Scroll Both Sides Together / Separately"), (*Editor).toggleSyncScroll},
+		{"yan.diff.toggleAlignedRows", i18n.T("Diff View: Align Rows of Both Sides / Lay Out Separately"), (*Editor).toggleAlignedRows},
+		{"yan.diff.toggleFullFiles", i18n.T("Diff View: Show Whole File / Only Near Changes"), (*Editor).toggleFullFiles},
+		{"yan.merge.open", i18n.T("Merge: Open Three-Way Merge (Conflicted File)"), (*Editor).openMergeCurrent},
+		{"yan.merge.acceptOurs", i18n.T("Merge: Use Ours for This Conflict"), func(e *Editor) error {
 			return e.mergeCommand(func(e *Editor, mv *mergeView, k int) { e.mergeTake(mv, k, false) })
 		}},
-		{"yan.merge.acceptTheirs", "合并：这处冲突用他们的", func(e *Editor) error {
+		{"yan.merge.acceptTheirs", i18n.T("Merge: Use Theirs for This Conflict"), func(e *Editor) error {
 			return e.mergeCommand(func(e *Editor, mv *mergeView, k int) { e.mergeTake(mv, k, true) })
 		}},
-		{"yan.merge.ignoreOurs", "合并：这处冲突忽略我们的", func(e *Editor) error {
+		{"yan.merge.ignoreOurs", i18n.T("Merge: Ignore Ours for This Conflict"), func(e *Editor) error {
 			return e.mergeCommand(func(e *Editor, mv *mergeView, k int) { e.mergeIgnore(mv, k, false) })
 		}},
-		{"yan.merge.ignoreTheirs", "合并：这处冲突忽略他们的", func(e *Editor) error {
+		{"yan.merge.ignoreTheirs", i18n.T("Merge: Ignore Theirs for This Conflict"), func(e *Editor) error {
 			return e.mergeCommand(func(e *Editor, mv *mergeView, k int) { e.mergeIgnore(mv, k, true) })
 		}},
-		{"yan.merge.resolveOurs", "合并：全部冲突用我们的", func(e *Editor) error {
+		{"yan.merge.resolveOurs", i18n.T("Merge: Use Ours for All Conflicts"), func(e *Editor) error {
 			return e.mergeCommand(func(e *Editor, mv *mergeView, _ int) { e.mergeResolveUsing(mv, false) })
 		}},
-		{"yan.merge.resolveTheirs", "合并：全部冲突用他们的", func(e *Editor) error {
+		{"yan.merge.resolveTheirs", i18n.T("Merge: Use Theirs for All Conflicts"), func(e *Editor) error {
 			return e.mergeCommand(func(e *Editor, mv *mergeView, _ int) { e.mergeResolveUsing(mv, true) })
 		}},
-		{"yan.merge.nextConflict", "合并：下一处冲突", func(e *Editor) error { return e.mergeStepConflict(1) }},
-		{"yan.merge.previousConflict", "合并：上一处冲突", func(e *Editor) error { return e.mergeStepConflict(-1) }},
-		{"yan.merge.markResolved", "合并：标记为已解决（保存并暂存）", (*Editor).mergeMarkResolved},
-		{"yan.merge.restoreConflict", "合并：恢复成冲突…", (*Editor).mergeRestore},
-		{"yan.merge.saveAndClose", "合并：保存并关闭三方合并", (*Editor).mergeClose},
-		{"yan.merge.files", "合并：冲突文件列表…", (*Editor).showMergeFiles},
-		{"yan.merge.applyChanges", "合并：应用两边不冲突的改动", func(e *Editor) error { return e.mergeApplySide(0) }},
-		{"yan.merge.applyOursChanges", "合并：应用我们这边不冲突的改动", func(e *Editor) error { return e.mergeApplySide(1) }},
-		{"yan.merge.applyTheirsChanges", "合并：应用他们那边不冲突的改动", func(e *Editor) error { return e.mergeApplySide(2) }},
-		{"yan.merge.toggleAutoApply", "合并：打开时自动应用不冲突的改动（开关）", (*Editor).toggleMergeAutoApply},
-		{"yan.merge.applyAndNext", "合并：应用（标记已解决）并打开下一个冲突文件", (*Editor).mergeApplyAndNext},
-		{"yan.diff.revertBlock", "改动视图：还原这处改动（比较两个文件时把左边写进右边）", func(e *Editor) error { return e.diffBlockAction(blockRevert) }},
-		{"yan.diff.appendBlock", "改动视图：在这处改动后追加对侧的行", func(e *Editor) error { return e.diffBlockAction(blockAppend) }},
-		{"yan.diff.acceptRight", "比较两个文件：把右边这处写进左边", func(e *Editor) error { return e.diffBlockAction(blockAcceptRight) }},
-		{"yan.diff.highlight", "改动视图：标出改动的方式（按词、按字、整行）…", (*Editor).chooseDiffHighlight},
-		{"yan.diff.context", "改动视图：上下文行数（0～10）…", (*Editor).chooseDiffContext},
-		{"workbench.action.compareEditor.nextChange", "改动视图：下一处改动", func(e *Editor) error { return e.diffTabNav((*Editor).diffStepChange, 1) }},
-		{"workbench.action.compareEditor.previousChange", "改动视图：上一处改动", func(e *Editor) error { return e.diffTabNav((*Editor).diffStepChange, -1) }},
-		{"yan.diff.nextFile", "改动视图：下一个文件", func(e *Editor) error { return e.diffTabNav((*Editor).diffStepFile, 1) }},
-		{"yan.diff.previousFile", "改动视图：上一个文件", func(e *Editor) error { return e.diffTabNav((*Editor).diffStepFile, -1) }},
-		{"selectForCompare", "资源管理器：选为比较对象", (*Editor).selectForCompare},
-		{"compareFiles", "资源管理器：与已选文件比较", (*Editor).compareWithSelected},
-		{"git.init", "Git：初始化仓库", (*Editor).initRepo},
-		{"yan.scm.moreCommits", "Git：显示更多提交", (*Editor).moreCommits},
-		{"yan.scm.chooseRepository", "Git：选择仓库…", (*Editor).chooseRepository},
-		{"yan.scm.refreshRepositories", "Git：刷新仓库列表", func(e *Editor) error { e.gitChanged(); return nil }},
-		{"yan.scm.toggleTree", "Git：以树的形式查看改动", (*Editor).toggleSCMTree},
-		{"yan.scm.commitActions", "Git：对选中的提交…（检出、合并、变基、重置、还原、拣选）", func(e *Editor) error {
+		{"yan.merge.nextConflict", i18n.T("Merge: Next Conflict"), func(e *Editor) error { return e.mergeStepConflict(1) }},
+		{"yan.merge.previousConflict", i18n.T("Merge: Previous Conflict"), func(e *Editor) error { return e.mergeStepConflict(-1) }},
+		{"yan.merge.markResolved", i18n.T("Merge: Mark as Resolved (Save and Stage)"), (*Editor).mergeMarkResolved},
+		{"yan.merge.restoreConflict", i18n.T("Merge: Restore Conflict…"), (*Editor).mergeRestore},
+		{"yan.merge.saveAndClose", i18n.T("Merge: Save and Close Three-Way Merge"), (*Editor).mergeClose},
+		{"yan.merge.files", i18n.T("Merge: Conflicted Files…"), (*Editor).showMergeFiles},
+		{"yan.merge.applyChanges", i18n.T("Merge: Apply Non-Conflicting Changes from Both Sides"), func(e *Editor) error { return e.mergeApplySide(0) }},
+		{"yan.merge.applyOursChanges", i18n.T("Merge: Apply Our Non-Conflicting Changes"), func(e *Editor) error { return e.mergeApplySide(1) }},
+		{"yan.merge.applyTheirsChanges", i18n.T("Merge: Apply Their Non-Conflicting Changes"), func(e *Editor) error { return e.mergeApplySide(2) }},
+		{"yan.merge.toggleAutoApply", i18n.T("Merge: Apply Non-Conflicting Changes on Open (Toggle)"), (*Editor).toggleMergeAutoApply},
+		{"yan.merge.applyAndNext", i18n.T("Merge: Apply (Mark Resolved) and Open Next Conflicted File"), (*Editor).mergeApplyAndNext},
+		{"yan.diff.revertBlock", i18n.T("Diff View: Revert This Change (Comparing Files: Write Left into Right)"), func(e *Editor) error { return e.diffBlockAction(blockRevert) }},
+		{"yan.diff.appendBlock", i18n.T("Diff View: Append the Other Side's Lines After This Change"), func(e *Editor) error { return e.diffBlockAction(blockAppend) }},
+		{"yan.diff.acceptRight", i18n.T("Compare Files: Write This Right-Side Change into the Left"), func(e *Editor) error { return e.diffBlockAction(blockAcceptRight) }},
+		{"yan.diff.highlight", i18n.T("Diff View: How Changes Are Highlighted (Word, Character, Line)…"), (*Editor).chooseDiffHighlight},
+		{"yan.diff.context", i18n.T("Diff View: Context Lines (0–10)…"), (*Editor).chooseDiffContext},
+		{"workbench.action.compareEditor.nextChange", i18n.T("Diff View: Next Change"), func(e *Editor) error { return e.diffTabNav((*Editor).diffStepChange, 1) }},
+		{"workbench.action.compareEditor.previousChange", i18n.T("Diff View: Previous Change"), func(e *Editor) error { return e.diffTabNav((*Editor).diffStepChange, -1) }},
+		{"yan.diff.nextFile", i18n.T("Diff View: Next File"), func(e *Editor) error { return e.diffTabNav((*Editor).diffStepFile, 1) }},
+		{"yan.diff.previousFile", i18n.T("Diff View: Previous File"), func(e *Editor) error { return e.diffTabNav((*Editor).diffStepFile, -1) }},
+		{"selectForCompare", i18n.T("Explorer: Select for Compare"), (*Editor).selectForCompare},
+		{"compareFiles", i18n.T("Explorer: Compare with Selected"), (*Editor).compareWithSelected},
+		{"git.init", i18n.T("Git: Initialize Repository"), (*Editor).initRepo},
+		{"yan.scm.moreCommits", i18n.T("Git: Show More Commits"), (*Editor).moreCommits},
+		{"yan.scm.chooseRepository", i18n.T("Git: Select Repository…"), (*Editor).chooseRepository},
+		{"yan.scm.refreshRepositories", i18n.T("Git: Refresh Repository List"), func(e *Editor) error { e.gitChanged(); return nil }},
+		{"yan.scm.toggleTree", i18n.T("Git: View Changes as Tree"), (*Editor).toggleSCMTree},
+		{"yan.scm.commitActions", i18n.T("Git: Selected Commit… (Checkout, Merge, Rebase, Reset, Revert, Cherry-Pick)"), func(e *Editor) error {
 			if i, ok := e.scmSelectedCommit(); ok {
 				return e.openCommit(i)
 			}
-			return errors.New("先在源代码管理的提交历史里选中一个提交")
+			return errors.New(i18n.T("Select a commit in Source Control's history first"))
 		}},
-		{"git.stageSelectedRanges", "Git：暂存这处改动", (*Editor).stageHunk},
-		{"yan.hunk.close", "Git：关掉改动的框", func(e *Editor) error { e.closePeek(); return nil }},
-		{"yan.scm.toggleCommits", "Git：折起或展开提交历史", func(e *Editor) error { e.SCMToggleSection("commits"); return nil }},
-		{"yan.scm.toggleRepositoryPanel", "Git：显示或隐藏仓库面板（分支、远程）", (*Editor).toggleRepoPanel},
-		{"yan.scm.toggleAllBranches", "Git：提交历史显示所有分支", (*Editor).toggleAllBranches},
-		{"yan.git.continueOp", "Git：继续合并、变基、拣选或还原", (*Editor).continueOp},
-		{"yan.git.abortOp", "Git：中止合并、变基、拣选或还原", (*Editor).abortOp},
-		{"git.stage", "Git：暂存当前文件", func(e *Editor) error { return e.stageCurrent(false) }},
-		{"git.unstage", "Git：取消暂存当前文件", func(e *Editor) error { return e.stageCurrent(true) }},
-		{"git.stageAll", "Git：暂存全部更改", func(e *Editor) error {
+		{"git.stageSelectedRanges", i18n.T("Git: Stage This Change"), (*Editor).stageHunk},
+		{"yan.hunk.close", i18n.T("Git: Close the Change Peek"), func(e *Editor) error { e.closePeek(); return nil }},
+		{"yan.scm.toggleCommits", i18n.T("Git: Fold or Unfold Commit History"), func(e *Editor) error { e.SCMToggleSection("commits"); return nil }},
+		{"yan.scm.toggleRepositoryPanel", i18n.T("Git: Show or Hide Repository Panel (Branches, Remotes)"), (*Editor).toggleRepoPanel},
+		{"yan.scm.toggleAllBranches", i18n.T("Git: Show All Branches in Commit History"), (*Editor).toggleAllBranches},
+		{"yan.git.continueOp", i18n.T("Git: Continue Merge, Rebase, Cherry-Pick or Revert"), (*Editor).continueOp},
+		{"yan.git.abortOp", i18n.T("Git: Abort Merge, Rebase, Cherry-Pick or Revert"), (*Editor).abortOp},
+		{"git.stage", i18n.T("Git: Stage Current File"), func(e *Editor) error { return e.stageCurrent(false) }},
+		{"git.unstage", i18n.T("Git: Unstage Current File"), func(e *Editor) error { return e.stageCurrent(true) }},
+		{"git.stageAll", i18n.T("Git: Stage All Changes"), func(e *Editor) error {
 			if e.repository().git.repo == nil {
-				return errors.New("不在 git 仓库里")
+				return errors.New(i18n.T("Not in a Git repository"))
 			}
 			return e.stage([]string{e.repository().git.repo.Root}, false)
 		}},
-		{"git.unstageAll", "Git：取消暂存全部", func(e *Editor) error {
+		{"git.unstageAll", i18n.T("Git: Unstage All"), func(e *Editor) error {
 			if e.repository().git.repo == nil {
-				return errors.New("不在 git 仓库里")
+				return errors.New(i18n.T("Not in a Git repository"))
 			}
 			return e.stage([]string{e.repository().git.repo.Root}, true)
 		}},
-		{"git.push", "Git：推送", (*Editor).push},
-		{"git.pull", "Git：拉取", (*Editor).pull},
-		{"git.sync", "Git：同步（拉取后推送；没有上游时发布分支）", (*Editor).gitSync},
-		{"git.fetch", "Git：抓取", (*Editor).fetch},
-		{"git.checkout", "Git：切换分支…", (*Editor).openBranchPicker},
-		{"git.renameBranch", "Git：重命名当前分支…", (*Editor).renameBranch},
-		{"git.deleteBranch", "Git：删除本地分支…", (*Editor).deleteBranch},
-		{"git.addRemote", "Git：添加远程仓库…", (*Editor).addRemote},
-		{"git.removeRemote", "Git：删除远程仓库…", (*Editor).removeRemote},
-		{"yan.git.setRemoteURL", "Git：修改远程仓库地址…", (*Editor).setRemoteURL},
-		{"yan.git.pruneRemote", "Git：清理远程已删除的分支…", (*Editor).pruneRemote},
-		{"git.refresh", "Git：刷新", func(e *Editor) error { e.gitChanged(); return nil }},
+		{"git.push", i18n.T("Git: Push"), (*Editor).push},
+		{"git.pull", i18n.T("Git: Pull"), (*Editor).pull},
+		{"git.sync", i18n.T("Git: Sync (Pull then Push; Publish the Branch without Upstream)"), (*Editor).gitSync},
+		{"git.fetch", i18n.T("Git: Fetch"), (*Editor).fetch},
+		{"git.checkout", i18n.T("Git: Switch Branch…"), (*Editor).openBranchPicker},
+		{"git.renameBranch", i18n.T("Git: Rename Current Branch…"), (*Editor).renameBranch},
+		{"git.deleteBranch", i18n.T("Git: Delete Local Branch…"), (*Editor).deleteBranch},
+		{"git.addRemote", i18n.T("Git: Add Remote…"), (*Editor).addRemote},
+		{"git.removeRemote", i18n.T("Git: Remove Remote…"), (*Editor).removeRemote},
+		{"yan.git.setRemoteURL", i18n.T("Git: Change Remote URL…"), (*Editor).setRemoteURL},
+		{"yan.git.pruneRemote", i18n.T("Git: Prune Deleted Remote Branches…"), (*Editor).pruneRemote},
+		{"git.refresh", i18n.T("Git: Refresh"), func(e *Editor) error { e.gitChanged(); return nil }},
 	}
 	for _, c := range cmds {
 		e.Register(Command{ID: c.id, Title: c.title, Run: c.run})
@@ -659,7 +663,7 @@ func (e *Editor) hintOr(id, fallback string) string {
 
 func (e *Editor) toggleSidebar() error {
 	if e.ws == nil {
-		return errors.New("没有打开文件夹：用 yan 目录 启动才有资源管理器")
+		return errors.New(i18n.T("No folder open: start with \"yan folder\" to get the Explorer"))
 	}
 	e.sidebar = !e.sidebar
 	if !e.sidebar {
@@ -670,7 +674,7 @@ func (e *Editor) toggleSidebar() error {
 
 func (e *Editor) focusExplorer() error {
 	if e.ws == nil {
-		return errors.New("没有打开文件夹：用 yan 目录 启动才有资源管理器")
+		return errors.New(i18n.T("No folder open: start with \"yan folder\" to get the Explorer"))
 	}
 	e.showSide(sideExplorer) // from Search or Source Control too: the sidebar shows the Explorer
 	e.revealInTree()
@@ -696,13 +700,26 @@ func (e *Editor) openConfig() error {
 		return err
 	}
 	if t := e.cur(); t != nil && t.doc.buf.Snapshot().Len() == 0 {
-		t.doc.buf.Insert(configTemplate, edit.OriginCommand)
-		e.status = "新的配置文件：保存后生效（下次启动时读取）"
+		t.doc.buf.Insert(configTemplate(i18n.Current()), edit.OriginCommand)
+		e.status = i18n.T("New configuration file: takes effect when saved (read again at next launch)")
 	}
 	return nil
 }
 
-const configTemplate = `# 砚 yan 的用户配置。所有项都可以省略；项目里的 .yan.toml 会覆盖这里。
+// configTemplate is a new config.toml, its comments in the interface language l.
+func configTemplate(l i18n.Locale) string {
+	if l == i18n.SimplifiedChinese {
+		return configTemplateZh
+	}
+	return configTemplateEn
+}
+
+const configTemplateZh = `# 砚 yan 的用户配置。所有项都可以省略；项目里的 .yan.toml 会覆盖这里。
+
+[ui]
+# 界面语言：system（跟随系统，默认）、zh-Hans（简体中文）、en（English）。
+# 整个应用共用，项目的 .yan.toml 里写了不算；「设置 › 通用」里选过的优先。改了以后重启砚生效。
+# language = "system"
 
 [editor]
 tab_width = 4
@@ -722,6 +739,34 @@ location = "panel"
 # "ctrl+k k" = "editor.action.deleteLines"
 `
 
+const configTemplateEn = `# Yan's user configuration. Every key is optional; a project's .yan.toml overrides these.
+
+[ui]
+# Interface language: system (follow the system, the default), zh-Hans (简体中文), en (English).
+# It is the whole application's: a project's .yan.toml can't set it, and a choice made in
+# Settings › General wins. A change applies when Yan restarts.
+# language = "system"
+
+[editor]
+tab_width = 4
+line_numbers = true
+
+[explorer]
+width = 30
+
+[terminal]
+# panel: the panel; editor: the editor area. A choice saved from the menus wins.
+location = "panel"
+
+# Keys: contexts are global, editor, explorer and overlay; command IDs are VS Code's (see the
+# Command Palette). "mod" is Ctrl in Terminal.app, Cmd or Ctrl in Ghostty, and Cmd in the window
+# version. An empty value unbinds a key.
+# keybindings.json beside this file takes VS Code's format too (Command Palette: Preferences:
+# Open Keyboard Shortcuts) and applies after these.
+[keys.editor]
+# "ctrl+k k" = "editor.action.deleteLines"
+`
+
 // registerMoves 注册所有光标移动命令及其 …Select 版本。
 func registerMoves(e *Editor) {
 	type mv struct {
@@ -729,23 +774,23 @@ func registerMoves(e *Editor) {
 		fn        func(s text.Snapshot, r edit.Range) int
 	}
 	horizontal := []mv{
-		{"cursorLeft", "光标左移", func(s text.Snapshot, r edit.Range) int { return edit.PrevBoundary(s, r.Head) }},
-		{"cursorRight", "光标右移", func(s text.Snapshot, r edit.Range) int { return edit.NextBoundary(s, r.Head) }},
-		{"cursorWordLeft", "按词左移", func(s text.Snapshot, r edit.Range) int { return edit.WordLeft(s, r.Head) }},
-		{"cursorWordEndRight", "按词右移", func(s text.Snapshot, r edit.Range) int { return edit.WordRight(s, r.Head) }},
-		{"cursorHome", "行首", func(s text.Snapshot, r edit.Range) int { return edit.SmartHome(s, r.Head) }},
-		{"cursorEnd", "行尾", func(s text.Snapshot, r edit.Range) int {
+		{"cursorLeft", i18n.T("Cursor Left"), func(s text.Snapshot, r edit.Range) int { return edit.PrevBoundary(s, r.Head) }},
+		{"cursorRight", i18n.T("Cursor Right"), func(s text.Snapshot, r edit.Range) int { return edit.NextBoundary(s, r.Head) }},
+		{"cursorWordLeft", i18n.T("Word Left"), func(s text.Snapshot, r edit.Range) int { return edit.WordLeft(s, r.Head) }},
+		{"cursorWordEndRight", i18n.T("Word Right"), func(s text.Snapshot, r edit.Range) int { return edit.WordRight(s, r.Head) }},
+		{"cursorHome", i18n.T("Line Start"), func(s text.Snapshot, r edit.Range) int { return edit.SmartHome(s, r.Head) }},
+		{"cursorEnd", i18n.T("Line End"), func(s text.Snapshot, r edit.Range) int {
 			_, end := s.LineRange(s.LineAt(r.Head))
 			return end
 		}},
-		{"cursorTop", "文件首", func(text.Snapshot, edit.Range) int { return 0 }},
-		{"cursorBottom", "文件尾", func(s text.Snapshot, _ edit.Range) int { return s.Len() }},
+		{"cursorTop", i18n.T("File Start"), func(text.Snapshot, edit.Range) int { return 0 }},
+		{"cursorBottom", i18n.T("File End"), func(s text.Snapshot, _ edit.Range) int { return s.Len() }},
 	}
 	for _, m := range horizontal {
 		for _, sel := range []bool{false, true} {
 			id, title := m.id, m.title
 			if sel {
-				id, title = id+"Select", title+"并选择"
+				id, title = id+"Select", i18n.F("%s and Select", title)
 			}
 			e.Register(Command{ID: id, Title: title, Hidden: true, Run: func(e *Editor) error {
 				return e.withDoc(func(b *edit.Buffer) {
@@ -767,16 +812,16 @@ func registerMoves(e *Editor) {
 		id, title string
 		lines     func(e *Editor) int
 	}{
-		{"cursorUp", "光标上移", func(*Editor) int { return -1 }},
-		{"cursorDown", "光标下移", func(*Editor) int { return 1 }},
-		{"cursorPageUp", "上一页", func(e *Editor) int { return -max(e.pageLines()-1, 1) }},
-		{"cursorPageDown", "下一页", func(e *Editor) int { return max(e.pageLines()-1, 1) }},
+		{"cursorUp", i18n.T("Cursor Up"), func(*Editor) int { return -1 }},
+		{"cursorDown", i18n.T("Cursor Down"), func(*Editor) int { return 1 }},
+		{"cursorPageUp", i18n.T("Page Up"), func(e *Editor) int { return -max(e.pageLines()-1, 1) }},
+		{"cursorPageDown", i18n.T("Page Down"), func(e *Editor) int { return max(e.pageLines()-1, 1) }},
 	}
 	for _, m := range vertical {
 		for _, sel := range []bool{false, true} {
 			id, title := m.id, m.title
 			if sel {
-				id, title = id+"Select", title+"并选择"
+				id, title = id+"Select", i18n.F("%s and Select", title)
 			}
 			e.Register(Command{ID: id, Title: title, Hidden: true, Run: func(e *Editor) error {
 				return e.withDoc(func(b *edit.Buffer) {
@@ -795,7 +840,7 @@ func registerMoves(e *Editor) {
 func (e *Editor) withDoc(fn func(b *edit.Buffer)) error {
 	t := e.cur()
 	if t == nil {
-		return errors.New("没有打开的文件")
+		return errors.New(i18n.T("No open file"))
 	}
 	e.sync()
 	fn(t.doc.buf)
@@ -807,7 +852,7 @@ func (e *Editor) withDoc(fn func(b *edit.Buffer)) error {
 func (e *Editor) editDoc(fn func(b *edit.Buffer)) error {
 	t := e.cur()
 	if t == nil {
-		return errors.New("没有打开的文件")
+		return errors.New(i18n.T("No open file"))
 	}
 	if !e.writable(t) {
 		return nil
@@ -869,7 +914,7 @@ func (e *Editor) moveVertical(b *edit.Buffer, n int, extend bool) {
 func (e *Editor) save() error {
 	t := e.cur()
 	if t == nil {
-		return errors.New("没有打开的文件")
+		return errors.New(i18n.T("No open file"))
 	}
 	if t.doc.untitled() {
 		return e.saveAs()
@@ -879,7 +924,7 @@ func (e *Editor) save() error {
 	}
 	e.gitChanged()
 	e.keep(t)
-	e.status = "已保存 " + filepath.Base(t.doc.buf.Path())
+	e.status = i18n.F("Saved %s", filepath.Base(t.doc.buf.Path()))
 	if e.isConfigFile(t.doc.buf.Path()) {
 		e.reloadConfig()
 	}
@@ -893,23 +938,21 @@ func (e *Editor) saveDoc(d *document) error {
 		return errUntitled
 	}
 	if d.buf.Snapshot().Meta().ReadOnly {
-		return errors.New("只读文件，不能保存")
+		return errors.New(i18n.T("Read-only file: can't save"))
 	}
 	err := d.buf.Save()
 	if errors.Is(err, edit.ErrConflict) {
 		return e.conflictError(d)
 	}
 	if err != nil {
-		return fmt.Errorf("保存 %s 失败：%w", d.name(), err)
+		return fmt.Errorf(i18n.T("Couldn't save %s: %w"), d.name(), err)
 	}
 	return nil
 }
 
 // conflictError 说明文档和磁盘冲突了、该怎么办。
 func (e *Editor) conflictError(d *document) error {
-	return userError(filepath.Base(d.buf.Path()) + " 在磁盘上被别的程序改过了，没有保存：用「" +
-		e.hintOr(cmdOverwrite, "文件：覆盖磁盘上的版本") + "」写入你的修改，或用「" +
-		e.hintOr(cmdRevert, "文件：还原为磁盘上的版本") + "」放弃你的修改")
+	return userError(i18n.F("%s was changed on disk by another program and was not saved: use \"%s\" to write your changes, or \"%s\" to discard them", filepath.Base(d.buf.Path()), e.hintOr(cmdOverwrite, i18n.T("File: Overwrite the Version on Disk")), e.hintOr(cmdRevert, i18n.T("File: Revert to the Version on Disk"))))
 }
 
 const (
@@ -921,21 +964,21 @@ const (
 func (e *Editor) overwrite() error {
 	t := e.cur()
 	if t == nil {
-		return errors.New("没有打开的文件")
+		return errors.New(i18n.T("No open file"))
 	}
 	d := t.doc
 	if d.untitled() {
 		return e.saveAs()
 	}
 	if d.buf.Snapshot().Meta().ReadOnly {
-		return errors.New("只读文件，不能保存")
+		return errors.New(i18n.T("Read-only file: can't save"))
 	}
 	if err := d.buf.Overwrite(); err != nil {
-		return fmt.Errorf("保存 %s 失败：%w", filepath.Base(d.buf.Path()), err)
+		return fmt.Errorf(i18n.T("Couldn't save %s: %w"), filepath.Base(d.buf.Path()), err)
 	}
 	e.gitChanged()
 	e.keep(t)
-	e.status = "已用编辑器里的内容覆盖 " + filepath.Base(d.buf.Path())
+	e.status = i18n.F("Overwrote %s with the editor's content", filepath.Base(d.buf.Path()))
 	return nil
 }
 
@@ -943,14 +986,14 @@ func (e *Editor) overwrite() error {
 func (e *Editor) revert() error {
 	t := e.cur()
 	if t == nil {
-		return errors.New("没有打开的文件")
+		return errors.New(i18n.T("No open file"))
 	}
 	d := t.doc
 	if d.untitled() {
-		return userError(d.title + " 还没存过：没有磁盘上的版本可以还原")
+		return userError(i18n.F("%s has never been saved: there is no version on disk to revert to", d.title))
 	}
 	if !d.buf.Exists() {
-		return userError(filepath.Base(d.buf.Path()) + " 在磁盘上不存在：没有可还原的内容")
+		return userError(i18n.F("%s does not exist on disk: nothing to revert to", filepath.Base(d.buf.Path())))
 	}
 	s, err := text.Load(d.buf.Path())
 	if err != nil {
@@ -959,7 +1002,7 @@ func (e *Editor) revert() error {
 	e.reloading = true
 	d.buf.Reload(s)
 	e.reloading = false
-	e.status = "已还原为磁盘上的版本（可以撤销）"
+	e.status = i18n.T("Reverted to the version on disk (can be undone)")
 	return nil
 }
 
@@ -986,9 +1029,9 @@ func (e *Editor) saveAll() error {
 	if first != nil {
 		return first
 	}
-	e.status = fmt.Sprintf("已保存 %d 个文件", n)
+	e.status = i18n.F("Saved %d files", n)
 	if untitled > 0 {
-		e.status += fmt.Sprintf("；%d 个未命名的文件要用「%s」选位置", untitled, e.hintOr("workbench.action.files.saveAs", "另存为"))
+		e.status += i18n.F("; %d untitled files need \"%s\" to choose a location", untitled, e.hintOr("workbench.action.files.saveAs", i18n.T("Save As")))
 	}
 	return nil
 }
@@ -998,12 +1041,12 @@ func (e *Editor) quitCmd() error {
 	e.saveDirty()
 	kept := e.KeepForRestart()
 	if kept != nil {
-		e.status = "未命名的文件没能留到下次：" + kept.Error()
+		e.status = i18n.F("Untitled files couldn't be kept for next time: %s", kept.Error())
 	}
 	for _, d := range e.docs {
 		if d.buf.Dirty() && (kept != nil || !d.untitled()) && e.armed != id {
 			e.armed = id
-			e.status = "有未保存的修改：" + e.hintOr("workbench.action.files.save", "保存") + " 保存，或再按一次 " + e.hintOr(id, "退出") + " 放弃修改并退出"
+			e.status = i18n.F("Unsaved changes: %s to save, or press %s again to discard changes and quit", e.hintOr("workbench.action.files.save", i18n.T("Save")), e.hintOr(id, i18n.T("Quit")))
 			return nil
 		}
 	}
@@ -1033,7 +1076,7 @@ func (e *Editor) history(undo bool) error {
 			_, ok = b.Redo()
 		}
 		if !ok {
-			e.status = map[bool]string{true: "没有可撤销的操作", false: "没有可重做的操作"}[undo]
+			e.status = map[bool]string{true: i18n.T("Nothing to undo"), false: i18n.T("Nothing to redo")}[undo]
 		}
 	})
 }
@@ -1048,7 +1091,7 @@ func (e *Editor) copy(cut bool) error {
 		return nil
 	}
 	if e.host == nil {
-		return errors.New("剪贴板不可用")
+		return errors.New(i18n.T("Clipboard unavailable"))
 	}
 	b := t.doc.buf
 	s := b.Snapshot()
@@ -1083,7 +1126,7 @@ func (e *Editor) copy(cut bool) error {
 		sep = ""
 	}
 	if err := e.host.SetClipboard(strings.Join(parts, sep)); err != nil {
-		return fmt.Errorf("写剪贴板失败：%w", err)
+		return fmt.Errorf(i18n.T("Couldn't write the clipboard: %w"), err)
 	}
 	if cut {
 		return e.editDoc(func(b *edit.Buffer) { b.Apply(edit.Transaction{Changes: cs, Origin: edit.OriginCommand}) })
@@ -1093,11 +1136,11 @@ func (e *Editor) copy(cut bool) error {
 
 func (e *Editor) paste() error {
 	if e.host == nil {
-		return errors.New("剪贴板不可用")
+		return errors.New(i18n.T("Clipboard unavailable"))
 	}
 	s, err := e.host.Clipboard()
 	if err != nil {
-		return fmt.Errorf("读剪贴板失败：%w", err)
+		return fmt.Errorf(i18n.T("Couldn't read the clipboard: %w"), err)
 	}
 	if s != "" {
 		e.handleText(TextInput{Text: s, Paste: true})
@@ -1135,7 +1178,7 @@ func (e *Editor) addNextMatch() error {
 		}
 		for _, r := range sels.Ranges {
 			if r.From() == i {
-				e.status = "所有匹配项都已选中"
+				e.status = i18n.T("All matches are already selected")
 				return
 			}
 		}
@@ -1150,15 +1193,15 @@ func (e *Editor) shell() error { return e.shellIn(e.terminalDir()) }
 
 func (e *Editor) shellIn(dir string) error {
 	if e.host == nil {
-		return errors.New("当前前端不支持终端")
+		return errors.New(i18n.T("This frontend doesn't support terminals"))
 	}
 	if err := e.host.Shell(dir); err != nil {
-		return fmt.Errorf("打开终端失败：%w", err)
+		return fmt.Errorf(i18n.T("Couldn't open the terminal: %w"), err)
 	}
 	if h, ok := e.host.(interface{ EmbeddedTerminal() bool }); ok && h.EmbeddedTerminal() {
 		return nil // 终端在窗口里的面板中：界面没让出去
 	}
-	e.status = "已从终端返回"
+	e.status = i18n.T("Returned from the terminal")
 	e.checkDisk() // 你可能在终端里改了文件、建了新文件
 	if e.ws != nil {
 		e.reindex()
@@ -1199,21 +1242,21 @@ func (e *Editor) stageCurrent(unstage bool) error {
 	}
 	t := e.cur()
 	if t == nil {
-		return errors.New("没有打开的文件")
+		return errors.New(i18n.T("No open file"))
 	}
 	path := t.doc.buf.Path()
 	if dt := t.diff; dt != nil {
 		if dt.commit != nil || dt.fixed {
-			return errors.New("历史改动不能暂存")
+			return errors.New(i18n.T("Historical changes can't be staged"))
 		}
 		if dt.peer != "" {
-			return errors.New("这是两个文件的比较：暂存不了")
+			return errors.New(i18n.T("This compares two files: nothing to stage"))
 		}
 		path = dt.path
 		if dt.changes {
 			line := t.doc.buf.Snapshot().LineAt(t.doc.buf.Selections().Main().Head)
 			if line < 0 || line >= len(dt.lines) || dt.lines[line].sec < 0 {
-				return errors.New("先选择一个改动文件")
+				return errors.New(i18n.T("Select a changed file first"))
 			}
 			path = dt.pathOf(dt.lines[line])
 		}

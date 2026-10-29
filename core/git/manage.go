@@ -3,6 +3,8 @@ package git
 import (
 	"errors"
 	"strings"
+
+	"github.com/corn12138/yan-source/core/i18n"
 )
 
 // Branch and remote management (GI-27), as Mayoi's Git menus offer it: rename and delete
@@ -10,7 +12,7 @@ import (
 
 // ErrNotMerged is a branch delete git refused because the branch has commits no other branch
 // has: deleting it would lose them. DeleteBranch with force deletes it anyway.
-var ErrNotMerged = errors.New("分支还有没合并的提交")
+var ErrNotMerged = i18n.Error("The branch has commits that are not merged")
 
 // RenameBranch renames a local branch; git refuses a name already taken.
 func (r *Repo) RenameBranch(old, name string) error {
@@ -95,10 +97,10 @@ func (r *Repo) Sync() error {
 		}
 	}
 	if branch == "" {
-		return errors.New("先检出一个有提交的分支，再同步")
+		return errors.New(i18n.T("Check out a branch with commits before syncing"))
 	}
 	if remote == "" || upstream == "" {
-		return errors.New("当前分支没有上游，不能同步")
+		return errors.New(i18n.T("The current branch has no upstream: can't sync"))
 	}
 	if _, err := r.run(nil, "pull", "--ff-only", "--", remote, upstream); err != nil {
 		return err

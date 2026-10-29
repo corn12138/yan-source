@@ -14,8 +14,10 @@ import (
 
 	"github.com/corn12138/yan-source/core/app"
 	"github.com/corn12138/yan-source/core/config"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/internal/launch"
 	"github.com/corn12138/yan-source/internal/version"
+	"github.com/corn12138/yan-source/platform/locale"
 	"github.com/corn12138/yan-source/ui/tui"
 )
 
@@ -31,10 +33,12 @@ func run(args []string) error {
 		fmt.Println("yan", version.String())
 		return nil
 	}
+	state := config.LoadState(config.StatePath())
+	langWarns := config.StartLocale(state, locale.Terminal())
 	if len(args) > 1 || (len(args) == 1 && (args[0] == "-h" || args[0] == "--help")) {
-		fmt.Println("用法：\n  yan              打开当前目录\n  yan 目录         打开文件夹（资源管理器、快速打开）\n  yan 文件[:行号]  打开文件；文件不存在时新建")
+		fmt.Println(i18n.T("Usage:\n  yan              open the current directory\n  yan FOLDER       open a folder (Explorer, Quick Open)\n  yan FILE[:LINE]  open a file; create it when it doesn't exist"))
 		if len(args) > 1 {
-			return errors.New("参数太多")
+			return errors.New(i18n.T("too many arguments"))
 		}
 		return nil
 	}
@@ -46,7 +50,7 @@ func run(args []string) error {
 	root, file, folder, line := t.Root, t.File, t.Folder, t.Line
 
 	cfg, cfgWarns := config.Load(root)
-	state := config.LoadState(config.StatePath())
+	cfgWarns = append(langWarns, cfgWarns...)
 	state.Apply(cfg)
 	fe := tui.New(cfg.TabWidth)
 	fe.SidebarWidth = cfg.SidebarWidth
@@ -77,7 +81,7 @@ func run(args []string) error {
 		}
 	}
 	if len(warns) > 0 {
-		ed.Notify("配置：" + strings.Join(warns, "；"))
+		ed.Notify(i18n.F("Configuration: %s", strings.Join(warns, i18n.TC("warning separator", "; "))))
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGHUP)

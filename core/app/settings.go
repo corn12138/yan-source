@@ -9,6 +9,7 @@ import (
 
 	"github.com/corn12138/yan-source/core/config"
 	"github.com/corn12138/yan-source/core/edit"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/workspace"
 )
 
@@ -73,14 +74,14 @@ func (e *Editor) BackgroundActivity() string {
 		return e.repository().git.busy
 	}
 	if e.fs.running {
-		return "正在搜索…"
+		return i18n.T("Searching…")
 	}
 	return ""
 }
 
 func (e *Editor) saveState() {
 	if err := e.state.Save(); err != nil {
-		e.status = "记不下设置：" + err.Error()
+		e.status = i18n.F("Couldn't save settings: %s", err.Error())
 	}
 }
 
@@ -137,10 +138,10 @@ func (e *Editor) toggleAutoSave() error {
 	}
 	e.settingsGen++
 	if e.autoSave {
-		e.status = "自动保存：开"
+		e.status = i18n.T("Auto Save: On")
 		e.saveDirty()
 	} else {
-		e.status = "自动保存：关"
+		e.status = i18n.T("Auto Save: Off")
 	}
 	return nil
 }
@@ -197,10 +198,10 @@ func (e *Editor) reloadConfig() {
 	}
 	e.cfg = cfg
 	e.settingsGen++
-	e.status = "配置已生效"
+	e.status = i18n.T("Configuration applied")
 	e.configProblem = ""
 	if len(warns) > 0 {
-		e.status = "配置：" + warns[0]
+		e.status = i18n.F("Configuration: %s", warns[0])
 		e.configProblem = warns[0] // stays in the status bar until a reload reads cleanly
 	}
 }
@@ -460,3 +461,5 @@ func (e *Editor) SetUpdateChecks(on bool) {
 		e.saveState()
 	}
 }
+
+func (e *Editor) PreviewMath() bool { return e.cfg.PreviewMath }

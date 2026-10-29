@@ -600,6 +600,9 @@ const (
 	OverlayPrompt                     // 问一个名字（新建文件、改名）
 	OverlayChoice                     // 从几项里选一项（代替确认对话框，两个前端都能画）
 	OverlayTheme
+	// OverlaySettings is Settings: Section names the page, items are grouped under headings
+	// (Group), a chosen item applies at once and the panel stays open.
+	OverlaySettings
 )
 
 // OverlayItem 是浮层里的一个候选项。
@@ -610,6 +613,10 @@ type OverlayItem struct {
 	LabelHits, DetailHits []int // 命中字符的字节下标
 	// Unreleased marks a command the official release does not have yet (features.json).
 	Unreleased bool
+	// Group is the heading of the items from this one on (Settings); Checked marks the
+	// option saved.
+	Group   string
+	Checked bool
 }
 
 // Overlay 是一个浮层：标题、输入框、候选列表。前端画边框和输入框，内核只给内容。
@@ -623,6 +630,9 @@ type Overlay struct {
 	Top        int // 键盘移动时保证选中项可见的首项（每屏 MaxOverlayItems 项）
 	Footer     string
 	Appearance string
+	// Section is the Settings page shown, Status a line of what is in effect, and Notice what
+	// the user has to do for a saved choice to apply ("" for nothing).
+	Section, Status, Notice string
 }
 
 // MaxOverlayItems 是浮层一屏显示的候选数。

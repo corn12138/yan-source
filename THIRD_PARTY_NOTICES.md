@@ -233,3 +233,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+## MathJax
+
+- MathJax 3.2.2: https://github.com/mathjax/MathJax-src/tree/3.2.2
+- Copyright (c) 2009-2021 The MathJax Consortium. Licensed under Apache License 2.0.
+- `ui/gui/mathjax.js.gz` bundles the TeX-to-SVG renderer and its path fonts for offline formula previews. `scripts/mathjax.sh` reproduces the bundle; the full license is in `packaging/licenses/mathjax.txt` and the compressed bundle banner, and is included in distributed notices.
+- The formula parser and positioning in `ui/gui/math.go`, `markdown.go`, `markdownview.go`, their tests, and the bundling script adapt Mayoi commit `1010308b542c4bfa25e15f84f4992914fac04223` (MIT, Copyright (c) 2026 chencheng). Yan adds configuration layers, cancellation, bounded rendering, macro isolation, and its own preview editing and clipboard integration.

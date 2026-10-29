@@ -6,7 +6,6 @@ package app
 // the terminal version follows its terminal's.
 
 import (
-	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -15,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/corn12138/yan-source/core/config"
+	"github.com/corn12138/yan-source/core/i18n"
 )
 
 // codeFont is a monospaced family the picker offers when its files are installed: files are
@@ -96,7 +96,7 @@ func installedCodeFonts() []codeFont {
 // fontsInWindow reports whether fonts can be chosen here; the terminal version says why not.
 func (e *Editor) fontsInWindow() bool {
 	if !e.profile.GUI {
-		e.status = "终端版用终端自己的字体：在终端的设置里改"
+		e.status = i18n.T("The terminal version uses the terminal's own font: change it in the terminal's settings")
 		return false
 	}
 	return true
@@ -138,36 +138,36 @@ func (e *Editor) chooseFont() error {
 	item := func(label, family, detail string) ovItem {
 		it := ovItem{label: label, detail: detail, font: family, run: func(e *Editor) error {
 			e.setFont(family, 0, 0)
-			e.status = "代码字体：" + label
+			e.status = i18n.F("Code font: %s", label)
 			return nil
 		}}
 		if family == cur {
-			it.hint = "当前"
+			it.hint = i18n.T("Current")
 		}
 		return it
 	}
-	items := []ovItem{item("系统等宽字体", "monospace", "")}
+	items := []ovItem{item(i18n.T("System monospace font"), "monospace", "")}
 	for _, f := range installedCodeFonts() {
 		detail := ""
 		if f.cjk {
-			detail = "中文等宽，对得齐"
+			detail = i18n.T("Chinese at fixed width, aligned")
 		}
 		items = append(items, item(f.family, f.family, detail))
 	}
 	if !slices.ContainsFunc(items, func(it ovItem) bool { return it.font == cur }) {
-		items = append(items, item(cur, cur, "config.toml 里的"))
+		items = append(items, item(cur, cur, i18n.T("From config.toml")))
 	}
-	items = append(items, ovItem{label: "输入字体名…", detail: "多个用逗号隔开，前面的没有的字用后面的", run: func(e *Editor) error {
-		e.prompt("代码字体（逗号隔开，依次回退）", cur, func(in string) string { return "用 " + strings.TrimSpace(in) }, func(e *Editor, in string) error {
+	items = append(items, ovItem{label: i18n.T("Enter Font Name…"), detail: i18n.T("Separate several with commas; characters a font lacks use the next one"), run: func(e *Editor) error {
+		e.prompt(i18n.T("Code font (comma-separated, in fallback order)"), cur, func(in string) string { return i18n.F("Use %s", strings.TrimSpace(in)) }, func(e *Editor, in string) error {
 			if in = strings.TrimSpace(in); in != "" {
 				e.setFont(in, 0, 0)
-				e.status = "代码字体：" + in
+				e.status = i18n.F("Code font: %s", in)
 			}
 			return nil
 		})
 		return nil
 	}})
-	e.choose("代码字体", items...)
+	e.choose(i18n.T("Code Font"), items...)
 	return nil
 }
 
@@ -178,21 +178,21 @@ func (e *Editor) chooseFontSize() error {
 	}
 	var items []ovItem
 	for size := 10.0; size <= 24; size++ {
-		label := fmt.Sprintf("%g 号", size)
+		label := i18n.F("%g pt", size)
 		if size == config.Default().FontSize {
-			label += "（默认）"
+			label += i18n.T(" (Default)")
 		}
 		it := ovItem{label: label, run: func(e *Editor) error {
 			e.setFont("", size, 0)
-			e.status = fmt.Sprintf("代码字号：%g", size)
+			e.status = i18n.F("Code font size: %g", size)
 			return nil
 		}}
 		if size == e.cfg.FontSize {
-			it.hint = "当前"
+			it.hint = i18n.T("Current")
 		}
 		items = append(items, it)
 	}
-	e.choose("代码字号", items...)
+	e.choose(i18n.T("Code Font Size"), items...)
 	return nil
 }
 
@@ -203,20 +203,20 @@ func (e *Editor) chooseLineHeight() error {
 	}
 	var items []ovItem
 	for _, lh := range []float64{1.2, 1.3, 1.4, 1.5, 1.55, 1.6, 1.7, 1.8, 2} {
-		label := fmt.Sprintf("%g 倍", lh)
+		label := i18n.F("%g×", lh)
 		if lh == config.Default().LineHeight {
-			label += "（默认）"
+			label += i18n.T(" (Default)")
 		}
 		it := ovItem{label: label, run: func(e *Editor) error {
 			e.setFont("", 0, lh)
-			e.status = fmt.Sprintf("行高：%g 倍", lh)
+			e.status = i18n.F("Line height: %g×", lh)
 			return nil
 		}}
 		if lh == e.cfg.LineHeight {
-			it.hint = "当前"
+			it.hint = i18n.T("Current")
 		}
 		items = append(items, it)
 	}
-	e.choose("行高", items...)
+	e.choose(i18n.T("Line Height"), items...)
 	return nil
 }

@@ -9,6 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/internal/updatehttp"
 	"github.com/corn12138/yan-source/internal/version"
 	"github.com/egoist/mygo"
@@ -44,12 +45,19 @@ func setupUpdates() {
 	if v := version.Release(); v != "" {
 		mygo.App.SetVersion(v)
 	}
-	mygo.Use(native.New(updater.Options{Language: "zh-Hans", DisableAutomaticChecks: true,
-		Strings: map[string]updater.Strings{"zh-Hans": {CheckError: "检查更新失败。请检查网络或系统代理后重试，也可从发布页下载安装包。"}},
-	}))
+	mygo.Use(native.New(updaterOptions(i18n.Current())))
 	updatesReady = true
 	updater.OnChange(func() { setUpdate(updateFound) }) // Skip This Version hides the version
 	startUpdates()
+}
+
+// updaterOptions has the updater's window speak the process's interface language rather than
+// the system's: its tag is one the plugin has its own translations for.
+func updaterOptions(l i18n.Locale) updater.Options {
+	lang := map[i18n.Locale]string{i18n.English: "en", i18n.SimplifiedChinese: "zh-Hans"}[l]
+	return updater.Options{Language: lang, DisableAutomaticChecks: true,
+		Strings: map[string]updater.Strings{lang: {CheckError: i18n.In(l, "Checking for updates failed. Check the network or system proxy and try again, or download the installer from the releases page.")}},
+	}
 }
 
 // startUpdates checks for updates every hour from now on, in builds that can update.
@@ -142,16 +150,16 @@ func installUpdate() {
 }
 
 func (f *Frontend) updateMenu() *mygo.MenuItem {
-	label := "检查更新…"
+	label := i18n.T("Check for Updates…")
 	if updateShown != "" {
-		label = "更新到 " + updateShown + "…"
+		label = i18n.F("Update to %s…", updateShown)
 	}
 	return &mygo.MenuItem{Label: label, Click: func(*mygo.MenuItem, *mygo.Window) { installUpdate() }}
 }
 
 func (f *Frontend) automaticUpdatesMenu() *mygo.MenuItem {
 	on := updatesReady && f.ed.UpdateChecks()
-	return &mygo.MenuItem{Label: "自动检查更新（每小时）", Type: mygo.MenuItemCheckbox, Checked: on,
+	return &mygo.MenuItem{Label: i18n.T("Check for Updates Automatically (Hourly)"), Type: mygo.MenuItemCheckbox, Checked: on,
 		Click: func(*mygo.MenuItem, *mygo.Window) {
 			if updatesReady {
 				f.do(func() {

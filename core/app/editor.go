@@ -5,7 +5,6 @@
 package app
 
 import (
-	"fmt"
 	"slices"
 	"strings"
 	"sync"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/corn12138/yan-source/core/config"
 	"github.com/corn12138/yan-source/core/edit"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/keymap"
 	"github.com/corn12138/yan-source/core/text"
 	"github.com/corn12138/yan-source/core/view"
@@ -105,7 +105,8 @@ type Editor struct {
 	wake    chan struct{} // 容量 1：多次 Post 合并成一次唤醒
 
 	cfg              *config.Config
-	state            *config.State // 菜单里选的设置、会话；nil 表示不记
+	state            *config.State   // 菜单里选的设置、会话；nil 表示不记
+	langPref         i18n.Preference // the interface language chosen without a state file (tests)
 	profile          keymap.Profile
 	allBranches      bool // 提交历史显示所有分支和标签（换文件夹也留着）
 	repoPanel        bool // 源代码管理下面的仓库面板开着
@@ -218,7 +219,7 @@ func (e *Editor) compileKeys(cfg *config.Config) []string {
 	for ctx, m := range cfg.Keys {
 		c, ok := keymap.ContextNames[ctx]
 		if !ok {
-			warns = append(warns, fmt.Sprintf("未知的按键上下文 [keys.%s]（可用 global、editor、explorer、overlay）", ctx))
+			warns = append(warns, i18n.F("Unknown key context [keys.%s] (available: global, editor, explorer, overlay)", ctx))
 			continue
 		}
 		if bindings[c] == nil {
@@ -249,7 +250,7 @@ func (e *Editor) compileKeys(cfg *config.Config) []string {
 	for _, m := range bindings {
 		for seq, id := range m {
 			if _, ok := e.commands[id]; !ok && id != "" {
-				warns = append(warns, fmt.Sprintf("按键 %q 绑定了未知命令 %q", seq, id))
+				warns = append(warns, i18n.F("Key %q is bound to unknown command %q", seq, id))
 			}
 		}
 	}
@@ -426,7 +427,7 @@ func (e *Editor) handleKey(c keymap.Chord) {
 	id, m := e.keys.Resolve(e.context(), e.seq)
 	switch m {
 	case keymap.MatchPrefix:
-		e.status = chordString(e.seq) + " 已按下，等待下一个键…"
+		e.status = i18n.F("%s pressed, waiting for the next key…", chordString(e.seq))
 		return
 	case keymap.MatchExact:
 		e.seq = e.seq[:0]
@@ -434,7 +435,7 @@ func (e *Editor) handleKey(c keymap.Chord) {
 		return
 	}
 	if len(e.seq) > 1 {
-		e.status = chordString(e.seq) + " 没有绑定命令"
+		e.status = i18n.F("%s is not bound to a command", chordString(e.seq))
 	}
 	e.seq = e.seq[:0]
 }
@@ -458,7 +459,7 @@ func (e *Editor) Run(id string) {
 func (e *Editor) run(id string) {
 	c, ok := e.commands[id]
 	if !ok {
-		e.status = "未知命令：" + id
+		e.status = i18n.F("Unknown command: %s", id)
 		return
 	}
 	if id != e.armed {
@@ -589,7 +590,7 @@ func (e *Editor) commitInto(t *tab, in TextInput) {
 		e.area = area
 		return
 	}
-	e.status = "输入法提交的「" + in.Text + "」没有插入：开始组字时的标签已经关了"
+	e.status = i18n.F("Text \"%s\" from the input method was not inserted: the tab where composition began is closed", in.Text)
 }
 
 func normalizeEOL(s string, eol text.EOL) string {
@@ -610,11 +611,11 @@ func toLower(r rune) rune {
 
 func (e *Editor) writable(t *tab) bool {
 	if t.doc.buf.Snapshot().Meta().ReadOnly {
-		e.status = "只读文件，不能编辑"
+		e.status = i18n.T("Read-only file: can't edit")
 		return false
 	}
 	if t.svg || t.markdown { // 看不见的文字不能改
-		e.status = "预览里不能编辑：按 " + e.hintOr("yan.svg.togglePreview", "⇧⌘V") + " 回到文字"
+		e.status = i18n.F("Can't edit in the preview: press %s to return to the text", e.hintOr("yan.svg.togglePreview", "⇧⌘V"))
 		return false
 	}
 	return true

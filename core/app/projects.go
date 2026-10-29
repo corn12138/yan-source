@@ -3,6 +3,8 @@ package app
 import (
 	"errors"
 	"strconv"
+
+	"github.com/corn12138/yan-source/core/i18n"
 )
 
 // 项目标签，照着 Mayoi v0.8.0–v0.8.1（MIT，cmd/mayoi 的 project tabs）：窗口版可以把几个文件夹放在一个窗口里，
@@ -21,7 +23,7 @@ func (e *Editor) projectHost() (ProjectHost, error) {
 	if h, ok := e.host.(ProjectHost); ok {
 		return h, nil
 	}
-	return nil, errors.New("项目标签只在窗口版里有（yan-app）")
+	return nil, errors.New(i18n.T("Project tabs are only in the window version (yan-app)"))
 }
 
 // ProjectTabs 报告是不是用项目标签（记在 state.json）。
@@ -72,10 +74,10 @@ func registerProjects(e *Editor) {
 			return nil
 		}
 	}
-	e.Register(Command{ID: "yan.projectTabs.toggle", Title: "显示：项目标签（一个窗口里几个文件夹）", Run: (*Editor).toggleProjectTabs})
-	e.Register(Command{ID: "yan.project.next", Title: "转到：下一个项目", Run: run(func(h ProjectHost) { h.StepProject(1) })})
-	e.Register(Command{ID: "yan.project.previous", Title: "转到：上一个项目", Run: run(func(h ProjectHost) { h.StepProject(-1) })})
-	e.Register(Command{ID: "yan.project.close", Title: "文件：关闭项目", Run: run(func(h ProjectHost) { h.CloseProject() })})
+	e.Register(Command{ID: "yan.projectTabs.toggle", Title: i18n.T("View: Project Tabs (Several Folders in One Window)"), Run: (*Editor).toggleProjectTabs})
+	e.Register(Command{ID: "yan.project.next", Title: i18n.T("Go: Next Project"), Run: run(func(h ProjectHost) { h.StepProject(1) })})
+	e.Register(Command{ID: "yan.project.previous", Title: i18n.T("Go: Previous Project"), Run: run(func(h ProjectHost) { h.StepProject(-1) })})
+	e.Register(Command{ID: "yan.project.close", Title: i18n.T("File: Close Project"), Run: run(func(h ProjectHost) { h.CloseProject() })})
 	for i := 1; i <= 9; i++ {
 		n := i - 1
 		if i == 9 {

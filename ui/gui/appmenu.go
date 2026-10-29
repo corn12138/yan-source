@@ -7,6 +7,8 @@ import (
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
+
+	"github.com/corn12138/yan-source/core/i18n"
 )
 
 // menuRevision counts the menus asked for: a deferred one applies only while it is the latest.
@@ -59,15 +61,15 @@ func (f *Frontend) populateMenu(m *ui.Menu, items []*mygo.MenuItem) {
 				m.Separator()
 				sep = false
 			}
-			m.Submenu("窗口", func(sub *ui.Menu) {
-				if sub.Item("最小化").Chosen() {
+			m.Submenu(i18n.T("Window"), func(sub *ui.Menu) {
+				if sub.Item(i18n.T("Minimize")).Chosen() {
 					f.win.Minimize()
 				}
-				if sub.Item("切换全屏").Chosen() {
+				if sub.Item(i18n.T("Toggle Full Screen")).Chosen() {
 					f.win.SetFullScreen(!f.win.IsFullScreen())
 				}
 				sub.Separator()
-				if sub.Item("关闭窗口").Chosen() {
+				if sub.Item(i18n.T("Close Window")).Chosen() {
 					f.win.Close()
 				}
 			})
@@ -75,10 +77,10 @@ func (f *Frontend) populateMenu(m *ui.Menu, items []*mygo.MenuItem) {
 		case mygo.RoleCut, mygo.RoleCopy, mygo.RolePaste, mygo.RoleSelectAll:
 			id := map[mygo.MenuRole]string{mygo.RoleCut: "editor.action.clipboardCutAction", mygo.RoleCopy: "editor.action.clipboardCopyAction",
 				mygo.RolePaste: "editor.action.clipboardPasteAction", mygo.RoleSelectAll: "editor.action.selectAll"}[it.Role]
-			label = map[mygo.MenuRole]string{mygo.RoleCut: "剪切", mygo.RoleCopy: "复制", mygo.RolePaste: "粘贴", mygo.RoleSelectAll: "全选"}[it.Role]
+			label = map[mygo.MenuRole]string{mygo.RoleCut: i18n.T("Cut"), mygo.RoleCopy: i18n.T("Copy"), mygo.RolePaste: i18n.T("Paste"), mygo.RoleSelectAll: i18n.T("Select All")}[it.Role]
 			run = func() { f.ed.Run(id) }
 		case mygo.RoleToggleFullScreen:
-			label, run = "切换全屏", func() { f.win.SetFullScreen(!f.win.IsFullScreen()) }
+			label, run = i18n.T("Toggle Full Screen"), func() { f.win.SetFullScreen(!f.win.IsFullScreen()) }
 		default:
 			if it.Role != "" {
 				continue

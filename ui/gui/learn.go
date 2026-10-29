@@ -7,11 +7,12 @@ import (
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
 
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/view"
 )
 
 // unreleasedSuffix marks a menu item the official release does not have yet.
-const unreleasedSuffix = "（未发布）"
+func unreleasedSuffix() string { return i18n.T(" (Unreleased)") }
 
 // learnView is the feature guide in the sidebar: the lessons by module, the steps of the one
 // running with the key, palette name and menu path for each, and a tip. The core decides when
@@ -21,13 +22,13 @@ func (f *Frontend) learnView(c *ui.Context) {
 	lg := &f.frame.Sidebar.Learn
 	ui.Scroll(c.Key("learn")).Grow(1).Children(func() {
 		ui.Column(c).Padding(8, 12, 12, 12).Gap(10).Children(func() {
-			ui.Text(c, fmt.Sprintf("已完成 %d / %d 课", lg.Done, len(lg.Lessons))).FontSize(12).TextColor(p.muted)
+			ui.Text(c, fmt.Sprintf(i18n.T("%d / %d lessons finished"), lg.Done, len(lg.Lessons))).FontSize(12).TextColor(p.muted)
 			if lg.Home != "" {
 				home := ui.Row(c.Key("learn-home")).Gap(6).Padding(6, 10).Radius(6).AlignItems(ui.Center).Background(p.surface).
-					Label("回到 " + lg.Home).Cursor(ui.CursorPointer)
+					Label(i18n.F("Return to %s", lg.Home)).Cursor(ui.CursorPointer)
 				home.Children(func() {
 					ui.Icon(c, iconFolder).FontSize(14).TextColor(p.accent)
-					ui.Text(c, "练习文件夹 · 回到 "+lg.Home).FontSize(12.5).TextColor(p.accent).Grow(1).SingleLine()
+					ui.Text(c, i18n.F("Practice folder · Return to %s", lg.Home)).FontSize(12.5).TextColor(p.accent).Grow(1).SingleLine()
 				})
 				if home.Clicked() {
 					f.ed.Run("yan.guide.leave")
@@ -40,7 +41,7 @@ func (f *Frontend) learnView(c *ui.Context) {
 			ui.Row(c).Margin(6, 0, 0, 0).Padding(10).Gap(8).Radius(6).Background(p.surface).AlignItems(ui.Start).Children(func() {
 				ui.Icon(c, iconTip).FontSize(15).TextColor(p.accent)
 				ui.Text(c, lg.Tip).FontSize(12.5).TextColor(p.text).Grow(1).MinWidth(0)
-				if f.iconButton(c, iconChevronRight, "下一条提示", false).Clicked() {
+				if f.iconButton(c, iconChevronRight, i18n.T("Next Tip"), false).Clicked() {
 					f.ed.Run("yan.guide.nextTip")
 				}
 			})
@@ -51,9 +52,9 @@ func (f *Frontend) learnView(c *ui.Context) {
 // unreleasedBadge says a feature is not in the official release yet; since is its version.
 func (f *Frontend) unreleasedBadge(c *ui.Context) ui.Element {
 	p := f.pal
-	return ui.Text(c, "未发布").FontSize(10.5).TextColor(p.modified).Padding(0, 5).Radius(4).
+	return ui.Text(c, i18n.T("Unreleased")).FontSize(10.5).TextColor(p.modified).Padding(0, 5).Radius(4).
 		BorderWidth(1).BorderColor(p.modified).Shrink(0).SingleLine().
-		Tooltip("正式版里还没有：这一项写在 CHANGELOG 的 Unreleased 下")
+		Tooltip(i18n.T("Not in the official release yet; listed under Unreleased in the changelog"))
 }
 
 // learnLessons lists the lessons by module; a click starts one.
@@ -66,7 +67,7 @@ func (f *Frontend) learnLessons(c *ui.Context, lg *view.Learn) {
 			ui.Text(c, module).FontSize(11).FontWeight(600).LetterSpacing(0.6).TextColor(p.faint).Margin(8, 0, 2, 0)
 		}
 		row := ui.Row(c.Key(fmt.Sprint("lesson:", i))).Height(26).Padding(0, 8).Gap(8).Radius(5).AlignItems(ui.Center).
-			Label("课程 " + l.Title)
+			Label(i18n.F("Lesson %s", l.Title))
 		switch {
 		case i == lg.Active:
 			row.Background(p.active)
@@ -84,9 +85,9 @@ func (f *Frontend) learnLessons(c *ui.Context, lg *view.Learn) {
 				f.unreleasedBadge(c)
 			}
 			if l.Folder {
-				ui.Icon(c, iconFolder).FontSize(12).TextColor(p.faint).Tooltip("在练习文件夹里做，不动你的项目")
+				ui.Icon(c, iconFolder).FontSize(12).TextColor(p.faint).Tooltip(i18n.T("Uses a practice folder; your project is unchanged"))
 			}
-			ui.Text(c, fmt.Sprintf("%d 步", l.Steps)).FontSize(11).TextColor(p.faint)
+			ui.Text(c, fmt.Sprintf(i18n.T("%d steps"), l.Steps)).FontSize(11).TextColor(p.faint)
 		})
 		if row.Clicked() {
 			f.ed.StartLesson(i)
@@ -127,7 +128,7 @@ func (f *Frontend) learnSteps(c *ui.Context, lg *view.Learn) {
 						f.learnHow(c, s)
 					}
 					if s.WindowOnly {
-						ui.Text(c, "窗口版才有，已跳过").FontSize(11).TextColor(p.faint)
+						ui.Text(c, i18n.T("Only in the window version: skipped")).FontSize(11).TextColor(p.faint)
 					}
 				})
 			})
@@ -139,14 +140,14 @@ func (f *Frontend) learnSteps(c *ui.Context, lg *view.Learn) {
 					f.ed.Run(cmd)
 				}
 			}
-			link("上一步", "yan.guide.back")
+			link(i18n.T("Previous Step"), "yan.guide.back")
 			if !done {
-				link("跳过这一步", "yan.guide.skip")
+				link(i18n.T("Skip This Step"), "yan.guide.skip")
 			}
-			link("重新开始", "yan.guide.restart")
+			link(i18n.T("Restart Lesson"), "yan.guide.restart")
 		})
 		if done {
-			ui.Text(c, "完成了！在下面选下一课").FontSize(12).TextColor(p.added)
+			ui.Text(c, i18n.T("Done! Choose the next lesson below")).FontSize(12).TextColor(p.added)
 		}
 	})
 }
@@ -167,10 +168,10 @@ func (f *Frontend) learnHow(c *ui.Context, s view.LearnStep) {
 		})
 	}
 	if s.Title != "" {
-		ui.Text(c, "命令面板：「"+s.Title+"」").FontSize(11).TextColor(p.muted)
+		ui.Text(c, i18n.F("Command Palette: %s", s.Title)).FontSize(11).TextColor(p.muted)
 	}
 	if where := f.menuPath(s.Command); where != "" {
-		ui.Text(c, "菜单："+where).FontSize(11).TextColor(p.muted)
+		ui.Text(c, i18n.F("Menu: %s", where)).FontSize(11).TextColor(p.muted)
 	}
 }
 
@@ -185,7 +186,7 @@ func (f *Frontend) menuPath(id string) string {
 		var walk func(items []*mygo.MenuItem, path string)
 		walk = func(items []*mygo.MenuItem, path string) {
 			for _, it := range items {
-				label := strings.TrimSuffix(it.Label, unreleasedSuffix)
+				label := strings.TrimSuffix(it.Label, unreleasedSuffix())
 				where := label
 				if path != "" {
 					where = path + " › " + label
@@ -207,19 +208,19 @@ func (f *Frontend) guideOfferView(c *ui.Context) {
 	o := f.frame.Guide
 	ui.Overlay(c, func() {
 		card := f.floating(c, ui.Column(c.Key("guide-offer")).Absolute().Right(20).Bottom(statusBarH+18).Width(330).
-			Padding(14, 16).Gap(10).Radius(10)).Role(ui.RoleDialog).Label("功能导览")
+			Padding(14, 16).Gap(10).Radius(10)).Role(ui.RoleDialog).Label(i18n.T("Feature Tour"))
 		card.Children(func() {
 			ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
 				ui.Icon(c, iconLearn).FontSize(16).TextColor(p.accent)
-				ui.Text(c, "第一次用砚？").FontSize(13.5).FontWeight(600).TextColor(p.text)
+				ui.Text(c, i18n.T("New to Yan?")).FontSize(13.5).FontWeight(600).TextColor(p.text)
 			})
-			ui.Text(c, fmt.Sprintf("功能导览有 %d 节小课：多光标、锁定列、最大化编辑区、转到定义、三方合并……每一步都在练习文件里真的做一遍，不动你的项目。", o.Lessons)).
+			ui.Text(c, fmt.Sprintf(i18n.T("Explore %d hands-on lessons: multiple cursors, locked columns, editor focus, definitions and three-way merges. Practice in separate files without changing your project."), o.Lessons)).
 				FontSize(12.5).TextColor(p.muted)
 			ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
-				if ui.Button(c.Key("guide-offer-no"), "不用了").Label("不用了").Clicked() {
+				if ui.Button(c.Key("guide-offer-no"), i18n.T("No Thanks")).Label(i18n.T("No Thanks")).Clicked() {
 					f.ed.Run("yan.guide.dismissOffer")
 				}
-				if ui.Button(c.Key("guide-offer-yes"), "开始导览").Label("开始导览").Background(p.accent).TextColor(p.editor).Clicked() {
+				if ui.Button(c.Key("guide-offer-yes"), i18n.T("Start Tour")).Label(i18n.T("Start Tour")).Background(p.accent).TextColor(p.editor).Clicked() {
 					f.ed.Run("yan.guide.open")
 				}
 			})

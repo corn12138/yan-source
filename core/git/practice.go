@@ -1,6 +1,7 @@
 package git
 
 import (
+	"github.com/corn12138/yan-source/core/i18n"
 	"os"
 	"path/filepath"
 	"strings"
@@ -52,10 +53,10 @@ func PracticeConflict(dir, path, base, ours, theirs string) error {
 	steps := []func() error{
 		func() error { return practice(dir, "checkout", "-q", "-b", "feature") },
 		func() error { return writeFiles(dir, map[string]string{path: theirs}) },
-		func() error { return practice(dir, "commit", "-qam", "feature 分支上的修改") },
+		func() error { return practice(dir, "commit", "-qam", "Changes on feature") },
 		func() error { return practice(dir, "checkout", "-q", "main") },
 		func() error { return writeFiles(dir, map[string]string{path: ours}) },
-		func() error { return practice(dir, "commit", "-qam", "main 上的修改") },
+		func() error { return practice(dir, "commit", "-qam", "Changes on main") },
 	}
 	for _, s := range steps {
 		if err := s(); err != nil {
@@ -63,7 +64,7 @@ func PracticeConflict(dir, path, base, ours, theirs string) error {
 		}
 	}
 	if err := practice(dir, "merge", "-q", "--no-edit", "feature"); err == nil {
-		return &Error{Args: []string{"merge"}, Stderr: "练习仓库没有产生冲突"}
+		return &Error{Args: []string{"merge"}, Stderr: i18n.T("The practice repository did not produce a conflict")}
 	}
 	return nil // the merge stops for the conflict, as it should
 }
@@ -91,5 +92,5 @@ func freshRepo(dir string, files map[string]string) error {
 	if err := practice(dir, "add", "-A"); err != nil {
 		return err
 	}
-	return practice(dir, "commit", "-qm", "练习的起点")
+	return practice(dir, "commit", "-qm", "Practice baseline")
 }

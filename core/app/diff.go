@@ -12,6 +12,7 @@ import (
 	"github.com/corn12138/yan-source/core/edit"
 	"github.com/corn12138/yan-source/core/git"
 	"github.com/corn12138/yan-source/core/git/linediff"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/style"
 	"github.com/corn12138/yan-source/core/syntax/highlight"
 	"github.com/corn12138/yan-source/core/text"
@@ -185,9 +186,9 @@ type diffTab struct {
 func (e *Editor) openChange(path string, preview bool) error {
 	defer e.bindRepository(e.repositoryForPath(path))()
 	if e.repository().git.repo == nil {
-		return errors.New("不在 git 仓库里")
+		return errors.New(i18n.T("Not in a Git repository"))
 	}
-	name := filepath.Base(path) + " (改动)"
+	name := i18n.F("%s (Changes)", filepath.Base(path))
 	if e.showingDiff(filepath.Join(filepath.Dir(path), name), preview) {
 		return nil
 	}
@@ -310,15 +311,16 @@ func (e *Editor) refreshDiff(d *document, dt *diffTab) {
 		dt.lines = append(dt.lines, l)
 	}
 	if len(hunks) == 0 {
-		msg := "（和 HEAD 一样，没有改动）"
+		msg := i18n.T("(Same as HEAD: no changes)")
 		if dt.fixed {
-			msg = "（这个提交没有改这个文件的文字）"
+			msg = i18n.T("(This commit didn't change this file's text)")
 		}
 		if dt.peer != "" {
-			msg = "（两个文件的文字一样）"
+			msg = i18n.T("(The two files have the same text)")
 		}
 		if e.cfg.DiffWhitespace != "" {
-			msg = strings.TrimSuffix(msg, "）") + "；" + diffWhitespaceLabel(e.cfg.DiffWhitespace) + "）"
+			closing := i18n.TC("closing parenthesis", ")") // the whitespace filter goes inside the note
+			msg = i18n.F("%s; %s", strings.TrimSuffix(msg, closing), diffWhitespaceLabel(e.cfg.DiffWhitespace)) + closing
 		}
 		put(msg, diffLine{kind: diffHeader, line: -1})
 	}
@@ -357,7 +359,7 @@ func writeHunks(put func(string, diffLine), base, cur []string, hunks []linediff
 		for i := from; i < from+keepHead; i++ {
 			put(cur[i], diffLine{kind: diffSame, line: i, sec: sec, hunk: -1})
 		}
-		put(fmt.Sprintf("⋯ %d 行没改", n-keepHead-keepTail), diffLine{kind: diffFold, line: from + keepHead, fold: *fold, sec: sec, hunk: -1})
+		put(i18n.F("⋯ %d unchanged lines", n-keepHead-keepTail), diffLine{kind: diffFold, line: from + keepHead, fold: *fold, sec: sec, hunk: -1})
 		*fold++
 		for i := to - keepTail; i < to; i++ {
 			put(cur[i], diffLine{kind: diffSame, line: i, sec: sec, hunk: -1})
@@ -514,7 +516,7 @@ func (e *Editor) diffOpen(t *tab) error {
 				}
 			}
 			if l.kind == diffRemoved {
-				return errors.New("这一行已经删掉了")
+				return errors.New(i18n.T("This line has been deleted"))
 			}
 			break
 		}
@@ -529,7 +531,7 @@ func (e *Editor) diffOpen(t *tab) error {
 		return nil
 	}
 	if dt.fixed || dt.commit != nil { // 行号是那个提交里的，跟现在的文件对不上，文件也可能已经不在了
-		return errors.New("这是提交里的版本：要编辑现在的文件，从资源管理器打开它")
+		return errors.New(i18n.T("This is the version in a commit: to edit the current file, open it from the Explorer"))
 	}
 	c := e.fileColumn()
 	if err := e.openIn(c, c.active+1, dt.pathOf(l), false); err != nil {
@@ -593,7 +595,9 @@ const (
 	layoutInline
 )
 
-func (l diffLayout) label() string { return [...]string{"自动", "并排", "一栏"}[l] }
+func (l diffLayout) label() string {
+	return [...]string{i18n.T("Auto"), i18n.T("Side by Side"), i18n.T("Inline")}[l]
+}
 
 // splitMin 是自动时并排要每边至少几格。
 const splitMin = 80
@@ -642,7 +646,7 @@ func (e *Editor) toggleDiffLayout() error {
 			e.refreshDiff(t.doc, t.diff)
 		}
 	}
-	e.status = "改动视图：" + l.label()
+	e.status = i18n.F("Diff view: %s", l.label())
 	return nil
 }
 
@@ -765,7 +769,7 @@ func writeSplit(put func(string, diffLine), base, cur []string, hunks []linediff
 		for i := from; i < from+keepHead; i++ {
 			one(i)
 		}
-		put(fmt.Sprintf("⋯ %d 行没改", n-keepHead-keepTail), diffLine{kind: diffFold, line: from + keepHead, fold: *fold, sec: sec, hunk: -1})
+		put(i18n.F("⋯ %d unchanged lines", n-keepHead-keepTail), diffLine{kind: diffFold, line: from + keepHead, fold: *fold, sec: sec, hunk: -1})
 		*fold++
 		for i := to - keepTail; i < to; i++ {
 			one(i)

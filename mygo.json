@@ -5,7 +5,11 @@
   "main": "./cmd/yan-app",
   "out": "build",
   "macos": {
-    "minimumSystemVersion": "13.0"
+    "minimumSystemVersion": "13.0",
+    "infoPlist": {
+      "CFBundleDevelopmentRegion": "en",
+      "CFBundleLocalizations": ["en", "zh-Hans"]
+    }
   },
   "updates": {
     "publicKey": "YAZEQZkBTSzjCznxDLoJHrI63pBCghQ8g608EcETN0k=",

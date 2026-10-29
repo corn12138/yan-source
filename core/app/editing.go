@@ -9,6 +9,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/corn12138/yan-source/core/edit"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/syntax/highlight"
 	"github.com/corn12138/yan-source/core/text"
 )
@@ -34,9 +35,9 @@ func (s indentStyle) unit() string {
 
 func (s indentStyle) String() string {
 	if s.tabs {
-		return "制表符"
+		return i18n.T("Tabs")
 	}
-	return "空格：" + string(rune('0'+s.size))
+	return i18n.F("Spaces: %s", string(rune('0'+s.size)))
 }
 
 // detectIndent 从文档开头的若干行看出它怎么缩进；看不出时按文件类型的习惯。
@@ -372,7 +373,7 @@ func (e *Editor) toggleComment() error {
 	}
 	mark := t.doc.lineComment()
 	if mark == "" {
-		e.status = "这种文件没有行注释"
+		e.status = i18n.T("This kind of file has no line comments")
 		return nil
 	}
 	return e.editDoc(func(b *edit.Buffer) {
@@ -925,9 +926,9 @@ func (e *Editor) camelCase() error {
 func (e *Editor) setIndent(style indentStyle) error {
 	t := e.cur()
 	if t == nil {
-		return errors.New("没有打开的文件")
+		return errors.New(i18n.T("No open file"))
 	}
 	t.doc.indent = style
-	e.status = "缩进：" + style.String()
+	e.status = i18n.F("Indentation: %s", style.String())
 	return nil
 }

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/corn12138/yan-source/core/edit"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/text"
 )
 
@@ -24,31 +25,53 @@ func isMarkdown(path string) bool {
 
 func (e *Editor) previewToSide() error {
 	source := e.cur()
-	if !e.profile.GUI || source == nil || source.diff != nil || (!isMarkdown(source.doc.buf.Path()) && !strings.EqualFold(filepath.Ext(source.doc.buf.Path()), ".svg")) {
-		return errors.New("请在窗口版打开 Markdown、Mermaid 或 SVG 文件")
+	if !e.profile.GUI || source == nil || source.term != nil || source.diff != nil || source.mergeSide != nil || (!isMarkdown(source.doc.buf.Path()) && !strings.EqualFold(filepath.Ext(source.doc.buf.Path()), ".svg")) {
+		return errors.New(i18n.T("Open Markdown, Mermaid or SVG files in the window version"))
 	}
 	c, active, area := e.column(), e.column().active, e.area
-	// Reuse an existing preview of this document; repeated commands must not grow columns.
-	for _, other := range e.cols {
-		if other == c {
-			continue
+	// Mayoi 64bd32c: an implicit preview must not replace a locked column's contents.
+	// Prefer the nearest unlocked column to the right, then the left, before splitting.
+	other := e.previewColumn()
+	if other == nil {
+		if err := e.splitRight(); err != nil {
+			return err
 		}
+	} else {
+		at := -1
 		for i, t := range other.tabs {
-			if t.doc == source.doc && (t.markdown || t.svg) {
-				other.active = i
-				return nil
+			if t.doc == source.doc && t.term == nil && t.diff == nil && t.mergeSide == nil {
+				at = i
+				break
 			}
 		}
-	}
-	if err := e.splitRight(); err != nil {
-		return err
+		if at >= 0 {
+			e.activate(other, at)
+		} else {
+			e.addTab(other, other.active+1, source.doc, source)
+			e.cur().scrollX, e.cur().wrap = source.scrollX, source.wrap
+		}
 	}
 	dest := e.cur()
+	e.keep(dest)
 	dest.markdown, dest.svg = isMarkdown(dest.doc.buf.Path()), !isMarkdown(dest.doc.buf.Path())
 	dest.previewLine = source.scrollY
 	source.markdown, source.svg = false, false
 	e.activate(c, active)
 	e.area = area
+	return nil
+}
+
+func (e *Editor) previewColumn() *column {
+	for i := e.col + 1; i < len(e.cols); i++ {
+		if !e.cols[i].locked {
+			return e.cols[i]
+		}
+	}
+	for i := e.col - 1; i >= 0; i-- {
+		if !e.cols[i].locked {
+			return e.cols[i]
+		}
+	}
 	return nil
 }
 
@@ -75,7 +98,7 @@ func (e *Editor) ScrollSourceTo(col int, path string, line int) {
 }
 
 // errStalePreview refuses an edit made in a preview built from older text.
-var errStalePreview = errors.New("文档刚被别处改过：预览已更新，请在新的内容上再改一次")
+var errStalePreview = i18n.Error("The document was just changed elsewhere: the preview is updated; make the edit again on the new content")
 
 // EditMarkdownLines replaces source lines [from, to) of the Markdown document that column col
 // previews with src, as typing in its source would: grouped into the undo history with the
@@ -99,7 +122,7 @@ func (e *Editor) EditMarkdownLines(col int, path string, version uint64, from, t
 		return s.Version(), errStalePreview
 	}
 	if s.Meta().ReadOnly {
-		return version, errors.New("只读打开的文件不能编辑")
+		return version, errors.New(i18n.T("Files opened read-only can't be edited"))
 	}
 	n := s.LineCount()
 	from = max(0, min(from, n))
@@ -133,7 +156,7 @@ func (e *Editor) EditMarkdownLines(col int, path string, version uint64, from, t
 // the document: relative, with forward slashes, as Markdown renderers and Git hosts read it.
 func (e *Editor) SaveMarkdownImage(path string, png []byte) (string, error) {
 	if len(png) == 0 {
-		return "", errors.New("剪贴板里没有图片")
+		return "", errors.New(i18n.T("No image on the clipboard"))
 	}
 	dir := filepath.Join(filepath.Dir(path), "assets")
 	if err := os.MkdirAll(dir, 0o755); err != nil {

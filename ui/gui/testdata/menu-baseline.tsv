@@ -75,6 +75,7 @@ workbench.action.splitEditor	显示 › 向右拆分
 workbench.action.terminal.new	显示 › 新建终端
 workbench.action.terminal.toggleTerminal	显示 › 切换终端
 workbench.action.toggleAutoSave	文件 › 自动保存
+workbench.action.toggleMaximizeEditorGroup	显示 › 最大化／还原编辑区
 workbench.action.toggleSidebarPosition	显示 › 移动侧边栏到另一侧
 workbench.action.toggleSidebarVisibility	显示 › 切换侧边栏
 workbench.action.zoomIn	显示 › 放大
@@ -123,6 +124,7 @@ yan.project.close	文件 › 关闭项目
 yan.project.next	转到 › 下一个项目
 yan.project.previous	转到 › 上一个项目
 yan.projectTabs.toggle	显示 › 项目标签
+yan.settings.open	gui.test › 设置…
 yan.theme.claude	显示 › 主题 › Claude
 yan.theme.matrix	显示 › 主题 › The Matrix
 yan.theme.mayoi	显示 › 主题 › Mayoi

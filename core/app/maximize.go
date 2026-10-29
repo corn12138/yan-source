@@ -3,6 +3,8 @@ package app
 import (
 	"errors"
 	"slices"
+
+	"github.com/corn12138/yan-source/core/i18n"
 )
 
 // 最大化编辑区：当前这一列，或者合并视图的三栏，单独占满窗口，侧边栏和终端面板不画。
@@ -19,12 +21,12 @@ type maximizeState struct {
 // toggleMaximize 最大化编辑区，或者还原。
 func (e *Editor) toggleMaximize() error {
 	if e.maximized != nil {
-		e.restoreLayout("已还原布局")
+		e.restoreLayout(i18n.T("Layout restored"))
 		return nil
 	}
 	t := e.cur()
 	if t == nil {
-		return errors.New("没有打开的编辑器")
+		return errors.New(i18n.T("No open editor"))
 	}
 	m := &maximizeState{cols: []*column{e.column()}}
 	if mv := mergeOf(t); mv != nil {
@@ -33,7 +35,7 @@ func (e *Editor) toggleMaximize() error {
 	}
 	e.maximized = m
 	e.area = areaEditor
-	e.status = "已最大化编辑区：再执行一次「" + e.hintOr(cmdMaximize, "最大化／还原编辑区") + "」还原"
+	e.status = i18n.F("Editor area maximized: run \"%s\" again to restore", e.hintOr(cmdMaximize, i18n.T("Maximize / Restore Editor Area")))
 	return nil
 }
 
@@ -67,13 +69,13 @@ func (e *Editor) checkMaximized() {
 	m.cols = slices.DeleteFunc(m.cols, func(c *column) bool { return !slices.Contains(e.cols, c) })
 	switch {
 	case len(m.cols) == 0:
-		e.restoreLayout("已还原布局：最大化的列关掉了")
+		e.restoreLayout(i18n.T("Layout restored: the maximized column was closed"))
 	case m.merge != nil && (!e.tabOpen(m.merge.result) || mergeOf(m.merge.result) == nil): // closed, or resolved and detached
-		e.restoreLayout("已还原布局：合并视图已结束")
+		e.restoreLayout(i18n.T("Layout restored: the merge view ended"))
 	case e.area == areaTree:
-		e.restoreLayout("已还原布局")
+		e.restoreLayout(i18n.T("Layout restored"))
 	case !slices.Contains(m.cols, e.column()):
-		e.restoreLayout("已还原布局：打开了别的列")
+		e.restoreLayout(i18n.T("Layout restored: another column was opened"))
 	}
 }
 

@@ -3,10 +3,10 @@ package app
 import (
 	"cmp"
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/corn12138/yan-source/core/git"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/view"
 )
 
@@ -18,13 +18,13 @@ import (
 func opTitle(op git.Op) string {
 	switch op {
 	case git.OpMerge:
-		return "合并"
+		return i18n.T("Merge")
 	case git.OpRebase:
-		return "变基"
+		return i18n.T("Rebase")
 	case git.OpCherryPick:
-		return "拣选"
+		return i18n.T("Cherry-Pick")
 	case git.OpRevert:
-		return "还原"
+		return i18n.T("Revert")
 	}
 	return ""
 }
@@ -84,27 +84,27 @@ func (e *Editor) commitOpItems(c git.Commit) []ovItem {
 	if branch != "" && !in {
 		rev := revOf(c)
 		items = append(items,
-			ovItem{label: "合并到 " + branch, detail: name + " · " + c.Subject, run: func(e *Editor) error {
-				return e.runOp(git.OpMerge, "合并中…", "已把 "+name+" 合并到 "+branch, func(r *git.Repo) error { return r.Merge(rev) })
+			ovItem{label: i18n.F("Merge into %s", branch), detail: name + " · " + c.Subject, run: func(e *Editor) error {
+				return e.runOp(git.OpMerge, i18n.T("Merging…"), i18n.F("Merged %s into %s", name, branch), func(r *git.Repo) error { return r.Merge(rev) })
 			}},
-			ovItem{label: "把 " + branch + " 变基到这里", detail: "在 " + name + " 上重做 " + branch + " 独有的提交；推送过的提交会被改写", run: func(e *Editor) error {
-				return e.runOp(git.OpRebase, "变基中…", "已把 "+branch+" 变基到 "+name, func(r *git.Repo) error { return r.Rebase(rev) })
+			ovItem{label: i18n.F("Rebase %s onto Here", branch), detail: i18n.F("Replays the commits only %[2]s has on top of %[1]s; pushed commits are rewritten", name, branch), run: func(e *Editor) error {
+				return e.runOp(git.OpRebase, i18n.T("Rebasing…"), i18n.F("Rebased %s onto %s", branch, name), func(r *git.Repo) error { return r.Rebase(rev) })
 			}},
 		)
 	}
 	if branch != "" {
-		items = append(items, ovItem{label: "把 " + branch + " 重置到这里…", detail: at, run: func(e *Editor) error {
+		items = append(items, ovItem{label: i18n.F("Reset %s to Here…", branch), detail: at, run: func(e *Editor) error {
 			e.resetTo(c, branch)
 			return nil
 		}})
 	}
 	if in {
-		items = append(items, ovItem{label: "还原这个提交", detail: "新建一个提交，撤掉它的改动", run: func(e *Editor) error {
-			return e.runOp(git.OpRevert, "还原中…", "已还原 "+at, func(r *git.Repo) error { return r.Revert(c.Hash, merge) })
+		items = append(items, ovItem{label: i18n.T("Revert This Commit"), detail: i18n.T("Create a new commit that undoes its changes"), run: func(e *Editor) error {
+			return e.runOp(git.OpRevert, i18n.T("Reverting…"), i18n.F("Reverted %s", at), func(r *git.Repo) error { return r.Revert(c.Hash, merge) })
 		}})
 	} else if e.repository().git.status != nil && e.repository().git.status.Head != "" {
-		items = append(items, ovItem{label: "拣选到 " + cmp.Or(branch, "HEAD"), detail: "把它的改动做成一个新提交", run: func(e *Editor) error {
-			return e.runOp(git.OpCherryPick, "拣选中…", "已拣选 "+at, func(r *git.Repo) error { return r.CherryPick(c.Hash, merge) })
+		items = append(items, ovItem{label: i18n.F("Cherry-Pick onto %s", cmp.Or(branch, "HEAD")), detail: i18n.T("Make its changes into a new commit"), run: func(e *Editor) error {
+			return e.runOp(git.OpCherryPick, i18n.T("Cherry-picking…"), i18n.F("Cherry-picked %s", at), func(r *git.Repo) error { return r.CherryPick(c.Hash, merge) })
 		}})
 	}
 	return items
@@ -115,27 +115,27 @@ var resetModes = []struct {
 	mode          git.ResetMode
 	label, detail string
 }{
-	{git.ResetSoft, "软重置（soft）", "它之后的提交的改动留在暂存区，工作区不动"},
-	{git.ResetMixed, "混合重置（mixed）", "它之后的提交的改动和工作区的改动都留着，不暂存"},
-	{git.ResetHard, "硬重置（hard）", "丢掉它之后的提交和工作区的所有改动，不能撤销"},
+	{git.ResetSoft, i18n.N("Soft Reset (soft)"), i18n.N("Changes of the commits after it stay staged; the working tree is untouched")},
+	{git.ResetMixed, i18n.N("Mixed Reset (mixed)"), i18n.N("Changes of the commits after it and of the working tree are kept, unstaged")},
+	{git.ResetHard, i18n.N("Hard Reset (hard)"), i18n.N("Discards the commits after it and every change in the working tree; can't be undone")},
 }
 
 // resetTo 问怎么重置，再把 branch 重置到提交 c。
 func (e *Editor) resetTo(c git.Commit, branch string) {
 	var items []ovItem
 	for _, m := range resetModes {
-		items = append(items, ovItem{label: m.label, detail: m.detail, run: func(e *Editor) error {
+		items = append(items, ovItem{label: i18n.T(m.label), detail: i18n.T(m.detail), run: func(e *Editor) error {
 			if err := e.saveDirtyInRepo(); err != nil {
 				return err
 			}
-			return e.gitDo("重置中…", func(r *git.Repo) error { return r.Reset(c.Hash, m.mode) }, func(e *Editor) {
-				e.status = fmt.Sprintf("已把 %s 重置到 %s（%s）", branch, c.Short(), m.mode)
+			return e.gitDo(i18n.T("Resetting…"), func(r *git.Repo) error { return r.Reset(c.Hash, m.mode) }, func(e *Editor) {
+				e.status = i18n.F("Reset %s to %s (%s)", branch, c.Short(), m.mode)
 				e.checkDisk()
 			})
 		}})
 	}
-	items = append(items, ovItem{label: "取消", run: func(*Editor) error { return nil }})
-	e.gitChoose("把 "+branch+" 重置到 "+c.Short()+"？", items...)
+	items = append(items, ovItem{label: i18n.T("Cancel"), run: func(*Editor) error { return nil }})
+	e.gitChoose(i18n.F("Reset %s to %s?", branch, c.Short()), items...)
 }
 
 // runOp 先保存仓库里的文件，再跑一个会动 HEAD 的命令；它遇到冲突停下来时说怎么接着做，
@@ -163,7 +163,7 @@ func (e *Editor) runOp(op git.Op, busy, done string, fn func(r *git.Repo) error)
 		}
 		e.showSide(sideSCM)
 		e.repository().git.showMergeFiles = true
-		e.status = opTitle(op) + "遇到冲突：解决并暂存后点「继续」，或者「中止」"
+		e.status = i18n.F("%s hit conflicts: resolve and stage them, then click \"Continue\", or \"Abort\"", opTitle(op))
 	})
 }
 
@@ -171,12 +171,12 @@ func (e *Editor) runOp(op git.Op, busy, done string, fn func(r *git.Repo) error)
 func (e *Editor) continueOp() error {
 	st := e.repository().git.status
 	if st == nil || st.Op == "" {
-		return errors.New("没有停下来的合并、变基、拣选或还原")
+		return errors.New(i18n.T("No merge, rebase, cherry-pick or revert is in progress"))
 	}
 	op := st.Op
 	for _, en := range st.Entries {
 		if en.Conflicted() {
-			return errors.New("先解决冲突，再暂存这些文件")
+			return errors.New(i18n.T("Resolve the conflicts first, then stage these files"))
 		}
 	}
 	if op != git.OpRebase && strings.TrimSpace(e.repository().scm.message) != "" {
@@ -186,7 +186,7 @@ func (e *Editor) continueOp() error {
 		return err
 	}
 	stopped := false
-	return e.gitDo("继续"+opTitle(op)+"中…", func(r *git.Repo) error {
+	return e.gitDo(i18n.F("Continuing %s…", opTitle(op)), func(r *git.Repo) error {
 		err := r.Continue(op)
 		if err != nil && r.InProgress() == op {
 			// 变基到下一个有冲突的提交又会停下来。
@@ -204,11 +204,11 @@ func (e *Editor) continueOp() error {
 		e.checkDisk()
 		if stopped {
 			e.repository().git.showMergeFiles = true
-			e.status = opTitle(op) + "又遇到冲突：解决并暂存后再点「继续」"
+			e.status = i18n.F("%s hit conflicts again: resolve and stage them, then click \"Continue\" again", opTitle(op))
 			return
 		}
 		e.repository().scm.message = ""
-		e.status = opTitle(op) + "完成"
+		e.status = i18n.F("%s complete", opTitle(op))
 	})
 }
 
@@ -216,18 +216,18 @@ func (e *Editor) continueOp() error {
 func (e *Editor) abortOp() error {
 	st := e.repository().git.status
 	if st == nil || st.Op == "" {
-		return errors.New("没有停下来的合并、变基、拣选或还原")
+		return errors.New(i18n.T("No merge, rebase, cherry-pick or revert is in progress"))
 	}
 	op := st.Op
-	e.gitChoose("中止"+opTitle(op)+"？",
-		ovItem{label: "中止" + opTitle(op), detail: "HEAD、暂存区和工作区回到" + opTitle(op) + "之前", run: func(e *Editor) error {
-			return e.gitDo("中止"+opTitle(op)+"中…", func(r *git.Repo) error { return r.Abort(op) }, func(e *Editor) {
+	e.gitChoose(i18n.F("Abort %s?", opTitle(op)),
+		ovItem{label: i18n.F("Abort %s", opTitle(op)), detail: i18n.F("HEAD, the index and the working tree return to before the %s", opTitle(op)), run: func(e *Editor) error {
+			return e.gitDo(i18n.F("Aborting %s…", opTitle(op)), func(r *git.Repo) error { return r.Abort(op) }, func(e *Editor) {
 				e.repository().scm.message = ""
-				e.status = "已中止" + opTitle(op)
+				e.status = i18n.F("Aborted %s", opTitle(op))
 				e.checkDisk()
 			})
 		}},
-		ovItem{label: "取消", run: func(*Editor) error { return nil }})
+		ovItem{label: i18n.T("Cancel"), run: func(*Editor) error { return nil }})
 	return nil
 }
 

@@ -10,6 +10,7 @@ import (
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
 
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/workspace"
 )
 
@@ -139,8 +140,8 @@ func icoPNG(data []byte) []byte {
 func (g *group) chooseProjectIcon(pf *Frontend, root string) {
 	go func() {
 		paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{
-			Parent: g.win, Title: "选择项目图标", ButtonLabel: "选择",
-			Filters: []mygo.FileFilter{{Name: "图片", Extensions: []string{"png", "jpg", "jpeg", "webp", "svg", "ico"}}},
+			Parent: g.win, Title: i18n.T("Choose Project Icon"), ButtonLabel: i18n.T("Selection"),
+			Filters: []mygo.FileFilter{{Name: i18n.T("Images"), Extensions: []string{"png", "jpg", "jpeg", "webp", "svg", "ico"}}},
 		})
 		if err == nil && len(paths) > 0 {
 			pf.do(func() { g.setProjectIcon(pf, root, paths[0]) })
@@ -151,7 +152,7 @@ func (g *group) chooseProjectIcon(pf *Frontend, root string) {
 // setProjectIcon shows the picture at path in the square of the folder root, if it decodes.
 func (g *group) setProjectIcon(pf *Frontend, root, path string) {
 	if decodeProjectImage(path) == nil {
-		pf.ed.Notify(filepath.Base(path) + " 不是能显示的图片")
+		pf.ed.Notify(i18n.F("%s is not an image that can be shown", filepath.Base(path)))
 		return
 	}
 	if err := pf.ed.SetProjectIcon(root, path); err != nil {

@@ -16,7 +16,7 @@ require (
 	github.com/go-git/go-git/v5 v5.19.3
 	github.com/sahilm/fuzzy v0.1.3
 	github.com/yuin/goldmark v1.7.13
-	golang.org/x/net v0.57.0
+	golang.org/x/net v0.59.0
 	golang.org/x/sys v0.48.0
 )
 
@@ -31,14 +31,13 @@ require (
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/lucasb-eyer/go-colorful v1.4.1 // indirect
 	golang.org/x/image v0.46.0 // indirect
-	golang.org/x/term v0.45.0 // indirect
+	golang.org/x/term v0.46.0 // indirect
 	golang.org/x/text v0.43.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 )
 
 tool github.com/egoist/mygo/cmd/mygo
 
-// 和 Mayoi v0.8.2 一样用 sorrycc/mygo：MyGo v0.4.8 加上终端的三个提交——选中即复制（egoist/mygo#290，已合进 MyGo）、
-// 剪贴板里只有图片时 ⌘V 发一个空的括起来的粘贴（#344）、「全选」也复制并且能在开着的终端里改（#345）。
-// #344、#345 合进 MyGo 发布之后，去掉这一行，回到 egoist/mygo。见 docs/DECISIONS.md。
-replace github.com/egoist/mygo => github.com/sorrycc/mygo v0.4.9-0.20261014065302-a816c1636ddf
+// Mayoi 1010308 pins this fork for inline math object layout. It also retains
+// terminal copy-on-select and image-only clipboard paste support.
+replace github.com/egoist/mygo => github.com/sorrycc/mygo v0.4.9-0.20261022125358-4bd079439ee7

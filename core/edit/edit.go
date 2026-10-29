@@ -8,6 +8,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/text"
 )
 
@@ -138,7 +139,7 @@ const (
 )
 
 // ErrConflict 表示磁盘上的文件在上次读写之后被别人改过：Save 不覆盖它。
-var ErrConflict = errors.New("文件在磁盘上被别的程序改过了")
+var ErrConflict = i18n.Error("The file was changed on disk by another program")
 
 // NewBuffer 用快照创建 buffer，光标在文首。
 func NewBuffer(s text.Snapshot) *Buffer {

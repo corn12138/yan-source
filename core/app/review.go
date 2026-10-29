@@ -10,6 +10,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/corn12138/yan-source/core/edit"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/keymap"
 	"github.com/corn12138/yan-source/core/review"
 	"github.com/corn12138/yan-source/core/text"
@@ -188,7 +189,7 @@ func (e *Editor) reviewSource(dt *diffTab, sec int) (review.Note, []string, []st
 func (e *Editor) addReviewComment() error {
 	t := e.cur()
 	if t == nil {
-		return errors.New("先打开文件或改动")
+		return errors.New(i18n.T("Open a file or changes first"))
 	}
 	if t.diff != nil {
 		lo, _ := selectedLines(t)
@@ -198,7 +199,7 @@ func (e *Editor) addReviewComment() error {
 	}
 	ns := e.reviewExcerpts(t)
 	if len(ns) == 0 {
-		return errors.New("请在已保存的文件或差异里选择代码行")
+		return errors.New(i18n.T("Select lines in a saved file or a diff"))
 	}
 	n := ns[len(ns)-1]
 	e.followReview(true)
@@ -223,7 +224,7 @@ func (e *Editor) editReview(id int) error {
 			return nil
 		}
 	}
-	return errors.New("这条意见已不存在")
+	return errors.New(i18n.T("This comment no longer exists"))
 }
 
 func (e *Editor) EditReview(id int) {
@@ -250,7 +251,7 @@ func (e *Editor) saveReview() error {
 	}
 	value := strings.TrimSpace(e.review.input)
 	if value == "" {
-		return errors.New("意见不能为空")
+		return errors.New(i18n.T("The comment can't be empty"))
 	}
 	n.Text = value
 	if !slices.Contains(e.review.notes, n) {
@@ -271,7 +272,7 @@ func (e *Editor) DeleteReview(id int) {
 				e.cancelReview()
 			}
 			e.reviewChanged()
-			e.tell("已删除评审意见", "撤销", "review.undo")
+			e.tell(i18n.T("Deleted review comment"), i18n.T("Undo"), "review.undo")
 			return
 		}
 	}
@@ -298,7 +299,7 @@ func (e *Editor) clearReview() error {
 	e.review.notes = nil
 	e.cancelReview()
 	e.reviewChanged()
-	e.tell("已清空评审意见", "撤销", "review.undo")
+	e.tell(i18n.T("Cleared review comments"), i18n.T("Undo"), "review.undo")
 	return nil
 }
 func (e *Editor) undoReview() error {
@@ -382,18 +383,18 @@ func (e *Editor) reviewText() string {
 }
 func (e *Editor) copyReview() error {
 	if len(e.review.notes) == 0 {
-		return errors.New("还没有评审意见")
+		return errors.New(i18n.T("No review comments yet"))
 	}
 	if err := e.host.SetClipboard(e.reviewText()); err != nil {
 		return err
 	}
-	e.status = "已复制评审意见"
+	e.status = i18n.T("Copied review comments")
 	return nil
 }
 func (e *Editor) copyReviewExcerpt() error {
 	ns := e.reviewExcerpts(e.cur())
 	if len(ns) == 0 {
-		return errors.New("请先选择代码行")
+		return errors.New(i18n.T("Select lines first"))
 	}
 	return e.host.SetClipboard(review.Format(ns, e.root))
 }
@@ -402,7 +403,7 @@ func (e *Editor) copyReviewExcerpt() error {
 // if no live terminal exists, and an error without claiming success if delivery fails.
 func (e *Editor) sendReview() error {
 	if len(e.review.notes) == 0 {
-		return errors.New("还没有评审意见")
+		return errors.New(i18n.T("No review comments yet"))
 	}
 	value := e.reviewText()
 	if h, ok := e.host.(interface{ PasteReview(string) (bool, error) }); ok {
@@ -412,14 +413,14 @@ func (e *Editor) sendReview() error {
 		}
 		if sent {
 			e.clearReview()
-			e.tell("评审意见已粘贴到终端，请确认后提交", "撤销清空", "review.undo")
+			e.tell(i18n.T("Review comments pasted into the terminal; check them before submitting"), i18n.T("Undo Clear"), "review.undo")
 			return nil
 		}
 	}
 	if err := e.host.SetClipboard(value); err != nil {
 		return err
 	}
-	e.status = "未发送到终端：意见已复制，仍保留在项目中"
+	e.status = i18n.T("Not sent to the terminal: the comments were copied and are still kept in the project")
 	return nil
 }
 
@@ -429,12 +430,12 @@ func (e *Editor) reviewList() error {
 	for _, n := range e.review.notes {
 		items = append(items, ovItem{label: n.Ref(e.root), detail: strings.ReplaceAll(n.Text, "\n", " "), run: func(e *Editor) error { return e.goToReview(n) }})
 	}
-	e.choose("评审意见", items...)
+	e.choose(i18n.T("Review Comments"), items...)
 	return nil
 }
 func (e *Editor) stepReview(by int) error {
 	if len(e.review.notes) == 0 {
-		return errors.New("还没有评审意见")
+		return errors.New(i18n.T("No review comments yet"))
 	}
 	e.followReview(true)
 	ns := slices.Clone(e.review.notes)
@@ -572,7 +573,7 @@ func (e *Editor) markReview(t *tab, row *view.RowFrame, line int) {
 		if n.Path == t.doc.buf.Path() && n.Commit == "" && !n.Staged && !n.OldSide && !n.Outdated && line >= n.From && line < n.To {
 			row.ReviewID = n.id
 			if line == n.To-1 {
-				row.Ghost = "意见：" + strings.Split(n.Text, "\n")[0]
+				row.Ghost = i18n.F("Comment: %s", strings.Split(n.Text, "\n")[0])
 			}
 		}
 	}
@@ -628,7 +629,7 @@ func (e *Editor) reviewDiffText(dt *diffTab, body string) string {
 		put(source[i], l)
 		for _, n := range after[i] {
 			card := diffLine{kind: diffReview, line: -1, sec: l.sec, hunk: -1, noteID: n.id}
-			put("┌ 意见 · "+n.Ref(e.root), card)
+			put(i18n.F("┌ Comment · %s", n.Ref(e.root)), card)
 			if n.Outdated {
 				for _, q := range n.Snippet {
 					put("│ "+q, card)
@@ -637,7 +638,7 @@ func (e *Editor) reviewDiffText(dt *diffTab, body string) string {
 			for _, s := range strings.Split(n.Text, "\n") {
 				put("│ "+s, card)
 			}
-			put("└ c 编辑 · Delete 删除", card)
+			put(i18n.T("└ c Edit · Delete Remove"), card)
 		}
 	}
 	return out.String()

@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/corn12138/yan-source/core/config"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/keymap"
 	"github.com/corn12138/yan-source/core/view"
 )
@@ -158,7 +159,7 @@ func TestGuideBackRestartResume(t *testing.T) {
 		t.Fatalf("resume: %+v, text %q", again.guide, content(again))
 	}
 	again.Run("yan.guide.restart")
-	if again.guide.step != 0 || content(again) != guideLessons[0].practice {
+	if again.guide.step != 0 || content(again) != i18n.T(guideLessons[0].practice) {
 		t.Fatalf("restart: %+v", again.guide)
 	}
 	for _, id := range []string{"expandLineSelection", "editor.action.copyLinesDownAction", "editor.action.moveLinesUpAction", "editor.action.commentLine", "editor.action.deleteLines", "undo"} {

@@ -11,21 +11,21 @@
 
 从 alpha.11 起可在「帮助 → 检查更新…」安装签名更新，同一菜单可关闭自动检查。旧版本需手动安装一次。
 
-## 安装 macOS 预览版（v0.1.0-alpha.32）
+## 安装 macOS 预览版（v0.1.0-alpha.34）
 
 > **预览版**：只支持 Apple Silicon（M 系列芯片）的 Mac，macOS 13 或更新；**ad-hoc 签名、没有经过 Apple 公证**。
 > 能日常试用，但还有没在原生窗口里验证过的地方，见 [docs/macos-preview-release-report.md](docs/macos-preview-release-report.md)。
 > 打开重要项目前请先提交或备份。
 
-1. 在 [Releases](https://github.com/corn12138/yan-releases/releases) 里下载 `yan-v0.1.0-alpha.32-macos-arm64.dmg`（备用：`…app.zip`）和 `SHA256SUMS`。
-   安装包仓库公开，无需登录；也可以 `gh release download v0.1.0-alpha.32 -R corn12138/yan-releases`。
+1. 在 [Releases](https://github.com/corn12138/yan-releases/releases) 里下载 `yan-v0.1.0-alpha.34-macos-arm64.dmg`（备用：`…app.zip`）和 `SHA256SUMS`。
+   安装包仓库公开，无需登录；也可以 `gh release download v0.1.0-alpha.34 -R corn12138/yan-releases`。
 2. 核对文件：在下载目录里运行 `shasum -a 256 -c SHA256SUMS --ignore-missing`，每个文件都应显示 `OK`。
 3. 打开 dmg，把 **yan** 拖到旁边的「应用程序」（Applications）。
 4. 第一次打开：在「应用程序」里双击 yan。macOS 会说无法验证开发者，点「完成」（不要点「移到废纸篓」）。
    然后打开「系统设置 › 隐私与安全性」，往下翻到「安全性」，在「已阻止 "yan" 以保护你的 Mac」旁点「仍要打开」，
    用密码或触控 ID 确认，再在弹出的对话框里点「打开」。以后直接双击就行。
    不需要关闭 Gatekeeper，也不需要在终端里删除隔离属性。
-5. 用「文件 › 打开文件夹…」（Cmd+O）打开一个项目。状态栏右下角和窗口标题里的标签（如「预览版 v0.1.0-alpha.32」）说明是哪一版；
+5. 用「文件 › 打开文件夹…」（Cmd+O）打开一个项目。状态栏右下角和窗口标题里的标签（如「预览版 v0.1.0-alpha.34」）说明是哪一版；
    完整版本号和提交号在「帮助 › 关于砚」；第三方声明在「帮助 › 第三方声明」。
 
 自动保存默认开：停止编辑 1 秒、切换标签、关标签、切到别的应用时保存。别的程序在这期间改过同一个文件时，砚**不会覆盖**它，
@@ -45,7 +45,7 @@ make dev              # 同上，但配置和会话放在 build/dev-config，不
 make bundle           # 打包成 build/ 下的 yan.app 和 .dmg（go tool mygo build），带上 libghostty-vt 和第三方声明
 make check            # gofmt + vet + 测试 + 竞态检测 + 架构边界 + 体积门禁（终端版 ≤10 MB）
 make race             # 只跑竞态检测（要 C 工具链；编不了 -race 时报「没跑」并失败）
-make release VERSION=v0.1.0-alpha.32   # 从打了这个标签、没有未提交修改的提交做 dist/ 下的发布包和 SHA256SUMS
+make release VERSION=v0.1.0-alpha.34   # 从打了这个标签、没有未提交修改的提交做 dist/ 下的发布包和 SHA256SUMS
 ```
 
 发布流程（CHANGELOG、scripts/bump.sh、CI）见 [CONTRIBUTING.md](CONTRIBUTING.md)。
@@ -88,8 +88,14 @@ make release VERSION=v0.1.0-alpha.32   # 从打了这个标签、没有未提交
   主题、字号、自动保存、Vim 这类在应用里切换的设置，以及会话和最近的文件夹，记在 `~/.config/yan/state.json`。
   Claude 的 Clawd 和 Matrix 的数字雨可在「显示 → 主题 → 装饰效果」关闭，或配置 `[ui] theme_effects = false`；
   菜单里选过的值优先于配置文件。失焦或系统要求减少动态效果时，装饰保持静止。
+- 界面语言：「设置 → 通用 → 界面语言」（⌘, 打开设置，Windows、Linux 上是 Ctrl+,）选「跟随系统」（默认）、简体中文或 English。
+  跟随系统时取系统语言偏好里第一个砚支持的语言，都不支持时用英文。选择立即记在 `state.json`，下次启动砚时生效；
+  在那之前所有窗口保持启动时的语言，设置里会提示重启。也可在用户 `config.toml` 写 `[ui] language = "system"`、`"zh-Hans"` 或 `"en"`，
+  设置里选过的优先。界面语言属于整个应用：项目的 `.yan.toml` 写了会被忽略并给出提示。终端版用同一个选择，跟随系统时看
+  `LANGUAGE`、`LC_ALL`、`LC_MESSAGES`、`LANG`。
 - Mermaid：窗口版的 Markdown 预览把 `mermaid` 代码块画成随主题着色的图，`.mmd`、`.mermaid` 文件也能预览；
   配置 `[ui] preview_mermaid = false` 改回显示代码。
+- Markdown 预览支持 `$…$` 行内公式、`$$…$$` 块公式和 `math` 代码块；本地渲染，随主题着色，悬停块公式可看源码或复制 TeX。无法绘制时保留源码并说明原因；`[ui] preview_math = false` 可关闭。
 
 ### 来自 Mayoi 的功能（两个版本都有，窗口版用 Cmd，终端版见命令面板里的键位）
 

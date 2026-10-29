@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/corn12138/yan-source/core/i18n"
 )
 
 // 资源管理器里复制、粘贴文件，照着 Mayoi v0.6.0（MIT，cmd/mayoi/filecopy.go）：⌘C 复制选中的文件或文件夹，
@@ -24,17 +26,17 @@ type FileClipboard interface {
 func (e *Editor) copyFiles() error {
 	n := e.treeNode()
 	if n == nil {
-		return errors.New("先在资源管理器里选中要复制的文件")
+		return errors.New(i18n.T("Select the files to copy in the Explorer first"))
 	}
 	path := filepath.Join(e.root, filepath.FromSlash(n.Rel))
 	if fc, ok := e.host.(FileClipboard); ok {
 		if err := fc.CopyFiles([]string{path}); err != nil {
-			return fmt.Errorf("复制不了：%w", err)
+			return fmt.Errorf(i18n.T("Couldn't copy: %w"), err)
 		}
 	} else {
 		e.copied = []string{path}
 	}
-	e.status = "已复制 " + n.Name
+	e.status = i18n.F("Copied %s", n.Name)
 	return nil
 }
 
@@ -53,25 +55,25 @@ func (e *Editor) CanPaste() bool { return len(e.clipboardFiles()) > 0 }
 func (e *Editor) pasteFiles() error {
 	_, dir, ok := e.treeTarget()
 	if !ok {
-		return errors.New("没有打开文件夹")
+		return errors.New(i18n.T("No folder open"))
 	}
 	files := e.clipboardFiles()
 	if len(files) == 0 {
-		return errors.New("剪贴板里没有文件")
+		return errors.New(i18n.T("No files on the clipboard"))
 	}
 	var first string
 	for _, p := range files {
 		to, err := copyInto(p, dir)
 		if err != nil {
 			e.afterFileOp(first)
-			return fmt.Errorf("粘贴不了 %s：%w", filepath.Base(p), err)
+			return fmt.Errorf(i18n.T("Couldn't paste %s: %w"), filepath.Base(p), err)
 		}
 		if first == "" {
 			first = to
 		}
 	}
 	e.afterFileOp(first)
-	e.status = fmt.Sprintf("已粘贴 %d 项", len(files))
+	e.status = i18n.F("Pasted %d items", len(files))
 	return nil
 }
 
@@ -173,7 +175,7 @@ func copyInto(src, dir string) (string, error) {
 		return "", err
 	}
 	if info.IsDir() && (dir == src || strings.HasPrefix(dir, src+string(filepath.Separator))) {
-		return "", errors.New("不能把文件夹粘贴进它自己里面")
+		return "", errors.New(i18n.T("Can't paste a folder into itself"))
 	}
 	to := freeName(dir, filepath.Base(src), info.IsDir())
 	return to, copyEntry(src, to)

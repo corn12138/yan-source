@@ -29,3 +29,17 @@ func TestParseRequests(t *testing.T) {
 		t.Fatal("relative folder wrong")
 	}
 }
+
+// A per-launch macOS default and its value are Foundation's, not files to open.
+func TestParseSkipsAppleDefaults(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "a.go"), nil, 0o644)
+	r := Parse([]string{"-AppleLanguages", "(en)", "a.go", "-NSDocumentRevisionsDebugMode", "YES"}, dir)
+	if len(r.Targets) != 1 || r.Targets[0].File != filepath.Join(dir, "a.go") {
+		t.Fatalf("targets %+v", r.Targets)
+	}
+	r = Parse([]string{"--", "-AppleLanguages"}, dir)
+	if len(r.Targets) != 1 {
+		t.Fatalf("a literal file named like a default was dropped: %+v", r.Targets)
+	}
+}

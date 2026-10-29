@@ -1,12 +1,16 @@
 package gui
 
-import "github.com/egoist/mygo"
+import (
+	"github.com/egoist/mygo"
+
+	"github.com/corn12138/yan-source/core/i18n"
+)
 
 var patchSaveDialog = mygo.Dialog.Save
 
 func (h host) SavePatchDialog(path string, done func(string, error)) {
 	go func() {
-		path, err := patchSaveDialog(mygo.SaveDialogOptions{Parent: h.f.win, Title: "导出补丁", DefaultPath: path, CreateDirectories: true})
+		path, err := patchSaveDialog(mygo.SaveDialogOptions{Parent: h.f.win, Title: i18n.T("Export Patch"), DefaultPath: path, CreateDirectories: true})
 		done(path, err)
 	}()
 }

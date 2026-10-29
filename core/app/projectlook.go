@@ -3,6 +3,7 @@ package app
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,13 +13,14 @@ import (
 	"github.com/clipperhouse/uax29/v2/graphemes"
 
 	"github.com/corn12138/yan-source/core/config"
+	"github.com/corn12138/yan-source/core/i18n"
 )
 
 // A project's square on the rail can carry a mark and colour of the user's choosing, kept per
 // folder in state.json on this machine, as Mayoi lets a project be told apart at a glance.
 
 // projectColors are the rail's colour lanes, by number from 1, as the choice lists them.
-var projectColors = []string{"蓝", "绿", "橙", "紫", "红", "青"}
+var projectColors = []string{i18n.N("Blue"), i18n.N("Green"), i18n.N("Orange"), i18n.N("Purple"), i18n.N("Red"), i18n.N("Cyan")}
 
 // ProjectLook returns the mark and colour chosen for the folder root: "" and 0 when none is.
 func (e *Editor) ProjectLook(root string) (mark string, color int) {
@@ -33,24 +35,24 @@ func (e *Editor) ProjectLook(root string) (mark string, color int) {
 func (e *Editor) customizeProject() error {
 	root := e.root
 	if root == "" {
-		return fmt.Errorf("没有打开文件夹")
+		return errors.New(i18n.T("No folder open"))
 	}
 	mark, _ := e.ProjectLook(root)
-	e.prompt("项目标识：最多两个字或一个表情；留空用名字的缩写", mark, func(s string) string {
+	e.prompt(i18n.T("Project badge: up to two characters or one emoji; leave empty to use the name's initials"), mark, func(s string) string {
 		if n := graphemeCount(strings.TrimSpace(s)); n > 2 {
-			return "最多两个字"
+			return i18n.T("Up to two characters")
 		}
-		return "用「" + strings.TrimSpace(s) + "」作为标识"
+		return i18n.F("Use \"%s\" as the badge", strings.TrimSpace(s))
 	}, func(e *Editor, s string) error {
 		s = strings.TrimSpace(s)
 		if graphemeCount(s) > 2 {
-			return fmt.Errorf("最多两个字或一个表情")
+			return errors.New(i18n.T("Up to two characters or one emoji"))
 		}
-		items := []ovItem{{label: "按文件夹自动", run: func(e *Editor) error { return e.setProjectLook(root, s, 0) }}}
+		items := []ovItem{{label: i18n.T("Automatic by Folder"), run: func(e *Editor) error { return e.setProjectLook(root, s, 0) }}}
 		for i, name := range projectColors {
-			items = append(items, ovItem{label: name, run: func(e *Editor) error { return e.setProjectLook(root, s, i+1) }})
+			items = append(items, ovItem{label: i18n.T(name), run: func(e *Editor) error { return e.setProjectLook(root, s, i+1) }})
 		}
-		e.choose("项目颜色", items...)
+		e.choose(i18n.T("Project Color"), items...)
 		return nil
 	})
 	return nil
@@ -109,14 +111,14 @@ func (e *Editor) SetProjectIcon(root, src string) error {
 		return nil
 	}
 	if !IsIconFile(src) {
-		return fmt.Errorf("%s 不是图片：可用 %s", filepath.Base(src), strings.Join(iconExts, " "))
+		return fmt.Errorf(i18n.T("%s is not an image: use %s"), filepath.Base(src), strings.Join(iconExts, " "))
 	}
 	fi, err := os.Stat(src)
 	if err != nil {
 		return err
 	}
 	if !fi.Mode().IsRegular() || fi.Size() > maxIconBytes {
-		return fmt.Errorf("%s 不是 4 MB 以内的图片文件", filepath.Base(src))
+		return fmt.Errorf(i18n.T("%s is not an image file of 4 MB or less"), filepath.Base(src))
 	}
 	data, err := os.ReadFile(src)
 	if err != nil {

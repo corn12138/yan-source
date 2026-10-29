@@ -24,6 +24,7 @@ import (
 	"github.com/yuin/goldmark/text"
 	"github.com/yuin/goldmark/util"
 
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/syntax/highlight"
 )
 
@@ -36,6 +37,7 @@ type markdownInline struct {
 	bitmap                          ui.ImageSource
 	w, h                            float32
 	kind                            highlight.Kind
+	math                            *mathFormula
 }
 
 type markdownKind uint8
@@ -52,6 +54,7 @@ const (
 	// markdownAlertTitle is the first row of a GitHub alert, its icon and
 	// its kind, as "Note".
 	markdownAlertTitle
+	markdownMathBlock
 )
 
 // markdownAlert is the kind of a GitHub alert, a quote that opens with
@@ -87,6 +90,8 @@ type markdownCache struct {
 	// diagrams are those drawn in it, by source.
 	mermaid  *mermaidStyle
 	diagrams map[string]*mermaidDiagram
+	math     bool
+	formulas map[mathKey]*mathFormula
 }
 
 // markdownBlock is a paragraph-sized row, including its enclosing lists and quotes.
@@ -122,6 +127,7 @@ type markdownBlock struct {
 	line int
 	// diagram is what a Mermaid block draws, or why it could not.
 	diagram *mermaidDiagram
+	formula *mathFormula
 }
 
 // isMermaidFile reports whether path is a Mermaid file, whose preview is
@@ -176,15 +182,19 @@ func markdownFrontMatter(lines []string) bool {
 // parts of its GFM and footnote extensions that parse, without their HTML
 // renderers, which the preview has no use for and would add unused
 // rendering code.
-func markdownParser() parser.Parser {
+func markdownParser(math bool) parser.Parser {
+	inline := append(parser.DefaultInlineParsers(),
+		util.Prioritized(extension.NewStrikethroughParser(), 500),
+		util.Prioritized(extension.NewTaskCheckBoxParser(), 0),
+		util.Prioritized(extension.NewLinkifyParser(), 999),
+		util.Prioritized(extension.NewFootnoteParser(), 101))
+	if math {
+		inline = append(inline, util.Prioritized(mathParser{}, 150))
+	}
 	return parser.NewParser(
 		parser.WithBlockParsers(append(parser.DefaultBlockParsers(),
 			util.Prioritized(extension.NewFootnoteBlockParser(), 999))...),
-		parser.WithInlineParsers(append(parser.DefaultInlineParsers(),
-			util.Prioritized(extension.NewStrikethroughParser(), 500),
-			util.Prioritized(extension.NewTaskCheckBoxParser(), 0),
-			util.Prioritized(extension.NewLinkifyParser(), 999),
-			util.Prioritized(extension.NewFootnoteParser(), 101))...),
+		parser.WithInlineParsers(inline...),
 		parser.WithParagraphTransformers(append(parser.DefaultParagraphTransformers(),
 			util.Prioritized(extension.NewTableParagraphTransformer(), 200))...),
 		parser.WithASTTransformers(util.Prioritized(extension.NewTableASTTransformer(), 0),
@@ -209,6 +219,7 @@ func parseMarkdown(source []byte, path, root string, current func() bool, caches
 	used := map[markdownImageKey]bool{}
 	usedCode := map[[2]string]bool{}
 	usedDiagrams := map[string]bool{}
+	usedFormulas := map[mathKey]bool{}
 	defer func() {
 		if current != nil && !current() {
 			return
@@ -228,7 +239,33 @@ func parseMarkdown(source []byte, path, root string, current func() bool, caches
 				delete(c.diagrams, k)
 			}
 		}
+		for k := range c.formulas {
+			if !usedFormulas[k] {
+				delete(c.formulas, k)
+			}
+		}
 	}()
+	// Unique formulas are bounded per parse so a hostile document cannot monopolize the worker.
+	formulaStart := time.Now()
+	formula := func(tex string, display bool) *mathFormula {
+		if !c.math || current != nil && !current() {
+			return nil
+		}
+		key := mathKey{tex, display}
+		usedFormulas[key] = true
+		if f := c.formulas[key]; f != nil {
+			return f
+		}
+		if len(usedFormulas) > 256 || time.Since(formulaStart) > 10*time.Second {
+			return &mathFormula{display: display, err: i18n.T("This preview reached its formula rendering limit")}
+		}
+		f := renderMath(tex, display)
+		if c.formulas == nil {
+			c.formulas = map[mathKey]*mathFormula{}
+		}
+		c.formulas[key] = f
+		return f
+	}
 	// diagram draws a Mermaid block, as the last parse did if it had it.
 	diagram := func(text string) *mermaidDiagram {
 		if c.mermaid == nil || current != nil && !current() {
@@ -277,7 +314,7 @@ func parseMarkdown(source []byte, path, root string, current func() bool, caches
 		}
 	}
 
-	tree := markdownParser().Parse(text.NewReader(source))
+	tree := markdownParser(c.math).Parse(text.NewReader(source))
 	// starts are where the lines of source start, for the line of a block.
 	starts := []int{0}
 	for i, ch := range source {
@@ -392,6 +429,12 @@ func parseMarkdown(source []byte, path, root string, current func() bool, caches
 				if x.RefIndex > 0 {
 					s.text += markdownSuperscript(strconv.Itoa(x.RefIndex + 1))
 				}
+			case *mathNode:
+				fence := "$"
+				if x.display {
+					fence = "$$"
+				}
+				s.text, s.math = fence+x.tex+fence, formula(x.tex, x.display)
 			case *east.TaskCheckBox:
 				s.text = "☐ "
 				if x.IsChecked {
@@ -440,6 +483,10 @@ func parseMarkdown(source []byte, path, root string, current func() bool, caches
 				b.runs = b.runs[1:]
 			}
 
+			if x, ok := n.FirstChild().(*mathNode); ok && x.display && n.ChildCount() == 1 {
+				b.kind, b.language, b.codeText, b.formula = markdownMathBlock, "math", x.tex, formula(x.tex, true)
+				b.runs = []markdownInline{{text: x.tex, code: true}}
+			}
 		case *ast.ThematicBreak:
 			b.kind = markdownRule
 		case *ast.FencedCodeBlock:
@@ -448,6 +495,10 @@ func parseMarkdown(source []byte, path, root string, current func() bool, caches
 			b.runs = code(b.codeText, b.language)
 			if strings.EqualFold(b.language, "mermaid") {
 				b.diagram = diagram(b.codeText)
+			}
+			if c.math && strings.EqualFold(b.language, "math") {
+				b.kind, b.formula = markdownMathBlock, formula(strings.TrimSpace(b.codeText), true)
+				b.runs = []markdownInline{{text: strings.TrimSpace(b.codeText), code: true}}
 			}
 		case *ast.CodeBlock:
 			b.kind = markdownCodeBlock
@@ -713,6 +764,10 @@ func markdownColumns(rows []markdownBlock, size float32, measure func(r markdown
 					w += min(r.w, size*12)
 					continue
 				}
+				if r.math != nil && r.math.err == "" {
+					w += r.math.w * size
+					continue
+				}
 				w += measure(r, row.kind == markdownTableHeader)
 			}
 			if i >= len(cols) {
@@ -735,7 +790,7 @@ func markdownMerge(runs []markdownInline) []markdownInline {
 	for _, r := range runs {
 		if n := len(out); n > 0 {
 			l := &out[n-1]
-			if r.bitmap == nil && l.bitmap == nil && r.image == "" && l.image == "" && r.link == l.link && r.kind == l.kind &&
+			if r.math == nil && l.math == nil && r.bitmap == nil && l.bitmap == nil && r.image == "" && l.image == "" && r.link == l.link && r.kind == l.kind &&
 				r.bold == l.bold && r.italic == l.italic && r.strike == l.strike && r.code == l.code && r.raw == l.raw {
 				l.text += r.text
 				continue
@@ -753,7 +808,7 @@ func markdownWords(blocks []markdownBlock) (words, minutes int) {
 	latin, wide := 0, 0
 	count := func(runs []markdownInline) {
 		for _, r := range runs {
-			if r.code || r.raw {
+			if r.code || r.raw || r.math != nil {
 				continue
 			}
 			in := false
@@ -774,7 +829,7 @@ func markdownWords(blocks []markdownBlock) (words, minutes int) {
 		}
 	}
 	for _, b := range blocks {
-		if b.kind == markdownCodeBlock || b.kind == markdownHTML {
+		if b.kind == markdownCodeBlock || b.kind == markdownHTML || b.kind == markdownMathBlock {
 			continue
 		}
 		count(b.runs)

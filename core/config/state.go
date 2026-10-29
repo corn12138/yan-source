@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/review"
 )
 
@@ -13,7 +14,11 @@ import (
 // 每个文件夹上次开着的标签，最近打开的文件夹。它和手写的 config.toml 分开放，免得改写用户的注释。
 // 菜单里选过的设置优先于 config.toml。
 type State struct {
-	Theme        *string  `json:"theme,omitempty"`
+	Theme *string `json:"theme,omitempty"`
+	// Language is the interface language chosen in Settings: "system", "zh-Hans" or "en". It
+	// applies from the next launch and wins over [ui] language; an explicit "system" is a choice
+	// too, unlike an absent one.
+	Language     *string  `json:"language,omitempty"`
 	ThemeEffects *bool    `json:"themeEffects,omitempty"`
 	Appearance   *string  `json:"appearance,omitempty"`
 	FontSize     *float64 `json:"fontSize,omitempty"`
@@ -187,6 +192,39 @@ func (s *State) Apply(c *Config) {
 			c.DiffWhitespace = w
 		}
 	}
+}
+
+// LanguagePreference is the interface language the settings and configuration choose: a valid
+// choice saved in Settings, else a valid [ui] language in the user configuration (c), else
+// System. An invalid saved choice is reported and skipped.
+func (s *State) LanguagePreference(c *Config) (i18n.Preference, []string) {
+	var warns []string
+	if s != nil && s.Language != nil {
+		if p, ok := i18n.ParsePreference(*s.Language); ok {
+			return p, nil
+		}
+		warns = append(warns, i18n.F("state.json: unknown interface language %q, ignored", *s.Language))
+	}
+	if c != nil {
+		if p, ok := i18n.ParsePreference(c.Language); ok {
+			return p, warns
+		}
+	}
+	return i18n.System, warns
+}
+
+// SetLanguage saves the interface language chosen in Settings.
+func (s *State) SetLanguage(p i18n.Preference) error {
+	v := string(p)
+	previous := s.Language
+	s.Language = &v
+	if err := s.Save(); err != nil {
+		// All windows share this state. A failed write must not appear as a saved choice,
+		// or make retrying the same choice skip persistence.
+		s.Language = previous
+		return err
+	}
+	return nil
 }
 
 // AddRecent 把文件夹放到最近打开的最前面（最多 10 个）。

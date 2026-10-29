@@ -3,10 +3,13 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/corn12138/yan-source/core/i18n"
 )
 
 const marker = "# Installed by yan GUI."
@@ -17,7 +20,7 @@ func Script(executable, goos string) (string, error) {
 		quoted := "'" + strings.ReplaceAll(executable, "'", "'\\''") + "'"
 		return "#!/bin/sh\n" + marker + "\nif [ \"$#\" -eq 0 ]; then set -- .; fi\nnohup " + quoted + " \"$@\" </dev/null >/dev/null 2>&1 &\n", nil
 	default:
-		return "", fmt.Errorf("此平台的命令安装暂未提供")
+		return "", errors.New(i18n.T("Installing the command is not available on this platform yet"))
 	}
 }
 
@@ -27,7 +30,7 @@ func Install(dir, executable, goos string) (string, error) {
 		return "", err
 	}
 	if !filepath.IsAbs(executable) {
-		return "", fmt.Errorf("应用路径必须是绝对路径")
+		return "", errors.New(i18n.T("The app path must be absolute"))
 	}
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return "", err
@@ -40,7 +43,7 @@ func Install(dir, executable, goos string) (string, error) {
 				return path, nil
 			}
 		}
-		return "", fmt.Errorf("%s 已存在，未作修改；请先将它移到别处再安装", path)
+		return "", fmt.Errorf(i18n.T("%s already exists and was left unchanged; move it elsewhere before installing"), path)
 	}
 	if err != nil {
 		return "", err

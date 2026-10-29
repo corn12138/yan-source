@@ -2,7 +2,6 @@ package app
 
 import (
 	"errors"
-	"fmt"
 	"path/filepath"
 	"slices"
 	"sync"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/corn12138/yan-source/core/config"
 	"github.com/corn12138/yan-source/core/edit"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/recovery"
 	"github.com/corn12138/yan-source/core/text"
 )
@@ -138,7 +138,7 @@ func (e *Editor) recoveryOwner() (string, error) {
 	if errors.Is(err, recovery.ErrInUse) && e.ws != nil {
 		want = recovery.NewRootlessID()
 		l, err = recovery.Acquire(recoveryDir(), want)
-		e.status = "另一个 yan 开着这个文件夹：这里的未命名文件另外备份，下次在没开文件夹的窗口里找回"
+		e.status = i18n.T("Another yan has this folder open: untitled files here are backed up separately; recover them next time in a window without a folder")
 	}
 	if err != nil {
 		return "", err
@@ -196,7 +196,7 @@ func (e *Editor) recoveryJob() (*recoveryJob, error) {
 func (e *Editor) submitCheckpoint() {
 	j, err := e.recoveryJob()
 	if err != nil {
-		e.status = "未命名文件的备份没写成：" + err.Error()
+		e.status = i18n.F("Couldn't write the backup of untitled files: %s", err.Error())
 		return
 	}
 	e.recoveryWriter().submit(j)
@@ -205,7 +205,7 @@ func (e *Editor) submitCheckpoint() {
 func (e *Editor) recoveryWriter() *recoveryWriter {
 	if e.rec.w == nil {
 		e.rec.w = newRecoveryWriter(func(err error) {
-			e.Post(func(e *Editor) { e.status = "未命名文件的备份没写成：" + err.Error() })
+			e.Post(func(e *Editor) { e.status = i18n.F("Couldn't write the backup of untitled files: %s", err.Error()) })
 		})
 	}
 	return e.rec.w
@@ -242,7 +242,7 @@ func (e *Editor) KeepForRestart() error {
 		return nil
 	}
 	if e.rec.closed {
-		return errors.New("编辑器已经关了")
+		return errors.New(i18n.T("The editor is already closed"))
 	}
 	e.rec.touched = true
 	e.rec.soon++
@@ -257,7 +257,7 @@ func (e *Editor) KeepForRestart() error {
 	case err := <-done:
 		return err
 	case <-time.After(keepTimeout):
-		return errors.New("写备份超时")
+		return errors.New(i18n.T("Writing the backup timed out"))
 	}
 }
 
@@ -284,7 +284,7 @@ func (e *Editor) restoreFolderDrafts() {
 	}
 	id, err := e.recoveryOwner()
 	if err != nil {
-		e.status = "未命名文件的备份打不开：" + err.Error()
+		e.status = i18n.F("Couldn't open the backup of untitled files: %s", err.Error())
 		return
 	}
 	if id == recovery.FolderID(e.ws.root) {
@@ -297,7 +297,7 @@ func (e *Editor) restoreFolderDrafts() {
 func (e *Editor) restoreDrafts(id string) {
 	cp, err := recovery.Read(recoveryDir(), id)
 	if err != nil {
-		e.status = "未命名文件的备份读不出来，已移到一边：" + err.Error()
+		e.status = i18n.F("Couldn't read the backup of untitled files; moved it aside: %s", err.Error())
 		return
 	}
 	if len(cp.Drafts) == 0 {
@@ -337,7 +337,7 @@ func (e *Editor) restoreDrafts(id string) {
 			d.buf.SetSelections(t.sels)
 		}
 	}
-	e.status = fmt.Sprintf("找回了 %d 个未命名的文件", len(cp.Drafts))
+	e.status = i18n.F("Recovered %d untitled files", len(cp.Drafts))
 }
 
 // RootlessDrafts 是没开文件夹的编辑器留下的备份编号（窗口版启动时各开一个项目找回）。

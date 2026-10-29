@@ -11,6 +11,7 @@ import (
 	"github.com/egoist/mygo/ui"
 
 	"github.com/corn12138/yan-source/core/app"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/view"
 )
 
@@ -41,7 +42,7 @@ func (f *Frontend) view(c *ui.Context) {
 		for _, s := range f.allTerminals() { // 配置变更也应用到编辑区里的终端
 			// Failed terminal tabs remain closable but have no native terminal to update.
 			if s.t != nil {
-				s.t.SetCopyOnSelect(f.ed.TerminalCopyOnSelect())
+				s.t.SetCopyOnSelect(f.terminalCopyOnSelect())
 			}
 		}
 		if f.win != nil && mygo.FocusedWindow() == f.win {
@@ -67,7 +68,7 @@ func (f *Frontend) view(c *ui.Context) {
 		mygo.App.Quit()
 	}
 	if f.win != nil && fr.Title != "" {
-		f.win.SetTitle(fr.Title + "（" + f.badge + "）")
+		f.win.SetTitle(i18n.F("%s (%s)", fr.Title, f.badge))
 	}
 	root := ui.Column(c.Key("workbench")).Fill().Background(p.chrome).Focusable().AutoFocus().Bind(&f.root).
 		HandleInput(f.input).Label("yan")
@@ -163,7 +164,7 @@ func (f *Frontend) view(c *ui.Context) {
 func (f *Frontend) sidebarPane(c *ui.Context) {
 	right := f.frame.Sidebar.Right
 	edge, sign := edgeRight, float32(1)
-	box := ui.Column(c.Key("sidebar")).Label("侧边栏").Width(f.opts.SidebarWidth).Shrink(0).BorderColor(f.pal.border)
+	box := ui.Column(c.Key("sidebar")).Label(i18n.T("Sidebar")).Width(f.opts.SidebarWidth).Shrink(0).BorderColor(f.pal.border)
 	if right {
 		edge, sign = edgeLeft, -1
 		box.BorderWidth(0, 0, 0, 1)
@@ -206,16 +207,16 @@ func (f *Frontend) titleBar(c *ui.Context) {
 		BorderWidth(0, 0, 1, 0).BorderColor(p.border).DragWindow().Children(func() {
 		ui.Row(c).Width(120).Gap(2).Children(func() {
 			if !nativeMenuBar() { // Windows、Linux：没有占一整行的原生菜单栏，菜单从这个按钮打开
-				f.iconButton(c, iconMenu, "菜单", false).Menu(func(m *ui.Menu) { f.populateMenu(m, f.menu().Items()) })
+				f.iconButton(c, iconMenu, i18n.T("Menu"), false).Menu(func(m *ui.Menu) { f.populateMenu(m, f.menu().Items()) })
 			}
-			if f.iconButton(c, iconSidebar, "切换侧边栏 ("+f.ed.KeyHint("workbench.action.toggleSidebarVisibility")+")", f.frame.Sidebar.Visible).Clicked() {
+			if f.iconButton(c, iconSidebar, i18n.F("Toggle Sidebar (%s)", f.ed.KeyHint("workbench.action.toggleSidebarVisibility")), f.frame.Sidebar.Visible).Clicked() {
 				f.ed.Run("workbench.action.toggleSidebarVisibility")
 			}
 		})
 		ui.Row(c).Grow(1).MinWidth(0).Justify(ui.Center).AlignItems(ui.Center).Children(func() { f.commandCenter(c) })
 		ui.Row(c).Width(120).Justify(ui.End).Gap(2).Children(func() {
 			f.maximizeButton(c)
-			if f.iconButton(c, iconColumns, "向右拆分 ("+f.ed.KeyHint("workbench.action.splitEditor")+")", false).Clicked() {
+			if f.iconButton(c, iconColumns, i18n.F("Split Right (%s)", f.ed.KeyHint("workbench.action.splitEditor")), false).Clicked() {
 				f.ed.Run("workbench.action.splitEditor")
 			}
 		})
@@ -224,9 +225,9 @@ func (f *Frontend) titleBar(c *ui.Context) {
 
 // maximizeButton 最大化编辑区（合并视图是三栏一起）或者还原；最大化时它亮着。
 func (f *Frontend) maximizeButton(c *ui.Context) {
-	icon, label := iconMaximize, "最大化编辑区"
+	icon, label := iconMaximize, i18n.T("Maximize Editor Area")
 	if f.frame.Maximized {
-		icon, label = iconMinimize, "还原布局"
+		icon, label = iconMinimize, i18n.T("Restore Layout")
 	}
 	if k := f.ed.KeyHint("workbench.action.toggleMaximizeEditorGroup"); k != "" {
 		label += " (" + k + ")"
@@ -240,7 +241,7 @@ func (f *Frontend) maximizeButton(c *ui.Context) {
 func (f *Frontend) commandCenter(c *ui.Context) {
 	p := f.pal
 	b := ui.Row(c.Key("command-center")).Height(24).Width(420).MaxWidthPercent(100).Shrink(1).Padding(0, 10).Gap(8).
-		Radius(6).Justify(ui.Center).AlignItems(ui.Center).Border(1, p.border).Background(p.hover).Label("快速打开")
+		Radius(6).Justify(ui.Center).AlignItems(ui.Center).Border(1, p.border).Background(p.hover).Label(i18n.T("Quick Open"))
 	f.centerW = b.Bounds().W // 上一帧在这个窗口里排出来的宽度
 	hovered := b.Hovered()
 	if hovered {
@@ -276,7 +277,7 @@ func (f *Frontend) commandCenter(c *ui.Context) {
 		case name != "" || folder != "":
 			ui.Text(c, name+folder).FontSize(12).FontWeight(500).TextColor(p.muted).SingleLine().Shrink(1)
 		default:
-			ui.Text(c, "砚 yan").FontSize(12).FontWeight(500).TextColor(p.muted).SingleLine()
+			ui.Text(c, i18n.T("Yan")).FontSize(12).FontWeight(500).TextColor(p.muted).SingleLine()
 		}
 	})
 	if b.Clicked() {
@@ -297,7 +298,7 @@ func (f *Frontend) statusFit(c *ui.Context, st *view.Status) ([]view.StatusItem,
 		avail -= textWidth(c, st.Busy, 11.5) + 14
 	}
 	if updateShown != "" {
-		avail -= textWidth(c, "新版本 "+updateShown, 11.5) + 16 + 14
+		avail -= textWidth(c, i18n.F("New version %s", updateShown), 11.5) + 16 + 14
 	}
 	if f.statusW <= 0 {
 		return items, branch // 第一帧还不知道多宽
@@ -456,14 +457,14 @@ func (f *Frontend) emptyColumnHeader(c *ui.Context, ci int) {
 	col := &f.frame.Columns[ci]
 	ui.Row(c.Key("empty-header")).Height(tabStripH).Background(p.chrome).Padding(0, 6, 0, 10).AlignItems(ui.Center).Gap(2).
 		BorderWidth(0, 0, 1, 0).BorderColor(p.border).Children(func() {
-		label := "空列"
+		label := i18n.T("Empty column")
 		if col.Locked {
-			label = "已锁定的空列"
+			label = i18n.T("Locked empty column")
 		}
 		ui.Text(c, label).FontSize(12).TextColor(p.faint).SingleLine()
 		ui.Spacer(c)
 		f.columnLockButton(c, ci)
-		if col.Closable && f.iconButton(c, iconX, "关闭这一列", false).Clicked() {
+		if col.Closable && f.iconButton(c, iconX, i18n.T("Close This Column"), false).Clicked() {
 			f.ed.CloseColumn(ci)
 		}
 	})
@@ -471,9 +472,9 @@ func (f *Frontend) emptyColumnHeader(c *ui.Context, ci int) {
 
 // columnLockButton locks or unlocks column ci.
 func (f *Frontend) columnLockButton(c *ui.Context, ci int) {
-	tip := "锁定这一列：打开的文件和新终端去别的列"
+	tip := i18n.T("Lock this column: opened files and new terminals go to other columns")
 	if f.frame.Columns[ci].Locked {
-		tip = "解锁这一列"
+		tip = i18n.T("Unlock This Column")
 	}
 	if f.iconButton(c, iconLock, tip, f.frame.Columns[ci].Locked).Clicked() {
 		f.ed.FocusColumn(ci)
@@ -486,18 +487,18 @@ func (f *Frontend) columnLockButton(c *ui.Context, ci int) {
 func (f *Frontend) emptyColumn(c *ui.Context, ci int) {
 	p := f.pal
 	col := &f.frame.Columns[ci]
-	text := "把标签拖到这里，或在这一列里打开文件"
+	text := i18n.T("Drag tabs here, or open a file in this column")
 	if col.Locked {
-		text = "锁定的列：打开的文件和新终端去别的列；把标签拖到这里放进来"
+		text = i18n.T("Locked column: opened files and new terminals go to other columns; drag tabs here to put them in")
 	}
 	ui.Column(c).Fill().Justify(ui.Center).AlignItems(ui.Center).Padding(16).Children(func() {
 		ui.Text(c, text).FontSize(12.5).TextColor(p.faint).TextAlign(ui.Center).MaxWidth(260)
 		if col.Closable {
-			b := ui.Box(c.Key("empty-close")).Margin(12, 0, 0, 0).Padding(4, 10).Radius(6).Label("关闭这一列")
+			b := ui.Box(c.Key("empty-close")).Margin(12, 0, 0, 0).Padding(4, 10).Radius(6).Label(i18n.T("Close This Column"))
 			if b.Hovered() {
 				b.Background(p.hover)
 			}
-			b.Children(func() { ui.Text(c, "关闭这一列").FontSize(12.5).TextColor(p.accent) })
+			b.Children(func() { ui.Text(c, i18n.T("Close This Column")).FontSize(12.5).TextColor(p.accent) })
 			if b.Clicked() {
 				f.ed.CloseColumn(ci)
 			}
@@ -626,7 +627,7 @@ func (f *Frontend) tabStrip(c *ui.Context, ci int) {
 							name.TextColor(p.muted)
 						}
 						// 未保存的圆点，指针移上去变成 ×。
-						x := ui.Box(c).Size(20, 20).Radius(4).Justify(ui.Center).AlignItems(ui.Center).Label("关闭 " + t.Name)
+						x := ui.Box(c).Size(20, 20).Radius(4).Justify(ui.Center).AlignItems(ui.Center).Label(i18n.F("Close %s", t.Name))
 						xh := x.Hovered()
 						if xh {
 							x.Background(p.hover)
@@ -653,7 +654,7 @@ func (f *Frontend) tabStrip(c *ui.Context, ci int) {
 				f.maximizeButton(c)
 			}
 			f.columnLockButton(c, ci)
-			if f.iconButton(c, iconColumns, "向右拆分 ("+f.ed.KeyHint("workbench.action.splitEditor")+")", false).Clicked() {
+			if f.iconButton(c, iconColumns, i18n.F("Split Right (%s)", f.ed.KeyHint("workbench.action.splitEditor")), false).Clicked() {
 				f.ed.FocusColumn(ci)
 				f.ed.Run("workbench.action.splitEditor")
 			}
@@ -707,35 +708,35 @@ func (f *Frontend) tabMenu(m *ui.Menu, ci, i int, t view.Tab) {
 		f.ed.Run(cmd)
 	}
 	n := len(f.frame.Columns[ci].Tabs)
-	if m.Item("关闭").Chosen() {
+	if m.Item(i18n.T("Close")).Chosen() {
 		f.ed.CloseTab(ci, i)
 	}
-	if m.Item("关闭其他").Disabled(n < 2).Chosen() {
+	if m.Item(i18n.T("Close Others")).Disabled(n < 2).Chosen() {
 		run("workbench.action.closeOtherEditors")
 	}
-	if m.Item("关闭全部").Chosen() {
+	if m.Item(i18n.T("Close All")).Chosen() {
 		run("workbench.action.closeEditorsInGroup")
 	}
 	m.Separator()
-	if m.Item("向右拆分").Chosen() {
+	if m.Item(i18n.T("Split Right")).Chosen() {
 		run("workbench.action.splitEditor")
 	}
 	last := ci == len(f.frame.Columns)-1
-	if m.Item("移到下一列").Disabled(n < 2 && last).Chosen() {
+	if m.Item(i18n.T("Move to Next Column")).Disabled(n < 2 && last).Chosen() {
 		run("workbench.action.moveEditorToNextGroup")
 	}
-	if m.Item("移到上一列").Disabled(n < 2 && ci == 0).Chosen() {
+	if m.Item(i18n.T("Move to Previous Column")).Disabled(n < 2 && ci == 0).Chosen() {
 		run("workbench.action.moveEditorToPreviousGroup")
 	}
-	if m.Item("锁定列").Checked(f.frame.Columns[ci].Locked).Chosen() {
+	if m.Item(i18n.T("Lock Column")).Checked(f.frame.Columns[ci].Locked).Chosen() {
 		run("view.lockColumn")
 	}
 	if t.Terminal != 0 {
 		m.Separator()
-		if m.Item("移到右侧锁定列").Chosen() {
+		if m.Item(i18n.T("Move to the Locked Column on the Right")).Chosen() {
 			run("view.terminalLockRight")
 		}
-		if m.Item("移到面板").Chosen() {
+		if m.Item(i18n.T("Move to Panel")).Chosen() {
 			f.columnToPanel(t.Terminal)
 		}
 		return
@@ -744,13 +745,13 @@ func (f *Frontend) tabMenu(m *ui.Menu, ci, i int, t view.Tab) {
 		return
 	}
 	m.Separator()
-	if m.Item("复制路径").Chosen() {
+	if m.Item(i18n.T("Copy Path")).Chosen() {
 		run("copyFilePath")
 	}
-	if m.Item("复制相对路径").Chosen() {
+	if m.Item(i18n.T("Copy Relative Path")).Chosen() {
 		run("copyRelativeFilePath")
 	}
-	if m.Item("在" + app.FileManager(hostOS) + "中显示").Chosen() {
+	if m.Item(i18n.F("Reveal in %s", app.FileManager(hostOS))).Chosen() {
 		run("revealFileInOS")
 	}
 }
@@ -782,7 +783,7 @@ func (f *Frontend) breadcrumbs(c *ui.Context, ci int) {
 			if i < len(dirs) && dirs[i] != "" { // 文件夹：点开一个列着它的文件的框
 				dir := dirs[i]
 				b := ui.Row(c.Key("crumb:"+dir)).Height(crumbsH-6).Padding(0, 4).Radius(4).AlignItems(ui.Center).Shrink(0).
-					Label("文件夹 " + part).Tooltip(dir)
+					Label(i18n.F("Folder %s", part)).Tooltip(dir)
 				open := f.crumbs.open && f.crumbs.col == ci && f.crumbs.dir == dir
 				if open || b.Hovered() {
 					b.Background(p.hover)
@@ -808,7 +809,7 @@ func (f *Frontend) breadcrumbs(c *ui.Context, ci int) {
 		// 光标所在的块：点一下跳到开始它的那一行。
 		for i, cr := range col.Crumbs {
 			b := ui.Row(c.Key(fmt.Sprint("scope:", i))).Height(crumbsH-6).Padding(0, 5).Radius(4).
-				AlignItems(ui.Center).Shrink(1).MinWidth(0).Label("转到 " + cr.Label)
+				AlignItems(ui.Center).Shrink(1).MinWidth(0).Label(i18n.F("Go to %s", cr.Label))
 			if b.Hovered() {
 				b.Background(p.hover)
 			}
@@ -823,30 +824,30 @@ func (f *Frontend) breadcrumbs(c *ui.Context, ci int) {
 			}
 		}
 		if ci == f.frame.Active {
-			f.reviewButton(c, "+ 意见", "review.comment")
+			f.reviewButton(c, i18n.T("+ Comment"), "review.comment")
 			if f.frame.ReviewCount > 0 {
-				f.reviewButton(c, "发送意见", "review.send")
+				f.reviewButton(c, i18n.T("Send Comments"), "review.send")
 			}
 		}
 		if ext := strings.ToLower(filepath.Ext(tab.Path)); !tab.Diff && (ext == ".md" || ext == ".markdown" || ext == ".mmd" || ext == ".mermaid" || ext == ".svg") {
 			ui.Spacer(c)
-			if f.iconButton(c, iconFileText, "切换预览", false).Clicked() {
+			if f.iconButton(c, iconFileText, i18n.T("Toggle Preview"), false).Clicked() {
 				f.ed.ClickTab(ci, col.Active, true)
 				f.ed.Run("yan.svg.togglePreview")
 			}
-			if f.iconButton(c, iconColumns, "在右侧打开预览", false).Clicked() {
+			if f.iconButton(c, iconColumns, i18n.T("Open Preview to the Side"), false).Clicked() {
 				f.ed.ClickTab(ci, col.Active, true)
 				f.ed.Run("markdown.showPreviewToSide")
 			}
 		}
 		if col.Tabs[col.Active].History {
-			if f.iconButton(c, iconListTree, "显示/隐藏提交文件列表", col.Pane.CommitFiles != nil && col.Pane.CommitFiles.Visible).Clicked() {
+			if f.iconButton(c, iconListTree, i18n.T("Show/Hide Commit File List"), col.Pane.CommitFiles != nil && col.Pane.CommitFiles.Visible).Clicked() {
 				f.ed.Run("git.toggleCommitFiles")
 			}
 		}
 		if col.Tabs[col.Active].Diff { // 改动视图：换排法（自动、并排、一栏），照着 Mayoi
 			ui.Spacer(c)
-			if f.iconButton(c, iconColumns, "换排法：自动、并排、一栏", false).Clicked() {
+			if f.iconButton(c, iconColumns, i18n.T("Layout: Auto, Side by Side, Inline"), false).Clicked() {
 				f.ed.Run("toggle.diff.renderSideBySide")
 			}
 		}
@@ -899,28 +900,28 @@ func (f *Frontend) welcome(c *ui.Context, pane *view.PaneFrame) {
 				}
 			})
 			// New here: the feature guide teaches the editor by doing, as an IDE's Learn panel does.
-			learn := ui.Row(c.Key("welcome-learn")).Gap(6).Padding(4, 10).Radius(6).AlignItems(ui.Center).Label("功能导览")
+			learn := ui.Row(c.Key("welcome-learn")).Gap(6).Padding(4, 10).Radius(6).AlignItems(ui.Center).Label(i18n.T("Feature Tour"))
 			if learn.Hovered() {
 				learn.Background(p.hover)
 			}
 			learn.Children(func() {
 				ui.Icon(c, iconLearn).FontSize(14).TextColor(p.accent)
-				ui.Text(c, "第一次用？打开功能导览，边做边学").FontSize(13).TextColor(p.accent)
+				ui.Text(c, i18n.T("New here? Open the feature tour and learn by doing")).FontSize(13).TextColor(p.accent)
 			})
 			if learn.Clicked() {
 				f.ed.Run("yan.guide.open")
 			}
-			if ui.Button(c.Key("welcome-theme"), "颜色主题…").Label("颜色主题…").Clicked() {
+			if ui.Button(c.Key("welcome-theme"), i18n.T("Color Theme…")).Label(i18n.T("Color Theme…")).Clicked() {
 				f.ed.Run("workbench.action.selectTheme")
 			}
 			if updateShown != "" {
-				up := ui.Row(c.Key("welcome-update")).Gap(6).Padding(4, 10).Radius(6).AlignItems(ui.Center).Label("更新到 " + updateShown)
+				up := ui.Row(c.Key("welcome-update")).Gap(6).Padding(4, 10).Radius(6).AlignItems(ui.Center).Label(i18n.F("Update to %s", updateShown))
 				if up.Hovered() {
 					up.Background(p.hover)
 				}
 				up.Children(func() {
 					ui.Icon(c, iconPull).FontSize(14).TextColor(p.accent)
-					ui.Text(c, "有新版本 "+updateShown+"：点击更新").FontSize(13).TextColor(p.accent)
+					ui.Text(c, i18n.F("New version %s available: click to update", updateShown)).FontSize(13).TextColor(p.accent)
 				})
 				if up.Clicked() {
 					installUpdate()
@@ -967,14 +968,14 @@ func (f *Frontend) statusBar(c *ui.Context) {
 			text(st.Busy).TextColor(p.text)
 		}
 		if f.frame.ReviewCount > 0 {
-			f.reviewButton(c, fmt.Sprintf("评审 %d", f.frame.ReviewCount), "review.list")
+			f.reviewButton(c, i18n.F("Review %d", f.frame.ReviewCount), "review.list")
 		}
 		if reading := f.markdownReadingTime(); reading != "" && f.statusW > 700 {
 			text(reading)
 		}
 		right, branch := f.statusFit(c, st)
 		if branch {
-			b := ui.Row(c.Key("status-branch")).Gap(5).AlignItems(ui.Center).Label("切换分支").Tooltip("切换或新建分支")
+			b := ui.Row(c.Key("status-branch")).Gap(5).AlignItems(ui.Center).Label(i18n.T("Switch Branch")).Tooltip(i18n.T("Switch or Create Branch"))
 			col := p.statusFg
 			if b.Hovered() {
 				col = p.text
@@ -987,9 +988,9 @@ func (f *Frontend) statusBar(c *ui.Context) {
 				f.ed.Run("git.checkout") // 和源代码管理同一个能搜索的分支浮层
 			}
 			if st.Sync {
-				label, tip := "同步", "同步：先拉取（只快进），再推送"
+				label, tip := i18n.T("Sync"), i18n.T("Sync: pull first (fast-forward only), then push")
 				if st.Publish {
-					label, tip = "发布分支", "发布分支：推送并设置上游"
+					label, tip = i18n.T("Publish Branch"), i18n.T("Publish branch: push and set upstream")
 				}
 				s := ui.Box(c.Key("status-sync")).Size(18, 18).Radius(4).Justify(ui.Center).AlignItems(ui.Center).Label(label).Tooltip(tip)
 				col := p.statusFg
@@ -1010,7 +1011,7 @@ func (f *Frontend) statusBar(c *ui.Context) {
 		for _, it := range right {
 			item := text(it.Text)
 			if it.Command != "" {
-				item.Label("设置 " + it.Text).Tooltip("点击设置 " + it.Text)
+				item.Label(i18n.F("Set %s", it.Text)).Tooltip(i18n.F("Click to set %s", it.Text))
 				if item.Hovered() {
 					item.TextColor(p.text)
 				}
@@ -1021,14 +1022,14 @@ func (f *Frontend) statusBar(c *ui.Context) {
 		}
 		// 版本标签：一眼看出用的是预览版、哪一版
 		if updateShown != "" { // 检查到新版本：点一下打开更新窗口
-			u := ui.Row(c.Key("status-update")).Gap(4).AlignItems(ui.Center).Label("更新到 " + updateShown).Tooltip("有新版本 " + updateShown + "：点击更新")
+			u := ui.Row(c.Key("status-update")).Gap(4).AlignItems(ui.Center).Label(i18n.F("Update to %s", updateShown)).Tooltip(i18n.F("New version %s available: click to update", updateShown))
 			col := p.accent
 			if u.Hovered() {
 				col = p.text
 			}
 			u.Children(func() {
 				ui.Icon(c, iconPull).FontSize(12).TextColor(col)
-				ui.Text(c, "新版本 "+updateShown).FontSize(11.5).TextColor(col).SingleLine()
+				ui.Text(c, i18n.F("New version %s", updateShown)).FontSize(11.5).TextColor(col).SingleLine()
 			})
 			if u.Clicked() {
 				installUpdate()

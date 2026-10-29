@@ -19,6 +19,8 @@ import (
 
 	"github.com/dop251/goja"
 	"github.com/egoist/mygo/ui"
+
+	"github.com/corn12138/yan-source/core/i18n"
 )
 
 // peleJS is Pele, which lays Mermaid diagrams out and draws them as SVG,
@@ -222,7 +224,7 @@ var errMermaidTimeout = errors.New("timeout")
 func peleError(vm *goja.Runtime, err error) error {
 	var interrupted *goja.InterruptedError
 	if errors.As(err, &interrupted) {
-		return errors.New("画图超时")
+		return errors.New(i18n.T("Drawing the diagram timed out"))
 	}
 	var ex *goja.Exception
 	if !errors.As(err, &ex) {
@@ -256,7 +258,7 @@ func renderMermaid(source string, st mermaidStyle) *mermaidDiagram {
 	}
 	d := &mermaidDiagram{svg: s}
 	if d.w, d.h = s.Size(); d.w <= 0 || d.h <= 0 {
-		return &mermaidDiagram{err: "画出来的图没有大小"}
+		return &mermaidDiagram{err: i18n.T("The drawn diagram has no size")}
 	}
 	for _, t := range texts {
 		d.labels = append(d.labels, t.shape(st)...)

@@ -4,11 +4,11 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
-	"strconv"
 	"strings"
 
 	"github.com/corn12138/yan-source/core/config"
 	"github.com/corn12138/yan-source/core/git"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/keymap"
 	"github.com/corn12138/yan-source/core/text"
 	"github.com/corn12138/yan-source/core/view"
@@ -48,134 +48,134 @@ type guideLesson struct {
 }
 
 // Practice texts some steps compare against.
-const (
-	practiceDefinition = "package practice\n\n// 光标放在下面 area 的调用上，转到它的定义；再跳回来。\nfunc report(w, h int) string {\n\treturn label(area(w, h))\n}\n\nfunc area(w, h int) int {\n\treturn w * h\n}\n\nfunc label(n int) string {\n\treturn \"面积\"\n}\n"
-	practiceMarkdown   = "# 说明\n\n双击预览里的这一段，直接改它。[^1]\n\n- 第一项\n- 第二项\n\n```mermaid\nflowchart LR\n  A[写] --> B[预览]\n```\n\n[^1]: 脚注写在文末，预览里显示成上标数字。\n"
-	practiceConflict   = "package practice\n\nfunc greeting() string {\n\treturn \"你好\"\n}\n"
+var (
+	practiceDefinition = i18n.N("package practice\n\n// Place the cursor on the area call, go to its definition, then go back.\nfunc report(w, h int) string {\n\treturn label(area(w, h))\n}\n\nfunc area(w, h int) int {\n\treturn w * h\n}\n\nfunc label(n int) string {\n\treturn \"Area\"\n}\n")
+	practiceMarkdown   = i18n.N("# Guide\n\nDouble-click this paragraph in the preview to edit it.[^1]\n\n- First item\n- Second item\n\n```mermaid\nflowchart LR\n  A[Write] --> B[Preview]\n```\n\n[^1]: Footnotes are defined at the end and shown as superscript numbers in the preview.\n")
+	practiceConflict   = i18n.N("package practice\n\nfunc greeting() string {\n\treturn \"Hello\"\n}\n")
 )
 
 var guideLessons = []guideLesson{
 	{
-		id: "editing", module: "编辑", title: "编辑基础", feature: "basics", file: "编辑基础.go",
-		practice: "package practice\n\n// 把光标放在下面任意一行，照侧边栏「学习」里的步骤做。\nfunc greet() string {\n\treturn \"你好\"\n}\n\nfunc farewell() string {\n\treturn \"再见\"\n}\n",
+		id: "editing", module: i18n.N("Editing"), title: i18n.N("Editing Basics"), feature: "basics", file: "编辑基础.go",
+		practice: i18n.N("package practice\n\n// Put the cursor on any line below and follow the steps in the sidebar's Learn view.\nfunc greet() string {\n\treturn \"Hello\"\n}\n\nfunc farewell() string {\n\treturn \"Goodbye\"\n}\n"),
 		steps: []guideStep{
-			{text: "选中光标所在的整行", cmds: []string{"expandLineSelection"}},
-			{text: "把这一行向下复制一份", cmds: []string{"editor.action.copyLinesDownAction", "editor.action.copyLinesUpAction"}},
-			{text: "把这一行上下移动", cmds: []string{"editor.action.moveLinesUpAction", "editor.action.moveLinesDownAction"}},
-			{text: "注释或取消注释这一行", cmds: []string{"editor.action.commentLine"}},
-			{text: "删除这一行", cmds: []string{"editor.action.deleteLines"}},
-			{text: "撤销刚才的修改", cmds: []string{"undo"}},
+			{text: i18n.N("Select the whole line the cursor is on"), cmds: []string{"expandLineSelection"}},
+			{text: i18n.N("Copy this line down"), cmds: []string{"editor.action.copyLinesDownAction", "editor.action.copyLinesUpAction"}},
+			{text: i18n.N("Move this line up or down"), cmds: []string{"editor.action.moveLinesUpAction", "editor.action.moveLinesDownAction"}},
+			{text: i18n.N("Comment or uncomment this line"), cmds: []string{"editor.action.commentLine"}},
+			{text: i18n.N("Delete this line"), cmds: []string{"editor.action.deleteLines"}},
+			{text: i18n.N("Undo the last change"), cmds: []string{"undo"}},
 		},
 	},
 	{
-		id: "multicursor", module: "编辑", title: "多光标", feature: "basics", file: "多光标.go",
-		practice: "package practice\n\n// 把 count 改个名字：先把光标放在第一个 count 上。\nfunc total(items []int) int {\n\tcount := 0\n\tfor range items {\n\t\tcount++\n\t}\n\treturn count\n}\n",
+		id: "multicursor", module: i18n.N("Editing"), title: i18n.N("Multiple Cursors"), feature: "basics", file: "多光标.go",
+		practice: i18n.N("package practice\n\n// Rename count: first put the cursor on the first count.\nfunc total(items []int) int {\n\tcount := 0\n\tfor range items {\n\t\tcount++\n\t}\n\treturn count\n}\n"),
 		steps: []guideStep{
-			{text: "选中光标所在的词，再连按两次，选中后面两个相同的词", cmds: []string{"editor.action.addSelectionToNextFindMatch"}, times: 3},
-			{text: "直接输入新名字：几处一起改", check: func(e *Editor) bool {
+			{text: i18n.N("Select the word at the cursor, then press twice more to select the next two occurrences"), cmds: []string{"editor.action.addSelectionToNextFindMatch"}, times: 3},
+			{text: i18n.N("Type the new name: all places change together"), check: func(e *Editor) bool {
 				t := e.cur()
 				return t != nil && t.doc.buf.Dirty() && len(t.doc.buf.Selections().Ranges) > 1
 			}},
-			{text: "回到一个光标", cmds: []string{"removeSecondaryCursors"}},
+			{text: i18n.N("Go back to one cursor"), cmds: []string{"removeSecondaryCursors"}},
 		},
 	},
 	{
-		id: "navigation", module: "导航", title: "找文件、找命令", feature: "basics", file: "导航.go",
-		practice: "package practice\n\n// 这个文件里有几个函数，用「转到符号」跳过去。\nfunc alpha() {}\n\nfunc beta() {}\n\nfunc gamma() {}\n",
+		id: "navigation", module: i18n.N("Navigation"), title: i18n.N("Finding Files and Commands"), feature: "basics", file: "导航.go",
+		practice: i18n.N("package practice\n\n// This file has a few functions: jump to them with \"Go to Symbol\".\nfunc alpha() {}\n\nfunc beta() {}\n\nfunc gamma() {}\n"),
 		steps: []guideStep{
-			{text: "快速打开一个文件（输入文件名的几个字母）", cmds: []string{"workbench.action.quickOpen"}},
-			{text: "打开命令面板：所有功能都能在这里按名字找到", cmds: []string{"workbench.action.showCommands"}},
-			{text: "跳到某一行", cmds: []string{"workbench.action.gotoLine"}},
-			{text: "跳到文件里的函数（符号）", cmds: []string{"workbench.action.gotoSymbol"}},
-			{text: "在这个文件里查找", cmds: []string{"actions.find"}},
-			{text: "在整个文件夹里搜索", cmds: []string{"workbench.action.findInFiles"}},
+			{text: i18n.N("Quick-open a file (type a few letters of its name)"), cmds: []string{"workbench.action.quickOpen"}},
+			{text: i18n.N("Open the Command Palette: every feature can be found here by name"), cmds: []string{"workbench.action.showCommands"}},
+			{text: i18n.N("Go to a line"), cmds: []string{"workbench.action.gotoLine"}},
+			{text: i18n.N("Go to a function (symbol) in the file"), cmds: []string{"workbench.action.gotoSymbol"}},
+			{text: i18n.N("Find in this file"), cmds: []string{"actions.find"}},
+			{text: i18n.N("Search the whole folder"), cmds: []string{"workbench.action.findInFiles"}},
 		},
 	},
 	{
-		id: "definition", module: "导航", title: "转到定义", feature: "definition", file: "转到定义.go",
+		id: "definition", module: i18n.N("Navigation"), title: i18n.N("Go to Definition"), feature: "definition", file: "转到定义.go",
 		practice: practiceDefinition,
 		steps: []guideStep{
-			{text: "把光标放在 report 里的 area 上，转到它的定义", cmds: []string{"editor.action.revealDefinition"}},
-			{text: "跳回刚才的位置", cmds: []string{"workbench.action.navigateBack"}},
-			{text: "按住 {link} 点击 label：鼠标也能转到定义", cmds: []string{"editor.action.revealDefinition"}, gui: true},
+			{text: i18n.N("Place the cursor on area in report and go to its definition"), cmds: []string{"editor.action.revealDefinition"}},
+			{text: i18n.N("Go back to the previous location"), cmds: []string{"workbench.action.navigateBack"}},
+			{text: i18n.N("Hold {link} and click label to go to its definition"), cmds: []string{"editor.action.revealDefinition"}, gui: true},
 		},
 	},
 	{
-		id: "layout", module: "布局", title: "列与终端", feature: "basics", file: "布局.go",
-		practice: "package practice\n\n// 这一课把窗口分成几列，再开一个终端。\nfunc layout() {}\n",
+		id: "layout", module: i18n.N("Layout"), title: i18n.N("Columns and Terminals"), feature: "basics", file: "布局.go",
+		practice: i18n.N("package practice\n\n// This lesson splits the window into columns, then opens a terminal.\nfunc layout() {}\n"),
 		steps: []guideStep{
-			{text: "向右拆分出一列", cmds: []string{"workbench.action.splitEditor"}},
-			{text: "把这个编辑器移到另一列", cmds: []string{"workbench.action.moveEditorToNextGroup", "workbench.action.moveEditorToPreviousGroup"}},
-			{text: "在列之间切换焦点", cmds: []string{"workbench.action.focusNextGroup", "workbench.action.focusPreviousGroup"}},
-			{text: "锁定这一列：之后打开的文件去别的列", cmds: []string{"view.lockColumn"}, feature: "columnLock"},
-			{text: "打开或收起终端面板", cmds: []string{"workbench.action.terminal.toggleTerminal"}, gui: true},
-			{text: "在编辑区开一个终端标签", cmds: []string{"workbench.action.createTerminalEditor"}, gui: true, feature: "editorTerminal"},
-			{text: "把终端移到右侧锁定列", cmds: []string{"view.terminalLockRight"}, gui: true, feature: "columnLock"},
+			{text: i18n.N("Split a column to the right"), cmds: []string{"workbench.action.splitEditor"}},
+			{text: i18n.N("Move this editor to another column"), cmds: []string{"workbench.action.moveEditorToNextGroup", "workbench.action.moveEditorToPreviousGroup"}},
+			{text: i18n.N("Move focus between columns"), cmds: []string{"workbench.action.focusNextGroup", "workbench.action.focusPreviousGroup"}},
+			{text: i18n.N("Lock this column: files opened afterwards go to other columns"), cmds: []string{"view.lockColumn"}, feature: "columnLock"},
+			{text: i18n.N("Open or hide the terminal panel"), cmds: []string{"workbench.action.terminal.toggleTerminal"}, gui: true},
+			{text: i18n.N("Open a terminal tab in the editor area"), cmds: []string{"workbench.action.createTerminalEditor"}, gui: true, feature: "editorTerminal"},
+			{text: i18n.N("Move the terminal to the locked column on the right"), cmds: []string{"view.terminalLockRight"}, gui: true, feature: "columnLock"},
 		},
 	},
 	{
-		id: "maximize", module: "布局", title: "最大化编辑区", feature: "maximize", file: "最大化.go",
-		practice: "package practice\n\n// 先拆出两列，再把这一列放大到整个窗口，看完还原。\nfunc focus() {}\n",
+		id: "maximize", module: i18n.N("Layout"), title: i18n.N("Maximize Editor Area"), feature: "maximize", file: "最大化.go",
+		practice: i18n.N("package practice\n\n// Split into two columns, maximize this column, then restore the layout.\nfunc focus() {}\n"),
 		steps: []guideStep{
-			{text: "向右拆分出一列", cmds: []string{"workbench.action.splitEditor"}, feature: "basics"},
-			{text: "最大化这一列：侧边栏、终端和别的列先让开", show: cmdMaximize, check: func(e *Editor) bool { return e.maximized != nil }},
-			{text: "还原：列宽、锁定和光标都和之前一样", show: cmdMaximize, check: func(e *Editor) bool { return e.maximized == nil }},
+			{text: i18n.N("Split a column to the right"), cmds: []string{"workbench.action.splitEditor"}, feature: "basics"},
+			{text: i18n.N("Maximize this column, hiding the sidebar, terminal panel and other columns"), show: cmdMaximize, check: func(e *Editor) bool { return e.maximized != nil }},
+			{text: i18n.N("Restore the layout: column widths, locks and cursors stay as they were"), show: cmdMaximize, check: func(e *Editor) bool { return e.maximized == nil }},
 		},
 	},
 	{
-		id: "git", module: "Git", title: "源代码管理", feature: "basics", file: "笔记.md",
+		id: "git", module: "Git", title: i18n.N("Source Control"), feature: "basics", file: "笔记.md",
 		folder: func(dir string) error {
-			return git.PracticeChanges(dir, map[string]string{"笔记.md": "# 笔记\n\n第一行。\n"},
-				map[string]string{"笔记.md": "# 笔记\n\n第一行。\n第二行：这一行还没提交。\n", "新文件.txt": "一个新文件。\n"})
+			return git.PracticeChanges(dir, map[string]string{"笔记.md": i18n.T("# Notes\n\nFirst line.\n")},
+				map[string]string{"笔记.md": i18n.T("# Notes\n\nFirst line.\nSecond line: not committed yet.\n"), "新文件.txt": i18n.T("A new file.\n")})
 		},
 		steps: []guideStep{
-			{text: "打开源代码管理视图：练习仓库里有两处改动", cmds: []string{"workbench.view.scm"}},
-			{text: "看当前文件改了什么", cmds: []string{"git.openChange", "git.openAllChanges"}},
-			{text: "暂存改动", cmds: []string{"git.stage", "git.stageAll", "git.stageSelectedRanges"}},
-			{text: "写一句提交说明，然后提交", cmds: []string{"git.commit", "git.commitAndPush"}},
+			{text: i18n.N("Open Source Control: the practice repository has two changes"), cmds: []string{"workbench.view.scm"}},
+			{text: i18n.N("See what changed in the current file"), cmds: []string{"git.openChange", "git.openAllChanges"}},
+			{text: i18n.N("Stage changes"), cmds: []string{"git.stage", "git.stageAll", "git.stageSelectedRanges"}},
+			{text: i18n.N("Write a commit message, then commit"), cmds: []string{"git.commit", "git.commitAndPush"}},
 		},
 	},
 	{
-		id: "merge", module: "Git", title: "三方合并", feature: "merge",
+		id: "merge", module: "Git", title: i18n.N("Three-Way Merge"), feature: "merge",
 		folder: func(dir string) error {
-			return git.PracticeConflict(dir, "冲突.go", practiceConflict,
-				strings.Replace(practiceConflict, "你好", "你好，世界", 1), strings.Replace(practiceConflict, "你好", "早上好", 1))
+			return git.PracticeConflict(dir, "冲突.go", i18n.T(practiceConflict),
+				strings.Replace(i18n.T(practiceConflict), i18n.T("Hello"), i18n.T("Hello, world"), 1), strings.Replace(i18n.T(practiceConflict), i18n.T("Hello"), i18n.T("Good morning"), 1))
 		},
 		steps: []guideStep{
-			{text: "打开源代码管理视图：练习仓库正在合并，冲突.go 有冲突", cmds: []string{"workbench.view.scm"}},
-			{text: "打开冲突.go 的三方合并：左边是我们的，右边是他们的，中间是结果", cmds: []string{"yan.merge.open"}, check: func(e *Editor) bool {
+			{text: i18n.N("Open Source Control: the practice repository has a merge conflict in its Go file"), cmds: []string{"workbench.view.scm"}},
+			{text: i18n.N("Open the conflicted Go file in a three-way merge: ours on the left, theirs on the right, the result in the middle"), cmds: []string{"yan.merge.open"}, check: func(e *Editor) bool {
 				return mergeOf(e.cur()) != nil
 			}},
-			{text: "给这处冲突选一边（或两边都要）", show: "yan.merge.acceptOurs", check: func(e *Editor) bool {
+			{text: i18n.N("Choose one side of this conflict, or keep both"), show: "yan.merge.acceptOurs", check: func(e *Editor) bool {
 				mv := mergeOf(e.cur())
 				return mv != nil && mv.unresolved() == 0
 			}},
-			{text: "标记为已解决：保存并暂存", cmds: []string{"yan.merge.markResolved", "yan.merge.applyAndNext", "yan.merge.saveAndClose"}},
+			{text: i18n.N("Mark as resolved: save and stage"), cmds: []string{"yan.merge.markResolved", "yan.merge.applyAndNext", "yan.merge.saveAndClose"}},
 		},
 	},
 	{
-		id: "markdown", module: "写作", title: "Markdown 预览与编辑", feature: "markdownEdit", file: "说明.md",
+		id: "markdown", module: i18n.N("Writing"), title: i18n.N("Markdown Preview and Editing"), feature: "markdownEdit", file: "说明.md",
 		practice: practiceMarkdown,
 		steps: []guideStep{
-			{text: "在右侧打开预览", cmds: []string{"markdown.showPreviewToSide"}, gui: true, feature: "markdownPreview"},
-			{text: "在预览里双击一段，直接编辑它", check: func(e *Editor) bool { return e.guide.previewEdited }, gui: true},
-			{text: "加一个脚注：正文里写 [^2]，文末写 [^2]: 和它的内容", feature: "footnotes", check: func(e *Editor) bool {
+			{text: i18n.N("Open the preview to the side"), cmds: []string{"markdown.showPreviewToSide"}, gui: true, feature: "markdownPreview"},
+			{text: i18n.N("Double-click a paragraph in the preview and edit it directly"), check: func(e *Editor) bool { return e.guide.previewEdited }, gui: true},
+			{text: i18n.N("Add a footnote: write [^2] in the text and [^2]: followed by its content at the end"), feature: "footnotes", check: func(e *Editor) bool {
 				t := practiceText(e, "说明.md")
 				return strings.Count(t, "[^2]") >= 2 && strings.Contains(t, "[^2]:")
 			}},
-			{text: "在 mermaid 图里加一条边，比如 B --> C[保存]：预览跟着重画", feature: "mermaid", check: func(e *Editor) bool {
+			{text: i18n.N("Add an edge to the Mermaid diagram, such as B --> C[Save]: the preview redraws"), feature: "mermaid", check: func(e *Editor) bool {
 				return strings.Count(practiceText(e, "说明.md"), "-->") > strings.Count(practiceMarkdown, "-->")
 			}},
-			{text: "保存", cmds: []string{"workbench.action.files.save"}},
+			{text: i18n.N("Save"), cmds: []string{"workbench.action.files.save"}},
 		},
 	},
 	{
-		id: "settings", module: "设置", title: "个性化", feature: "basics",
+		id: "settings", module: i18n.N("Settings"), title: i18n.N("Personalization"), feature: "basics",
 		steps: []guideStep{
-			{text: "打开设置文件 config.toml", cmds: []string{"yan.config.open"}},
-			{text: "打开快捷键设置 keybindings.json", cmds: []string{"workbench.action.openGlobalKeybindingsFile"}},
-			{text: "把侧边栏移到另一侧（再按一次移回来）", cmds: []string{"workbench.action.toggleSidebarPosition"}},
-			{text: "从 VS Code、Cursor 导入设置（没有可跳过）", cmds: []string{"yan.config.importVSCode", "yan.config.importSettingsFile"}, feature: "importSettings"},
+			{text: i18n.N("Open the settings file config.toml"), cmds: []string{"yan.config.open"}},
+			{text: i18n.N("Open the keyboard shortcuts file keybindings.json"), cmds: []string{"workbench.action.openGlobalKeybindingsFile"}},
+			{text: i18n.N("Move the sidebar to the other side (press again to move it back)"), cmds: []string{"workbench.action.toggleSidebarPosition"}},
+			{text: i18n.N("Import settings from VS Code or Cursor (skip if you have neither)"), cmds: []string{"yan.config.importVSCode", "yan.config.importSettingsFile"}, feature: "importSettings"},
 		},
 	},
 }
@@ -233,16 +233,16 @@ func practiceText(e *Editor, file string) string {
 // guideTips are short tips shown under the lessons, one at a time; {id} becomes the key of
 // command id in the user's keymap.
 var guideTips = []string{
-	"按 {workbench.action.quickOpen} 后输入「:行号」直接跳到那一行，输入「@」列出符号。",
-	"{editor.action.addSelectionToNextFindMatch} 连按，一次选中一处相同的词，然后一起改。",
-	"关错了标签？{workbench.action.reopenClosedEditor} 按原位置重新打开。",
-	"鼠标中键点一下标签就能关掉它，不会切过去。",
-	"把搜索结果拖到一列上，在那里打开并选中这一处。",
-	"锁定一列后，打开的文件都去别的列：适合钉住终端或参考文件。",
-	"面包屑里的文件夹点一下，就能在弹出的树里找同目录的文件。",
-	"keybindings.json 支持 VS Code 的写法，包括 when 条件和 runCommands。",
-	"Markdown 编辑框里在行首输入 /，可以插入标题、列表、表格、代码块。",
-	"在 config.toml 的 [terminal] 里写 position = \"right\"，终端面板就放到右边。",
+	i18n.N("Press {workbench.action.quickOpen}, then type \":line\" to jump to that line, or \"@\" to list symbols."),
+	i18n.N("Press {editor.action.addSelectionToNextFindMatch} repeatedly to select one more occurrence each time, then edit them together."),
+	i18n.N("Closed the wrong tab? {workbench.action.reopenClosedEditor} reopens it where it was."),
+	i18n.N("Middle-click a tab to close it without switching to it."),
+	i18n.N("Drag a search result onto a column to open it there with the match selected."),
+	i18n.N("Once a column is locked, opened files go to other columns: good for pinning a terminal or a reference file."),
+	i18n.N("Click a folder in the breadcrumbs to find files beside it in a pop-up tree."),
+	i18n.N("keybindings.json accepts VS Code's format, including when conditions and runCommands."),
+	i18n.N("In the Markdown editing box, type / at the start of a line to insert headings, lists, tables and code blocks."),
+	i18n.N("Write position = \"right\" under [terminal] in config.toml to put the terminal panel on the right."),
 }
 
 // guideState is the guide's progress in this window.
@@ -310,7 +310,7 @@ func (e *Editor) resumeLesson() error {
 		return err
 	}
 	e.skipWindowSteps()
-	e.status = "接着上次的「" + l.title + "」：第 " + strconv.Itoa(g.step+1) + " 步"
+	e.status = i18n.F("Resume lesson %q at step %d", i18n.T(l.title), g.step+1)
 	return nil
 }
 
@@ -339,7 +339,7 @@ func (e *Editor) startLesson(i int) error {
 	}
 	e.skipWindowSteps()
 	e.saveGuideProgress()
-	e.status = "课程「" + l.title + "」：照着侧边栏的步骤做"
+	e.status = i18n.F("Lesson %q: follow the steps in the sidebar", i18n.T(l.title))
 	return nil
 }
 
@@ -362,7 +362,7 @@ func (e *Editor) preparePractice(l guideLesson) error {
 		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 			return err
 		}
-		if err := os.WriteFile(path, []byte(l.practice), 0o644); err != nil {
+		if err := os.WriteFile(path, []byte(i18n.T(l.practice)), 0o644); err != nil {
 			return err
 		}
 		if d := e.docOf(path); d != nil { // a fresh copy each time the lesson starts
@@ -421,7 +421,7 @@ func (e *Editor) leavePracticeFolder() error {
 		home = e.state.GuideHome
 	}
 	if home == "" {
-		return userError("这个窗口打开练习文件夹之前没有文件夹：用「打开文件夹」换回你的项目")
+		return userError(i18n.T("This window had no folder before practice. Use Open Folder to return to your project"))
 	}
 	if err := e.SwitchFolder(home); err != nil {
 		return err
@@ -485,9 +485,9 @@ func (e *Editor) guideAdvance() {
 	if g.step < len(l.steps) {
 		if e.side != sideGuide || !e.sidebar || e.maximized != nil { // the guide is out of sight: say what is next
 			next := l.steps[g.step]
-			e.status = "下一步：" + e.expandTip(next.text)
+			e.status = i18n.F("Next step: %s", e.expandTip(next.text))
 			if id := next.command(); e.keyHint[id] != "" {
-				e.status += "（" + e.keyHint[id] + "）"
+				e.status += i18n.F(" (%s)", e.keyHint[id])
 			}
 		}
 		return
@@ -496,13 +496,13 @@ func (e *Editor) guideAdvance() {
 		e.state.GuideDone = append(e.state.GuideDone, l.id)
 		e.saveState()
 	}
-	e.status = "完成课程「" + l.title + "」"
+	e.status = i18n.F("Completed lesson %q", i18n.T(l.title))
 	if e.ws != nil && inPractice(e.ws.root) && e.state != nil && e.state.GuideHome != "" {
-		e.status += "：用「" + e.commands["yan.guide.leave"].Title + "」回到 " + filepath.Base(e.state.GuideHome)
+		e.status += i18n.F(": use %q to return to %s", e.commands["yan.guide.leave"].Title, filepath.Base(e.state.GuideHome))
 		return
 	}
 	if next := e.nextLesson(g.active); next >= 0 {
-		e.status += "：在侧边栏开始下一课「" + guideLessons[next].title + "」"
+		e.status += i18n.F(": start the next lesson \"%s\" in the sidebar", i18n.T(guideLessons[next].title))
 		g.sel = next
 	}
 }
@@ -572,7 +572,7 @@ func (e *Editor) resetGuide() error {
 		e.saveState()
 	}
 	e.guide = guideState{active: -1}
-	e.status = "功能导览的进度已清空"
+	e.status = i18n.T("Feature tour progress reset")
 	return nil
 }
 
@@ -616,7 +616,7 @@ func (e *Editor) guideFrame(dst *view.Learn) {
 		if d {
 			done++
 		}
-		dst.Lessons = append(dst.Lessons, view.LearnLesson{Module: l.module, Title: l.title, Done: d, Steps: len(l.steps),
+		dst.Lessons = append(dst.Lessons, view.LearnLesson{Module: i18n.T(l.module), Title: i18n.T(l.title), Done: d, Steps: len(l.steps),
 			Unreleased: lessonUnreleased(l), Folder: l.folder != nil})
 	}
 	dst.Selected, dst.Active, dst.Done = g.sel, g.active, done
@@ -648,6 +648,7 @@ func (e *Editor) guideFrame(dst *view.Learn) {
 // expandTip writes the keys of the commands a tip or a step names; {link} is the modifier a
 // link click holds on this platform.
 func (e *Editor) expandTip(tip string) string {
+	tip = i18n.T(tip)
 	for {
 		i := strings.Index(tip, "{")
 		j := strings.Index(tip, "}")
@@ -660,7 +661,7 @@ func (e *Editor) expandTip(tip string) string {
 		case id == "link":
 			k = modName(e.LinkModifier(), e.profile)
 		case k == "":
-			k = "「" + e.commands[id].Title + "」"
+			k = i18n.F("“%s”", e.commands[id].Title)
 		}
 		tip = tip[:i] + k + tip[j+1:]
 	}

@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/corn12138/yan-source/core/edit"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/text"
 )
 
@@ -18,7 +19,7 @@ import (
 // 不碰它；git、监视、最近文件、会话也都等它有了路径再管。
 
 // errUntitled 是不能问保存位置的地方遇到未命名文档时的错误。
-var errUntitled = userError("还没存过的文件要先「另存为」")
+var errUntitled = i18n.Error("Files never saved need \"Save As\" first")
 
 // name 是文档在标签、状态栏里的名字：文件名，未命名时是「未命名-1」这样的。
 func (d *document) name() string {
@@ -62,17 +63,17 @@ func (e *Editor) addTab(c *column, at int, d *document, like *tab) {
 	e.activate(c, at)
 }
 
-func untitledTitle(n int) string { return fmt.Sprintf("未命名-%d", n) }
+func untitledTitle(n int) string { return i18n.F("Untitled-%d", n) }
 
 // saveAs 问文档存到哪里（窗口版用系统的保存对话框，终端版在输入框里输路径），再写过去。
 func (e *Editor) saveAs() error {
 	t := e.cur()
 	if t == nil || t.term != nil || t.diff != nil || t.mergeSide != nil || t.image {
-		return errors.New("没有可以另存为的文件")
+		return errors.New(i18n.T("No file to save as"))
 	}
 	d := t.doc
 	if d.buf.Snapshot().Meta().ReadOnly {
-		return errors.New("只读文件，不能保存")
+		return errors.New(i18n.T("Read-only file: can't save"))
 	}
 	if d.askingPath {
 		return nil // 已经在问了
@@ -112,10 +113,10 @@ func (e *Editor) saveAs() error {
 	if e.root != "" && strings.HasPrefix(initial, e.root+string(filepath.Separator)) {
 		initial = e.rel(initial)
 	}
-	e.prompt("另存为", initial, func(s string) string { return "保存到 " + strings.TrimSpace(s) }, func(e *Editor, s string) error {
+	e.prompt(i18n.T("Save As"), initial, func(s string) string { return i18n.F("Save to %s", strings.TrimSpace(s)) }, func(e *Editor, s string) error {
 		path := strings.TrimSpace(s)
 		if path == "" {
-			return errors.New("路径不能为空")
+			return errors.New(i18n.T("The path can't be empty"))
 		}
 		if !filepath.IsAbs(path) {
 			path = filepath.Join(cmp.Or(e.root, dir), path)
@@ -148,12 +149,12 @@ func (e *Editor) writeAs(d *document, target string, replace bool) error {
 		return err
 	}
 	if fi, err := os.Stat(abs); err == nil && fi.IsDir() {
-		return userError(filepath.Base(abs) + " 是文件夹，请另选一个文件名")
+		return userError(i18n.F("%s is a folder; choose another file name", filepath.Base(abs)))
 	}
 	same := canonical(abs)
 	for _, o := range e.docs {
 		if o != d && o.buf.Path() != "" && canonical(o.buf.Path()) == same {
-			return userError(filepath.Base(abs) + " 已经在编辑器里打开了：先关掉它，或换一个名字")
+			return userError(i18n.F("%s is already open in the editor: close it first, or choose another name", filepath.Base(abs)))
 		}
 	}
 	now, err := edit.StatStamp(abs)
@@ -161,9 +162,9 @@ func (e *Editor) writeAs(d *document, target string, replace bool) error {
 		return err
 	}
 	if !now.ModTime.IsZero() && !replace {
-		e.choose(filepath.Base(abs)+" 已经存在，要替换它吗？",
-			ovItem{label: "替换", run: func(e *Editor) error { return e.writeOver(d, abs, now) }},
-			ovItem{label: "取消", run: func(*Editor) error { return nil }})
+		e.choose(i18n.F("%s already exists. Replace it?", filepath.Base(abs)),
+			ovItem{label: i18n.T("Replace"), run: func(e *Editor) error { return e.writeOver(d, abs, now) }},
+			ovItem{label: i18n.T("Cancel"), run: func(*Editor) error { return nil }})
 		return nil
 	}
 	return e.writeOver(d, abs, now)
@@ -175,9 +176,9 @@ func (e *Editor) writeOver(d *document, abs string, expect edit.Stamp) error {
 		return nil
 	}
 	if err := d.buf.SaveAs(abs, expect); errors.Is(err, edit.ErrConflict) {
-		return userError(filepath.Base(abs) + " 刚被别的程序创建或改过，没有覆盖：请重新另存为")
+		return userError(i18n.F("%s was just created or changed by another program and was not overwritten: save as again", filepath.Base(abs)))
 	} else if err != nil {
-		return fmt.Errorf("保存 %s 失败：%w", filepath.Base(abs), err)
+		return fmt.Errorf(i18n.T("Couldn't save %s: %w"), filepath.Base(abs), err)
 	}
 	e.bindPath(d)
 	e.checkpointNow() // 有了文件：不再需要备份它
@@ -202,7 +203,7 @@ func (e *Editor) bindPath(d *document) {
 		e.reindex()
 	}
 	e.gitChanged()
-	e.status = "已保存 " + d.name()
+	e.status = i18n.F("Saved %s", d.name())
 	if e.isConfigFile(path) {
 		e.reloadConfig()
 	}

@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/corn12138/yan-source/core/app"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/keymap"
 	"github.com/corn12138/yan-source/core/view"
 	"github.com/egoist/mygo/ui"
@@ -99,21 +100,21 @@ func (f *Frontend) scmView(c *ui.Context) {
 		return
 	}
 	ui.Row(c.Key("repository-picker")).Padding(6, 12).Gap(8).Children(func() {
-		label := "选择仓库"
+		label := i18n.T("Select Repository")
 		for _, panel := range s.Panels {
 			if panel.State.RepositoryID == s.RepositoryID {
 				label = panel.Name
 			}
 		}
 		if s.AutoRepository {
-			label += " · 自动"
+			label += i18n.T(" · Auto")
 		}
-		b := ui.Row(c.Key("choose-repository")).Padding(4, 6).Radius(4).Label("选择仓库").Tooltip("选择提交历史和 Git 命令的目标仓库").Grow(1)
+		b := ui.Row(c.Key("choose-repository")).Padding(4, 6).Radius(4).Label(i18n.T("Select Repository")).Tooltip(i18n.T("Choose the repository for commit history and Git commands")).Grow(1)
 		b.Children(func() { ui.Text(c, label).SingleLine().Shrink(1).TextColor(f.pal.text).FontSize(12) })
 		if b.Clicked() {
 			f.ed.Run("yan.scm.chooseRepository")
 		}
-		if f.smallButton(c, iconRefresh, "刷新仓库列表") {
+		if f.smallButton(c, iconRefresh, i18n.T("Refresh Repository List")) {
 			f.ed.Run("yan.scm.refreshRepositories")
 		}
 	})
@@ -126,7 +127,7 @@ func (f *Frontend) scmView(c *ui.Context) {
 			state := panel.State
 			live[state.RepositoryID] = true
 			ui.Column(c.Key(fmt.Sprint("repository:", state.RepositoryID))).Children(func() {
-				h := ui.Row(c.Key("repository-header")).Height(30).Padding(0, 10).Gap(6).AlignItems(ui.Center).Label("仓库 " + panel.Name).Tooltip(state.Root)
+				h := ui.Row(c.Key("repository-header")).Height(30).Padding(0, 10).Gap(6).AlignItems(ui.Center).Label(i18n.F("Repository %s", panel.Name)).Tooltip(state.Root)
 				if state.RepositoryID == s.RepositoryID {
 					h.Background(f.pal.active)
 				}
@@ -144,7 +145,7 @@ func (f *Frontend) scmView(c *ui.Context) {
 					ui.Text(c, fmt.Sprint(count)).FontSize(11).TextColor(f.pal.muted)
 				})
 				h.ContextMenu(func(m *ui.Menu) {
-					if m.Item("在独立项目打开").Chosen() {
+					if m.Item(i18n.T("Open as a Separate Project")).Chosen() {
 						f.ed.SCMOpenRepository(state.Root)
 					}
 				})

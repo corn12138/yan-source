@@ -61,6 +61,14 @@ func runSelftest(ed *app.Editor, fe *gui.Frontend) {
 		fe.SelfTestUpdateRestart(dir, func(s string) { enc.Encode(map[string]string{"UpdateRestart": s}) })
 		return
 	}
+	if os.Getenv("YAN_SELFTEST_MODE") == "math" {
+		fe.SelfTestMath(dir, func(s string) { enc.Encode(map[string]string{"Math": s}) })
+		return
+	}
+	if os.Getenv("YAN_SELFTEST_MODE") == "language" {
+		fe.SelfTestLanguage(dir, func(s string) { enc.Encode(map[string]string{"Language": s}) })
+		return
+	}
 	if os.Getenv("YAN_SELFTEST_MODE") == "window-workflows" {
 		fe.SelfTestWindowWorkflows(dir, func(s string) { enc.Encode(map[string]string{"WindowWorkflow": s}) })
 		return

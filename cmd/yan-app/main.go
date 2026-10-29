@@ -13,10 +13,12 @@ import (
 
 	"github.com/corn12138/yan-source/core/app"
 	"github.com/corn12138/yan-source/core/config"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/internal/crashlog"
 	"github.com/corn12138/yan-source/internal/launch"
 	"github.com/corn12138/yan-source/internal/process"
 	"github.com/corn12138/yan-source/internal/version"
+	"github.com/corn12138/yan-source/platform/locale"
 	"github.com/corn12138/yan-source/ui/gui"
 )
 
@@ -57,11 +59,13 @@ func run(args []string) error {
 
 	// 所有窗口共用一份状态：菜单里选的设置、最近打开的文件夹、各文件夹的会话，谁存都不会盖掉别的窗口记下的。
 	state := config.LoadState(config.StatePath())
+	langWarns := config.StartLocale(state, locale.System())
 	ed, fe, warns := newEditor(t.Root, state)
+	warns = append(langWarns, warns...)
 	gui.SetWindowMaker(func() (*app.Editor, *gui.Frontend) {
 		ed, fe, warns := newEditor("", state)
 		if len(warns) > 0 {
-			ed.Notify("配置：" + strings.Join(warns, "；"))
+			ed.Notify(i18n.F("Configuration: %s", strings.Join(warns, i18n.TC("warning separator", "; "))))
 		}
 		return ed, fe
 	})
@@ -85,7 +89,7 @@ func run(args []string) error {
 		}
 	}
 	if len(warns) > 0 {
-		ed.Notify("配置：" + strings.Join(warns, "；"))
+		ed.Notify(i18n.F("Configuration: %s", strings.Join(warns, i18n.TC("warning separator", "; "))))
 	}
 	if selftest != nil {
 		selftest(ed, fe)

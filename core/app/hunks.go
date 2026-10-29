@@ -2,12 +2,12 @@ package app
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/corn12138/yan-source/core/edit"
 	"github.com/corn12138/yan-source/core/git"
 	"github.com/corn12138/yan-source/core/git/linediff"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/text"
 	"github.com/corn12138/yan-source/core/view"
 )
@@ -91,7 +91,7 @@ func (e *Editor) peekedHunk(t *tab) (int, bool) {
 func (e *Editor) targetHunk() (*tab, linediff.Hunk, error) {
 	t := e.cur()
 	if t == nil || t.diff != nil {
-		return nil, linediff.Hunk{}, errors.New("没有打开的文件")
+		return nil, linediff.Hunk{}, errors.New(i18n.T("No open file"))
 	}
 	g := &t.doc.marks
 	if i, ok := e.peekedHunk(t); ok {
@@ -101,7 +101,7 @@ func (e *Editor) targetHunk() (*tab, linediff.Hunk, error) {
 	if i, ok := hunkAt(g.hunks, line); ok {
 		return t, g.hunks[i], nil
 	}
-	return nil, linediff.Hunk{}, errors.New("光标所在的行没有改动")
+	return nil, linediff.Hunk{}, errors.New(i18n.T("The line at the cursor has no changes"))
 }
 
 // revertHunk 把一处改动还原成 HEAD 里的样子：编辑器里的一步，能撤销。
@@ -112,7 +112,7 @@ func (e *Editor) revertHunk() error {
 	}
 	base := t.doc.marks.base
 	if h.A+h.ALen > len(base) {
-		return errors.New("改动和 HEAD 对不上了：等一下再试")
+		return errors.New(i18n.T("The changes no longer match HEAD: try again in a moment"))
 	}
 	old := base[h.A : h.A+h.ALen]
 	return e.editDoc(func(b *edit.Buffer) {
@@ -142,7 +142,7 @@ func (e *Editor) revertHunk() error {
 		b.Apply(edit.Transaction{Changes: text.ChangeSet{ch}, Origin: edit.OriginCommand})
 		b.BreakGroup()
 		t.peek = nil
-		e.status = "已还原这处改动（可以撤销）"
+		e.status = i18n.T("Reverted this change (can be undone)")
 	})
 }
 
@@ -157,7 +157,7 @@ func (e *Editor) stageHunk() error {
 	}
 	r := e.repository().git.repo
 	if r == nil {
-		return errors.New("不在 git 仓库里")
+		return errors.New(i18n.T("Not in a Git repository"))
 	}
 	path := t.doc.buf.Path()
 	s := t.doc.buf.Snapshot()
@@ -167,7 +167,7 @@ func (e *Editor) stageHunk() error {
 		first, last = h.B, h.B
 	}
 	t.peek = nil
-	return e.gitDo("暂存中…", func(r *git.Repo) error {
+	return e.gitDo(i18n.T("Staging…"), func(r *git.Repo) error {
 		idx, ok, err := r.Show("", path)
 		if err != nil {
 			return err
@@ -185,9 +185,9 @@ func (e *Editor) stageHunk() error {
 			out := append(append(append([]string{}, lines[:ih.A]...), cur[ih.B:ih.B+ih.BLen]...), lines[ih.A+ih.ALen:]...)
 			return r.StageText(path, strings.Join(out, "\n"))
 		}
-		return errors.New("这处改动已经暂存了")
+		return errors.New(i18n.T("This change is already staged"))
 	}, func(e *Editor) {
-		e.status = "已暂存这处改动"
+		e.status = i18n.T("Staged this change")
 	})
 }
 
@@ -223,7 +223,7 @@ func (e *Editor) peekFrame(t *tab, pane *view.PaneFrame) {
 	if h.A+h.ALen <= len(g.base) {
 		p.Removed = g.base[h.A : h.A+h.ALen]
 	}
-	p.Title = fmt.Sprintf("第 %d 处改动，共 %d 处", i+1, len(g.hunks))
+	p.Title = i18n.F("Change %d of %d", i+1, len(g.hunks))
 	pane.Peek = p
 }
 

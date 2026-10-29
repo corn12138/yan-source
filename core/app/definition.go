@@ -9,6 +9,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/corn12138/yan-source/core/edit"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/keymap"
 	"github.com/corn12138/yan-source/core/syntax/highlight"
 	"github.com/corn12138/yan-source/core/syntax/symbols"
@@ -251,13 +252,13 @@ func (e *Editor) revealDefinition() error {
 // 没有就到文件夹里找。
 func (e *Editor) definitionAt(t *tab, pos int) error {
 	if !definable(t) {
-		e.status = "这里不能转到定义"
+		e.status = i18n.T("Can't go to a definition here")
 		return nil
 	}
 	s := t.doc.buf.Snapshot()
 	a, z, ok := identifierAt(t.doc, s, pos)
 	if !ok {
-		e.status = "光标处没有名字"
+		e.status = i18n.T("No name at the cursor")
 		return nil
 	}
 	name, qual := s.String(a, z), qualifierAt(s, a)
@@ -267,7 +268,7 @@ func (e *Editor) definitionAt(t *tab, pos int) error {
 	path := t.doc.buf.Path()
 	found, at := definitionsInFile(s, path, name, qual, pos)
 	if at {
-		e.status = name + " 就定义在这里"
+		e.status = i18n.F("%s is defined right here", name)
 		return nil
 	}
 	if len(found) > 0 {
@@ -275,7 +276,7 @@ func (e *Editor) definitionAt(t *tab, pos int) error {
 		return nil
 	}
 	if e.ws == nil || path == "" || family(path) == "" {
-		e.status = "找不到 " + name + " 的定义"
+		e.status = i18n.F("Couldn't find the definition of %s", name)
 		return nil
 	}
 	e.searchDefinition(t, name, qual, path)
@@ -292,12 +293,12 @@ func (e *Editor) showDefinitions(name string, found []defTarget) {
 	for _, d := range found {
 		where := fmt.Sprintf("%s:%d", d.rel, d.line+1)
 		if d.rel == "" {
-			where = fmt.Sprintf("第 %d 行", d.line+1)
+			where = i18n.F("Line %d", d.line+1)
 		}
 		items = append(items, ovItem{label: name, detail: strings.TrimSpace(where + "  " + d.detail), hint: symbolKind(d.kind),
 			run: func(e *Editor) error { e.jumpToDefinition(d); return nil }})
 	}
-	e.choose(fmt.Sprintf("%s 的 %d 个定义", name, len(found)), items...)
+	e.choose(i18n.F("%[2]d definitions of %[1]s", name, len(found)), items...)
 }
 
 // jumpToDefinition 记下现在的位置（后退回得来），打开定义所在的文件并选中名字。
@@ -357,7 +358,7 @@ func (e *Editor) searchDefinition(t *tab, name, qual, path string) {
 	e.def.stop = make(chan struct{})
 	gen, root, here, stop := e.def.gen, e.root, e.rel(path), e.def.stop
 	post := e.postHere()
-	e.status = "正在找 " + name + " 的定义…"
+	e.status = i18n.F("Finding the definition of %s…", name)
 	go func() {
 		var found []defTarget
 		for _, rel := range rels {
@@ -397,7 +398,7 @@ func (e *Editor) takeDefinitions(gen int, name, qual, here string, found []defTa
 	if gen != e.def.gen {
 		return
 	}
-	if e.status == "正在找 "+name+" 的定义…" {
+	if e.status == i18n.F("Finding the definition of %s…", name) {
 		e.status = ""
 	}
 	t := e.cur()
@@ -429,7 +430,7 @@ func (e *Editor) takeDefinitions(gen int, name, qual, here string, found []defTa
 		return a.line - b.line
 	})
 	if len(found) == 0 {
-		e.status = "找不到 " + name + " 的定义"
+		e.status = i18n.F("Couldn't find the definition of %s", name)
 		return
 	}
 	e.showDefinitions(name, found[:min(len(found), maxDefinitionHits)])

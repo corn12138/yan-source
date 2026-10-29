@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/corn12138/yan-source/core/git"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/view"
 )
 
@@ -186,19 +187,19 @@ func (e *Editor) repoPanelRows() []view.SCMPanelRow {
 		l := e.panelLogOf(key, from, to)
 		switch {
 		case l.loading && !l.loaded:
-			add(view.SCMPanelRow{Key: key + ":loading", Kind: "status", Label: "读取提交中…", Depth: depth})
+			add(view.SCMPanelRow{Key: key + ":loading", Kind: "status", Label: i18n.T("Reading commits…"), Depth: depth})
 			return
 		case l.err != "":
-			add(view.SCMPanelRow{Key: key, Kind: "retryLog", Label: "读取提交失败：点一下重试", Detail: l.err, Depth: depth})
+			add(view.SCMPanelRow{Key: key, Kind: "retryLog", Label: i18n.T("Couldn't read commits: click to retry"), Detail: l.err, Depth: depth})
 			return
 		case len(l.commits) == 0:
-			add(view.SCMPanelRow{Key: key + ":empty", Kind: "status", Label: "没有提交", Depth: depth})
+			add(view.SCMPanelRow{Key: key + ":empty", Kind: "status", Label: i18n.T("No commits"), Depth: depth})
 		}
 		for _, c := range l.commits {
 			add(view.SCMPanelRow{Key: key + ":" + c.Hash, Kind: "commit", Label: c.Subject, Detail: git.ShortHash(c.Hash) + " · " + c.Author + " · " + relTime(c.Time, time.Now()), Hash: c.Hash, Depth: depth})
 		}
 		if len(l.commits) >= l.n {
-			add(view.SCMPanelRow{Key: key, Kind: "more", Label: "更多提交…", Depth: depth})
+			add(view.SCMPanelRow{Key: key, Kind: "more", Label: i18n.T("More Commits…"), Depth: depth})
 		}
 	}
 	addBranch := func(b git.PanelBranch, depth int) {
@@ -206,7 +207,7 @@ func (e *Editor) repoPanelRows() []view.SCMPanelRow {
 		detail := b.Upstream
 		switch {
 		case b.Gone:
-			detail += "（远端已删除）"
+			detail += i18n.T("(deleted on remote)")
 		case b.Upstream != "":
 			if b.Behind > 0 {
 				detail += fmt.Sprintf(" ↓%d", b.Behind)
@@ -225,15 +226,15 @@ func (e *Editor) repoPanelRows() []view.SCMPanelRow {
 		}
 		if b.Upstream != "" && !b.Gone {
 			for _, in := range []bool{true, false} {
-				label, n, from, to := "待推送", b.Ahead, b.UpstreamRef, b.Ref()
+				label, n, from, to := i18n.T("To Push"), b.Ahead, b.UpstreamRef, b.Ref()
 				if in {
-					label, n, from, to = "待拉取", b.Behind, b.Ref(), b.UpstreamRef
+					label, n, from, to = i18n.T("To Pull"), b.Behind, b.Ref(), b.UpstreamRef
 				}
 				if n == 0 {
 					continue
 				}
 				k := key + ":" + map[bool]string{true: "in", false: "out"}[in]
-				add(view.SCMPanelRow{Key: k, Kind: "range", Label: fmt.Sprintf("%s（%d 个提交）", label, n), Depth: depth + 1, Open: p.open[k]})
+				add(view.SCMPanelRow{Key: k, Kind: "range", Label: i18n.F("%s (%d commits)", label, n), Depth: depth + 1, Open: p.open[k]})
 				if p.open[k] {
 					addLog(k, from, to, depth+2)
 				}
@@ -242,10 +243,10 @@ func (e *Editor) repoPanelRows() []view.SCMPanelRow {
 		addLog(key+":history", "", b.Ref(), depth+1)
 	}
 	if !p.loaded && p.err == "" || e.repoPanelRemotes() && !p.remotesLoaded && p.err == "" {
-		return append(rows, view.SCMPanelRow{Key: "status", Kind: "status", Label: "读取中…", Depth: 1})
+		return append(rows, view.SCMPanelRow{Key: "status", Kind: "status", Label: i18n.T("Reading…"), Depth: 1})
 	}
 	if p.err != "" {
-		return append(rows, view.SCMPanelRow{Key: "retry", Kind: "retry", Label: "读取分支失败：点一下重试", Detail: p.err, Depth: 1})
+		return append(rows, view.SCMPanelRow{Key: "retry", Kind: "retry", Label: i18n.T("Couldn't read branches: click to retry"), Detail: p.err, Depth: 1})
 	}
 	if !e.repoPanelRemotes() {
 		for _, b := range p.branches {
@@ -254,7 +255,7 @@ func (e *Editor) repoPanelRows() []view.SCMPanelRow {
 			}
 		}
 		if len(rows) == 0 {
-			add(view.SCMPanelRow{Key: "none", Kind: "status", Label: "还没有分支", Depth: 1})
+			add(view.SCMPanelRow{Key: "none", Kind: "status", Label: i18n.T("No branches yet"), Depth: 1})
 		}
 		return rows
 	}
@@ -273,9 +274,9 @@ func (e *Editor) repoPanelRows() []view.SCMPanelRow {
 		for i := range rm.FetchURLs {
 			same = same && rm.FetchURLs[i] == rm.PushURLs[i]
 		}
-		kind := "拉取"
+		kind := i18n.T("Pull")
 		if same {
-			kind = "拉取、推送"
+			kind = i18n.T("Pull, Push")
 		}
 		for _, u := range rm.FetchURLs {
 			add(view.SCMPanelRow{Key: key + ":fetch:" + u, Kind: "url", Label: u, Detail: kind, Depth: 2})
@@ -284,7 +285,7 @@ func (e *Editor) repoPanelRows() []view.SCMPanelRow {
 			if same {
 				break
 			}
-			add(view.SCMPanelRow{Key: key + ":push:" + u, Kind: "url", Label: u, Detail: "推送", Depth: 2})
+			add(view.SCMPanelRow{Key: key + ":push:" + u, Kind: "url", Label: u, Detail: i18n.T("Push"), Depth: 2})
 		}
 		for _, b := range p.branches {
 			if b.Remote && strings.HasPrefix(b.Name, rm.Name+"/") {
@@ -293,7 +294,7 @@ func (e *Editor) repoPanelRows() []view.SCMPanelRow {
 		}
 	}
 	if len(p.remotes) == 0 {
-		add(view.SCMPanelRow{Key: "addRemote", Kind: "addRemote", Label: "没有远程仓库：点一下添加", Depth: 1})
+		add(view.SCMPanelRow{Key: "addRemote", Kind: "addRemote", Label: i18n.T("No remotes: click to add one"), Depth: 1})
 	}
 	return rows
 }

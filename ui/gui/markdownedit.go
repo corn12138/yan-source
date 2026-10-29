@@ -8,6 +8,7 @@ import (
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
 
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/keymap"
 	"github.com/corn12138/yan-source/core/view"
 )
@@ -105,7 +106,7 @@ func (f *Frontend) markdownEditBox(c *ui.Context, v *markdownViewport, ci int, p
 	size := f.markdownSize(*b)
 	_, lh := f.markdownBody() // the box takes the place of the prose it edits: the same lines
 	font := c.Theme().Font
-	if p.mono || b.kind == markdownCodeBlock || b.kind == markdownTable || b.kind == markdownTableHeader {
+	if p.mono || b.kind == markdownMathBlock || b.kind == markdownCodeBlock || b.kind == markdownTable || b.kind == markdownTableHeader {
 		font = f.opts.FontFamily
 	}
 	// As tall as its text wrapped at the box's width, so the blocks below stay where they read.
@@ -121,7 +122,7 @@ func (f *Frontend) markdownEditBox(c *ui.Context, v *markdownViewport, ci int, p
 		Height(min(h, size*lh*40)).
 		Font(font).FontSize(size).LineHeight(lh).TextColor(p.text).Padding(4, 8).Radius(4).
 		Background(p.chrome.Mix(p.editor, 0.6)).BorderWidth(0, 0, 0, 2).BorderColor(p.accent).
-		Label("编辑 Markdown 块")
+		Label(i18n.T("Edit Markdown Block"))
 	box = box.HandleInput(f.markdownLineKeys(v, ci, path))
 	if e.sel != nil {
 		box.SetTextSelection(e.sel[0], e.sel[1])
@@ -142,7 +143,7 @@ func (f *Frontend) markdownEditBox(c *ui.Context, v *markdownViewport, ci int, p
 	if v.edit != e {
 		return // a write was refused and ended the edit
 	}
-	ui.Text(c, "Esc 或 "+f.modKeys(keymap.KeyEnter)+" 完成 · 修改即时写入文档，可在源码里撤销").
+	ui.Text(c, i18n.F("Esc or %s to finish · changes are written to the document at once and can be undone in the source", f.modKeys(keymap.KeyEnter))).
 		FontSize(11).TextColor(p.muted).Margin(4, 0, 0, 0)
 	done := box.Shortcut(mod, ui.KeyEnter)
 	if e.slash == nil { // with the block menu open, Esc closes only the menu
@@ -300,7 +301,7 @@ func (f *Frontend) markdownSlashMenu(c *ui.Context, v *markdownViewport, ci int,
 	e.slash = &mdSlashMenu{at: at, caret: e.seen[1], items: items, sel: sel}
 	p := f.pal
 	ui.Column(c.Key("markdown-slash")).Margin(4, 0, 0, 0).Padding(4).Radius(6).MaxWidth(260).
-		Background(p.chrome).BorderWidth(1).BorderColor(p.border).Label("插入块").Children(func() {
+		Background(p.chrome).BorderWidth(1).BorderColor(p.border).Label(i18n.T("Insert Block")).Children(func() {
 		for i, k := range items {
 			row := ui.Row(c.Key("slash:"+k.label)).Padding(3, 8).Radius(4).Gap(8).AlignItems(ui.Center).Label(k.label)
 			if i == sel {

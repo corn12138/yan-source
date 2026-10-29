@@ -6,6 +6,7 @@ import (
 	"slices"
 
 	"github.com/corn12138/yan-source/core/edit"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/text"
 )
 
@@ -24,7 +25,7 @@ func (e *Editor) newTerminalTab(c *column, at int, dir, title string) int {
 	e.nextTerm++
 	id := e.nextTerm
 	if title == "" {
-		title = "终端"
+		title = i18n.T("Terminal")
 	}
 	d := &document{buf: edit.NewBuffer(text.FromString("", text.Meta{ReadOnly: true}))}
 	t := &tab{doc: d, sels: edit.Single(edit.Cursor(0)), term: &termTab{id: id, dir: dir, title: title}}
@@ -96,7 +97,7 @@ func (e *Editor) newTerminalEditor() error {
 
 func (e *Editor) newTerminalEditorIn(dir string) error {
 	if h, ok := e.host.(interface{ EmbeddedTerminal() bool }); !ok || !h.EmbeddedTerminal() {
-		return errors.New("编辑区里的终端只在窗口版里有")
+		return errors.New(i18n.T("Terminals in the editor area are only in the window version"))
 	}
 	c := e.fileColumn()
 	e.newTerminalTab(c, c.active+1, dir, "")

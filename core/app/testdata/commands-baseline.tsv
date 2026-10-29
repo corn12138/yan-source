@@ -188,6 +188,7 @@ workbench.action.splitEditor	false	向右拆分编辑器	⌘\	Ctrl+\	Ctrl+\	Ctrl
 workbench.action.terminal.new	false	终端：新建终端	⌃⇧`	Ctrl+Shift+`	Ctrl+Shift+`	Ctrl+Shift+`
 workbench.action.terminal.toggleTerminal	false	终端：切换终端	⌃`	Ctrl+`	Ctrl+`	Ctrl+`
 workbench.action.toggleAutoSave	false	切换自动保存				
+workbench.action.toggleMaximizeEditorGroup	false	最大化／还原编辑区（合并视图三栏一起）				
 workbench.action.toggleSidebarPosition	false	移动侧边栏到另一侧				
 workbench.action.toggleSidebarVisibility	false	切换侧边栏可见性	⌘B	Ctrl+B	Ctrl+B	Ctrl+B
 workbench.action.zoomIn	false	放大	⌘=	Ctrl+=	Ctrl+=	
@@ -289,6 +290,8 @@ yan.scm.toggleAllBranches	false	Git：提交历史显示所有分支
 yan.scm.toggleCommits	false	Git：折起或展开提交历史				
 yan.scm.toggleRepositoryPanel	false	Git：显示或隐藏仓库面板（分支、远程）				
 yan.scm.toggleTree	false	Git：以树的形式查看改动				
+yan.settings.language	false	首选项：界面语言…				
+yan.settings.open	false	首选项：打开设置	⌘,	Ctrl+,	Ctrl+,	
 yan.svg.togglePreview	false	切换预览（SVG、Markdown、Mermaid）	⇧⌘V	Ctrl+Shift+V	Ctrl+Shift+V	Ctrl+Shift+V
 yan.theme.claude	false	主题：Claude				
 yan.theme.matrix	false	主题：The Matrix				

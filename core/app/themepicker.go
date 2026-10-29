@@ -4,6 +4,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/view"
 	"github.com/sahilm/fuzzy"
 )
@@ -15,16 +16,16 @@ import (
 type themePreview struct{ theme, appearance string }
 
 var themeChoices = []struct{ id, name, detail string }{
-	{"", "Mayoi", "清晰的浅色与深色界面"},
-	{"matrix", "The Matrix", "绿色代码与深色背景 · 始终使用深色"},
-	{"claude", "Claude", "暖色界面与 Clawd"},
+	{"", "Mayoi", i18n.N("Clear light and dark interface")},
+	{"matrix", "The Matrix", i18n.N("Green code on a dark background · always dark")},
+	{"claude", "Claude", i18n.N("Warm interface with Clawd")},
 }
 
 var themeAppearances = []string{"", "light", "dark"}
 
 func (e *Editor) openThemePicker() error {
 	e.closeOverlay()
-	e.ov = &overlay{kind: view.OverlayTheme, title: "颜色主题", preview: &themePreview{e.cfg.Theme, e.cfg.Appearance}}
+	e.ov = &overlay{kind: view.OverlayTheme, title: i18n.T("Color Theme"), preview: &themePreview{e.cfg.Theme, e.cfg.Appearance}}
 	e.settingsGen++
 	e.setOverlayInput("")
 	return nil
@@ -48,7 +49,7 @@ func (e *Editor) themeItems() {
 	}
 	for _, match := range matches {
 		choice := themeChoices[match.Index]
-		ov.items = append(ov.items, ovItem{label: choice.name, detail: choice.detail, theme: choice.id, labelHit: match.MatchedIndexes, run: func(e *Editor) error {
+		ov.items = append(ov.items, ovItem{label: choice.name, detail: i18n.T(choice.detail), theme: choice.id, labelHit: match.MatchedIndexes, run: func(e *Editor) error {
 			return e.keepTheme(choice.id, p.appearance)
 		}})
 		if choice.id == p.theme {
@@ -61,16 +62,16 @@ func (e *Editor) themeItems() {
 
 func (e *Editor) themeFooter() {
 	ov := e.ov
-	name := map[string]string{"": "跟随系统", "light": "浅色", "dark": "深色"}[ov.preview.appearance]
-	ov.footer = "↑↓ 预览主题 · ←→ 外观：" + name + " · 回车保存 · Esc 取消"
+	name := map[string]string{"": i18n.T("Follow System"), "light": i18n.T("Light"), "dark": i18n.T("Dark")}[ov.preview.appearance]
+	ov.footer = i18n.F("↑↓ preview themes · ←→ appearance: %s · Enter to save · Esc to cancel", name)
 	if ov.input != "" {
-		ov.footer = "↑↓ 预览主题 · 回车保存 · Esc 取消"
+		ov.footer = i18n.T("↑↓ preview themes · Enter to save · Esc to cancel")
 	}
 	if ov.preview.theme == "matrix" {
-		ov.footer = "The Matrix 始终使用深色 · 回车保存 · Esc 取消"
+		ov.footer = i18n.T("The Matrix is always dark · Enter to save · Esc to cancel")
 	}
 	if len(ov.items) == 0 {
-		ov.footer = "没有匹配的主题 · Esc 取消"
+		ov.footer = i18n.T("No matching themes · Esc to cancel")
 	}
 }
 

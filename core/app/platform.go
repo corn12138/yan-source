@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/keymap"
 )
 
@@ -102,19 +103,19 @@ func platformBindings(b map[keymap.Context]map[string]string, p keymap.Profile) 
 func FileManager(goos string) string {
 	switch goos {
 	case "", "darwin":
-		return "访达"
+		return i18n.T("Finder")
 	case "windows":
-		return "文件资源管理器"
+		return i18n.T("File Explorer")
 	}
-	return "文件管理器"
+	return i18n.T("File Manager")
 }
 
 // TrashName 是删掉的文件去的地方：macOS 上是废纸篓，别处是回收站。
 func TrashName(goos string) string {
 	if goos == "" || goos == "darwin" {
-		return "废纸篓"
+		return i18n.T("Trash")
 	}
-	return "回收站"
+	return i18n.T("Recycle Bin")
 }
 
 func (e *Editor) trashName() string { return TrashName(e.profile.OS) }

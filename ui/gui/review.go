@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/keymap"
 	"github.com/corn12138/yan-source/core/view"
 	"github.com/egoist/mygo/ui"
@@ -38,11 +39,11 @@ func (f *Frontend) reviewView(c *ui.Context) {
 	p := f.pal
 	ui.Overlay(c, func() {
 		ui.Column(c).Absolute().Top(0).Left(0).Right(0).Bottom(0).AlignItems(ui.Center).Modal().Children(func() {
-			box := f.floating(c, ui.Column(c.Key(d.ID)).Width(680).MaxWidthPercent(94).Margin(70, 0, 0, 0).Padding(14).Gap(10).Radius(8)).Role(ui.RoleDialog).Label("评审意见")
+			box := f.floating(c, ui.Column(c.Key(d.ID)).Width(680).MaxWidthPercent(94).Margin(70, 0, 0, 0).Padding(14).Gap(10).Radius(8)).Role(ui.RoleDialog).Label(i18n.T("Review Comments"))
 			box.Children(func() {
 				ui.Text(c, d.Ref).FontSize(12).TextColor(p.muted)
 				ui.Scroll(c).MaxHeight(140).Children(func() { ui.Text(c, d.Snippet).Font(f.opts.FontFamily).FontSize(12).TextColor(p.text) })
-				input := ui.TextArea(c.Key("review-input"), &f.reviewInput).Height(126).AutoFocus().Label("意见内容").Placeholder("写下建议，保存后可统一发送到终端")
+				input := ui.TextArea(c.Key("review-input"), &f.reviewInput).Height(126).AutoFocus().Label(i18n.T("Comment")).Placeholder(i18n.T("Write a suggestion; after saving, all comments can be sent to the terminal together"))
 				if input.Changed() {
 					f.ed.SetReviewInput(f.reviewInput)
 				}
@@ -56,11 +57,11 @@ func (f *Frontend) reviewView(c *ui.Context) {
 				}
 				ui.Row(c).Gap(6).AlignItems(ui.Center).Children(func() {
 					if d.Saved {
-						f.reviewButton(c, "删除意见", "review.delete")
+						f.reviewButton(c, i18n.T("Delete Comment"), "review.delete")
 					}
 					ui.Spacer(c)
-					f.reviewButton(c, "取消", "review.cancel")
-					f.reviewButton(c, "保存意见", "review.save")
+					f.reviewButton(c, i18n.T("Cancel"), "review.cancel")
+					f.reviewButton(c, i18n.T("Save Comment"), "review.save")
 				})
 			})
 			if box.OverlayShortcut(0, ui.KeyEscape) {
@@ -75,9 +76,9 @@ func (f *Frontend) reviewLineButtons(c *ui.Context, ci int, pf *view.PaneFrame) 
 		if i < len(pf.Sticky) || row.ReviewID == 0 && i != f.cols[ci].reviewHover {
 			continue
 		}
-		label := "添加评审意见"
+		label := i18n.T("Add Review Comment")
 		if row.ReviewID != 0 {
-			label = fmt.Sprintf("编辑意见 %d", row.ReviewID)
+			label = i18n.F("Edit Comment %d", row.ReviewID)
 		}
 		b := ui.Box(c.Key(fmt.Sprintf("review-line-%d", i))).Absolute().Left(0).Top(codePadY + float32(i)*f.font.lineH).Width(18).Height(f.font.lineH).AlignItems(ui.Center).Justify(ui.Center).Cursor(ui.CursorPointer).Label(label).Tooltip(label)
 		b.Children(func() {

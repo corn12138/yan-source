@@ -1,9 +1,12 @@
 package gui
 
 import (
+	"fmt"
+
 	"github.com/egoist/mygo/ui"
 
 	"github.com/corn12138/yan-source/core/app"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/keymap"
 	"github.com/corn12138/yan-source/core/style"
 	"github.com/corn12138/yan-source/core/view"
@@ -26,8 +29,11 @@ func (f *Frontend) overlayView(c *ui.Context) {
 			box.Children(func() {
 				ui.Row(c).Padding(10, 14).Gap(10).AlignItems(ui.Center).BorderWidth(0, 0, 1, 0).BorderColor(p.border).Children(func() {
 					icon := iconSearch
-					if o.Kind == view.OverlayPalette {
+					switch o.Kind {
+					case view.OverlayPalette:
 						icon = iconChevronRight
+					case view.OverlaySettings:
+						icon = iconSettings
 					}
 					ui.Icon(c, icon).FontSize(15).TextColor(p.muted)
 					in := ui.TextInputBase(c.Key("overlay-input"), &f.ovInput).Grow(1).FontSize(14).AutoFocus().
@@ -74,8 +80,8 @@ func (f *Frontend) overlayView(c *ui.Context) {
 				})
 				if o.Kind == view.OverlayTheme {
 					ui.Row(c).Padding(6, 14).Gap(6).Children(func() {
-						for _, ap := range []struct{ id, label string }{{"", "跟随系统"}, {"light", "浅色"}, {"dark", "深色"}} {
-							b := ui.Button(c.Key(ap.id), ap.label).Label("主题外观：" + ap.label).Disabled(f.opts.Theme == "matrix")
+						for _, ap := range []struct{ id, label string }{{"", i18n.T("Follow System")}, {"light", i18n.T("Light")}, {"dark", i18n.T("Dark")}} {
+							b := ui.Button(c.Key(ap.id), ap.label).Label(i18n.F("Theme appearance: %s", ap.label)).Disabled(f.opts.Theme == "matrix")
 							if ap.id == o.Appearance {
 								b.Background(p.active)
 							}
@@ -84,6 +90,9 @@ func (f *Frontend) overlayView(c *ui.Context) {
 							}
 						}
 					})
+				}
+				if o.Kind == view.OverlaySettings {
+					f.settingsHeader(c, o)
 				}
 				f.overlayItems(c, o)
 				if o.Footer != "" {
@@ -103,7 +112,7 @@ func (f *Frontend) overlayItems(c *ui.Context, o *view.Overlay) {
 	p := f.pal
 	if len(o.Items) == 0 {
 		if o.Kind == view.OverlayTheme {
-			ui.Text(c, "没有匹配的主题").Padding(12, 16).TextColor(p.muted)
+			ui.Text(c, i18n.T("No matching themes")).Padding(12, 16).TextColor(p.muted)
 		}
 		return
 	}
@@ -112,6 +121,9 @@ func (f *Frontend) overlayItems(c *ui.Context, o *view.Overlay) {
 	ui.Scroll(c.Key("overlay-items")).MaxHeight(380).Padding(6).Children(func() {
 		for i := range o.Items {
 			it := &o.Items[i]
+			if it.Group != "" && (i == 0 || o.Items[i-1].Group != it.Group) {
+				ui.Text(c.Key(fmt.Sprint("group", i)), it.Group).FontSize(11).FontWeight(600).TextColor(p.muted).Padding(8, 10, 3, 10).Role(ui.RoleHeading)
+			}
 			row := ui.Row(c.Key(i)).Padding(5, 10).Gap(10).Radius(6).AlignItems(ui.Center)
 			switch {
 			case i == o.Selected:
@@ -143,6 +155,12 @@ func (f *Frontend) overlayItems(c *ui.Context, o *view.Overlay) {
 					icon, tint := fileIcon(p, it.Label)
 					ui.Icon(c, icon).FontSize(14).TextColor(tint)
 				}
+				if o.Kind == view.OverlaySettings {
+					check := ui.Box(c).Size(14, 14).Shrink(0)
+					if it.Checked {
+						check.Children(func() { ui.Icon(c, iconCheck).FontSize(14).TextColor(p.accent) })
+					}
+				}
 				f.hitText(c, it.Label, it.LabelHits, 13, p.text).Shrink(0)
 				if it.Unreleased {
 					f.unreleasedBadge(c)
@@ -158,6 +176,19 @@ func (f *Frontend) overlayItems(c *ui.Context, o *view.Overlay) {
 					ui.Text(c, it.Hint).FontSize(12).TextColor(p.muted).SingleLine().Shrink(0)
 				}
 			})
+		}
+	})
+}
+
+// settingsHeader names the Settings page and says what is in effect and what a saved choice
+// still needs.
+func (f *Frontend) settingsHeader(c *ui.Context, o *view.Overlay) {
+	p := f.pal
+	ui.Column(c).Padding(10, 16, 4, 16).Gap(3).Children(func() {
+		ui.Text(c, o.Section).FontSize(14).FontWeight(600).TextColor(p.text).Role(ui.RoleHeading)
+		ui.Text(c, o.Status).FontSize(12).TextColor(p.muted)
+		if o.Notice != "" {
+			ui.Text(c, o.Notice).FontSize(12).FontWeight(600).TextColor(p.accent).Label(o.Notice)
 		}
 	})
 }
@@ -201,15 +232,17 @@ func overlayHint(o *view.Overlay) string {
 	}
 	switch o.Kind {
 	case view.OverlayPalette:
-		return "输入命令名"
+		return i18n.T("Type a command name")
 	case view.OverlayBranch:
-		return "找分支，或输入新分支的名字"
+		return i18n.T("Find a branch, or type a new branch name")
 	case view.OverlayRecent:
-		return "按名字找最近打开的文件夹"
+		return i18n.T("Find a recently opened folder by name")
 	case view.OverlayPrompt:
-		return "输入名字"
+		return i18n.T("Type a name")
 	case view.OverlayChoice:
-		return "选一项"
+		return i18n.T("Choose one")
+	case view.OverlaySettings:
+		return i18n.T("Search settings")
 	}
-	return "按名字找文件，> 运行命令，: 跳到行，@ 跳到符号"
+	return i18n.T("Find files by name, > run commands, : go to line, @ go to symbol")
 }

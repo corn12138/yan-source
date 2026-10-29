@@ -8,6 +8,22 @@
 初始基线为 2026-10-19 上游 `46990a1`；后续更新逐批补充，完整功能登记与缺口见 [逐项功能台账](mayoi-feature-ledger.md)，
 命令注册项见 [命令索引](mayoi-command-index.md)。本页保留已移植来源；开放项以台账为准。
 
+## 2026-10-28 关闭其他项目保护（UP-64）
+
+参考 [`d888678`](https://github.com/sorrycc/Mayoi/commit/d888678834f4d9035c04da589f044746e92049e6)：
+项目标签的「关闭其他项目」先显示总确认，说明终端和任务会停止，默认取消。
+确认后逐个处理未保存文件；取消或保存失败会停止后续关闭，保留选中的项目以及确认后新打开的项目。
+沿用砚已有的未命名文档恢复与保存冲突保护，不自动覆盖磁盘上的外部修改。
+自动测试覆盖总确认取消、重入、保存/放弃/取消/冲突和新增项目；macOS 原生验证中文总确认、默认回车取消、未保存提示及冲突阻止关闭。
+
+## 2026-10-28 侧边预览复用已有列（UP-63）
+
+参考 [`64bd32c`](https://github.com/sorrycc/Mayoi/commit/64bd32c4ecdfe0a48af7c40ce3e1d8837ab56b69)：
+「在右侧打开预览」先找右侧最近的未锁定列，再找左侧；没有其他未锁定列才新建。
+目标列已有同一文档时复用标签，否则增加共享文档的标签，不替换其他文件。
+源码保留焦点、光标与滚动位置，已有列宽和锁定列不变。适用于 Markdown、Mermaid 和 SVG。
+单测覆盖布局、重复执行和会话恢复；macOS 原生中英文验证了右侧 Markdown 复用、源码焦点与重复调用。其他原生布局分支与 Windows/Linux 桌面验收另列，不等同于交叉编译。
+
 ## 2026-10-27 Markdown 预览：脚注、标点后的网址、样式填充上的 Mermaid 标签（UP-59～61）
 
 - 脚注照 [`88e00cf`](https://github.com/sorrycc/Mayoi/commit/88e00cfaeb4c52b33a74e4eefc70dec92ab8720b)：引用是上标数字，链接到正文末尾分隔线下的编号列表；
@@ -242,3 +258,9 @@ metadata-preserving external writes are detected before atomic replacement. Sear
 BOM-free editor offsets, rejects stale single-result versions and re-reads bulk replacements.
 This extends Yan's existing save guard without importing upstream UI or platform dependencies.
 The remaining file-watching and configuration/keybinding contracts stay open in the ledger.
+
+### UP-62: Markdown formulas
+
+Adapted from `1010308b542c4bfa25e15f84f4992914fac04223`: inline `$…$`, display `$$…$$`, and fenced `math` blocks, rendered locally with MathJax 3.2.2 (Apache-2.0) in goja. Only the bundled base, AMS, newcommand, and boldsymbol packages are enabled; document text is data, with no host I/O or package loading. Each formula has isolated macros, a 32 KiB input limit, and a five-second timeout. A parse renders at most 256 distinct formulas within a ten-second budget, retaining readable source and a reason on failure. Unsupported glyphs, including Chinese inside TeX text, fall back to source; surrounding Chinese prose is unaffected.
+
+`[ui] preview_math` defaults to true, supports user and project configuration, and reloads through the existing watcher. The TUI does not link MathJax. MyGo is pinned to the same `4bd079439ee7` fork revision used by this upstream feature for inline object geometry; the terminal boolean setting still maps to clipboard copy or no copy, and file paste keeps its existing routing. UP-66 remains separate work.

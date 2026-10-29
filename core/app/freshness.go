@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/corn12138/yan-source/core/edit"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/search/glob"
 	"github.com/corn12138/yan-source/core/text"
 	"github.com/corn12138/yan-source/core/workspace"
@@ -205,7 +206,7 @@ func (e *Editor) takeDiskReads(reads []diskRead) {
 		case d.buf.Dirty() && r.state != edit.DiskSame:
 			e.status = e.conflictError(d).Error() // the unsaved text stays; Save refuses too
 		case r.state == edit.DiskDeleted:
-			e.status = filepath.Base(d.buf.Path()) + " 已从磁盘上删除：标签里的内容还在，保存会重新创建它"
+			e.status = i18n.F("%s was deleted from disk: the tab keeps its content, and saving creates it again", filepath.Base(d.buf.Path()))
 		case r.state == edit.DiskChanged:
 			e.reloading = true
 			d.buf.Reload(r.snap)

@@ -11,6 +11,7 @@ import (
 	"github.com/corn12138/yan-source/core/edit"
 	"github.com/corn12138/yan-source/core/git"
 	"github.com/corn12138/yan-source/core/git/linediff"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/text"
 )
 
@@ -34,7 +35,7 @@ const (
 )
 
 func (g changeGroup) label() string {
-	return [...]string{"已暂存", "更改", "未跟踪", "合并冲突", "比较", "提交里"}[g]
+	return [...]string{i18n.T("Staged"), i18n.T("Changes"), i18n.T("Untracked"), i18n.T("Merge Conflicts"), i18n.T("Compare"), i18n.T("In Commit")}[g]
 }
 
 // changeSec 是所有改动里的一个文件：从 base 改成 cur。
@@ -60,16 +61,16 @@ const (
 
 func (s *changeSec) key() string { return s.group.label() + ":" + s.path }
 
-const changesName = "所有改动"
+const changesName = "所有改动" // the tab's path: stays the same in every language
 
 // openAllChanges 开「所有改动」标签（已经开着就切过去）。
 func (e *Editor) openAllChanges() error {
 	r := e.repository().git.repo
 	if r == nil {
-		return errors.New("不在 git 仓库里")
+		return errors.New(i18n.T("Not in a Git repository"))
 	}
 	dt := &diffTab{path: filepath.Join(r.Root, changesName), changes: true, expanded: map[int]bool{}, collapsed: map[string]bool{}}
-	e.showDiff(changesName, dt, false)
+	e.showDiff(i18n.T("All Changes"), dt, false)
 	if t := e.cur(); t != nil && t.diff == dt {
 		e.loadChanges(t)
 	}
@@ -262,9 +263,9 @@ func (e *Editor) buildChanges(d *document, dt *diffTab) {
 	dt.splitW = e.diffSplitWidthFor(e.columnOf(d))
 	if c := dt.commit; c != nil { // 提交的标签：先是说明、作者、日期、提交号、分支
 		if from := dt.compareFrom; from != nil {
-			put("比较：起点 → 终点（回车或双击提交行复制提交号）", diffLine{kind: diffHeader, line: -1, hunk: -1, sec: -1})
-			put("起点 "+from.Hash+" · "+from.Subject, diffLine{kind: diffHeader, line: -1, hunk: -1, sec: -1, copyHash: from.Hash})
-			put("终点 "+c.Hash+" · "+c.Subject, diffLine{kind: diffHeader, line: -1, hunk: -1, sec: -1, copyHash: c.Hash})
+			put(i18n.T("Compare: start → end (Enter or double-click a commit line to copy its hash)"), diffLine{kind: diffHeader, line: -1, hunk: -1, sec: -1})
+			put(i18n.F("Start %s · %s", from.Hash, from.Subject), diffLine{kind: diffHeader, line: -1, hunk: -1, sec: -1, copyHash: from.Hash})
+			put(i18n.F("End %s · %s", c.Hash, c.Subject), diffLine{kind: diffHeader, line: -1, hunk: -1, sec: -1, copyHash: c.Hash})
 		} else {
 			put(c.Subject, diffLine{kind: diffHeader, line: -1, hunk: -1})
 			meta := fmt.Sprintf("%s · %s · %s", c.Author, c.Time.Format("2006-01-02 15:04"), c.Hash)
@@ -275,7 +276,7 @@ func (e *Editor) buildChanges(d *document, dt *diffTab) {
 			if len(refs) > 0 {
 				meta += " · " + strings.Join(refs, ", ")
 			}
-			put(meta+"（回车或双击复制提交号）", diffLine{kind: diffHeader, line: -1, hunk: -1, sec: -1, copyHash: c.Hash})
+			put(i18n.F("%s (Enter or double-click to copy the hash)", meta), diffLine{kind: diffHeader, line: -1, hunk: -1, sec: -1, copyHash: c.Hash})
 			body := strings.Split(strings.TrimRight(c.Body, "\n"), "\n")
 			if c.Body == "" {
 				body = nil
@@ -283,22 +284,22 @@ func (e *Editor) buildChanges(d *document, dt *diffTab) {
 			folded := len(body) > commitBodyFold && !dt.bodyOpen
 			for i, l := range body {
 				if folded && i == commitBodyShown {
-					put(fmt.Sprintf("⋯ 说明还有 %d 行（回车展开）", len(body)-i), diffLine{kind: diffFold, line: -1, hunk: -1, sec: -1, fold: -1, bodyToggle: true})
+					put(i18n.F("⋯ %d more lines of message (Enter to expand)", len(body)-i), diffLine{kind: diffFold, line: -1, hunk: -1, sec: -1, fold: -1, bodyToggle: true})
 					break
 				}
 				put(l, diffLine{kind: diffHeader, line: -1, hunk: -1})
 			}
 			if len(body) > commitBodyFold && dt.bodyOpen {
-				put("⋯ 收起说明", diffLine{kind: diffFold, line: -1, hunk: -1, sec: -1, fold: -1, bodyToggle: true})
+				put(i18n.T("⋯ Collapse message"), diffLine{kind: diffFold, line: -1, hunk: -1, sec: -1, fold: -1, bodyToggle: true})
 			}
 		}
 	}
 	if dt.loadError != "" {
-		put("读取失败："+dt.loadError, diffLine{kind: diffHeader, line: -1, hunk: -1, sec: -1})
+		put(i18n.F("Couldn't read: %s", dt.loadError), diffLine{kind: diffHeader, line: -1, hunk: -1, sec: -1})
 	} else if dt.loading && len(dt.secs) == 0 {
-		put("（读取改动中…）", diffLine{kind: diffHeader, line: -1, hunk: -1})
+		put(i18n.T("(Reading changes…)"), diffLine{kind: diffHeader, line: -1, hunk: -1})
 	} else if len(dt.secs) == 0 {
-		put("（没有改动）", diffLine{kind: diffHeader, line: -1, hunk: -1})
+		put(i18n.T("(No changes)"), diffLine{kind: diffHeader, line: -1, hunk: -1})
 	}
 	fold := 0
 	for i := range dt.secs {
@@ -345,20 +346,20 @@ func (e *Editor) buildChanges(d *document, dt *diffTab) {
 		fl.addB, fl.delB = statBar(add, del)
 		head += strings.Repeat("■", statBarW)
 		if s.binary {
-			head, fl.barAt = fmt.Sprintf("%s %c %s  二进制文件  %s", mark, letter, rel, s.group.label()), -1
+			head, fl.barAt = i18n.F("%s %c %s  Binary file  %s", mark, letter, rel, s.group.label()), -1
 		}
 		if s.lazy {
-			head, fl.barAt = fmt.Sprintf("%s %c %s  大文件（%.1f MB）：展开时读取  %s", mark, letter, rel, float64(s.size)/(1<<20), s.group.label()), -1
+			head, fl.barAt = i18n.F("%s %c %s  Large file (%.1f MB): read when expanded  %s", mark, letter, rel, float64(s.size)/(1<<20), s.group.label()), -1
 		}
 		if s.group == changeConflict {
-			head, fl.barAt = fmt.Sprintf("%s %c %s  %s：回车打开三方合并", mark, letter, rel, s.group.label()), -1
+			head, fl.barAt = i18n.F("%s %c %s  %s: Enter opens the three-way merge", mark, letter, rel, s.group.label()), -1
 		}
 		put(head, fl)
 		if dt.collapsed[s.key()] || s.group == changeConflict || s.binary || s.lazy {
 			continue
 		}
 		if len(s.hunks) == 0 {
-			put("（文字没有改动）", diffLine{kind: diffHeader, line: -1, sec: i, hunk: -1})
+			put(i18n.T("(No text changes)"), diffLine{kind: diffHeader, line: -1, sec: i, hunk: -1})
 			continue
 		}
 		writeHunks(put, base, cur, s.hunks, i, &fold, dt.expanded, e.diffOptsFor(dt, s.path, cur))
@@ -482,11 +483,11 @@ func (e *Editor) diffKey(r rune) bool {
 // diffStage 是改动视图里的 s：在文件标题上暂存（已暂存的取消暂存）整个文件，在一处改动里只暂存（取消暂存）那一处。
 func (e *Editor) diffStage(t *tab, line int) error {
 	if t.diff.peer != "" {
-		return errors.New("这是两个文件的比较：暂存不了")
+		return errors.New(i18n.T("This compares two files: nothing to stage"))
 	}
 	defer e.bindDiff(t.diff)()
 	if e.repository().git.repo == nil {
-		return errors.New("原仓库已不可用")
+		return errors.New(i18n.T("The original repository is no longer available"))
 	}
 	dt := t.diff
 	if line < 0 || line >= len(dt.lines) {
@@ -494,15 +495,15 @@ func (e *Editor) diffStage(t *tab, line int) error {
 	}
 	l := dt.lines[line]
 	if l.kind == diffReview {
-		return errors.New("请把光标移到要暂存的代码行")
+		return errors.New(i18n.T("Move the cursor to the lines you want to stage"))
 	}
 	if dt.commit != nil {
-		return errors.New("这是一个提交里的改动：暂存不了")
+		return errors.New(i18n.T("These are a commit's changes: nothing to stage"))
 	}
 
 	if !dt.changes {
 		if l.hunk < 0 {
-			return errors.New("光标放在一处改动里，再按 s")
+			return errors.New(i18n.T("Put the cursor in a change, then press s"))
 		}
 		return e.stageHunkOf(dt, l.hunk)
 	}
@@ -525,11 +526,11 @@ func (e *Editor) diffStage(t *tab, line int) error {
 		out = append(append(append([]string{}, sec.base[:h.A]...), sec.cur[h.B:h.B+h.BLen]...), sec.base[h.A+h.ALen:]...)
 	}
 	path, unstage := sec.path, sec.group == changeStaged
-	return e.gitDo("暂存中…", func(r *git.Repo) error { return r.StageText(path, strings.Join(out, "\n")) }, func(e *Editor) {
+	return e.gitDo(i18n.T("Staging…"), func(r *git.Repo) error { return r.StageText(path, strings.Join(out, "\n")) }, func(e *Editor) {
 		if unstage {
-			e.status = "已取消暂存这处改动"
+			e.status = i18n.T("Unstaged this change")
 		} else {
-			e.status = "已暂存这处改动"
+			e.status = i18n.T("Staged this change")
 		}
 	})
 }
@@ -549,7 +550,7 @@ func (e *Editor) stageHunkOf(dt *diffTab, k int) error {
 	}
 	first, last := hs[k].B, hs[k].B+max(hs[k].BLen, 1)-1
 	path := dt.path
-	return e.gitDo("暂存中…", func(r *git.Repo) error {
+	return e.gitDo(i18n.T("Staging…"), func(r *git.Repo) error {
 		idx, ok, err := r.Show("", path)
 		if err != nil {
 			return err
@@ -566,8 +567,8 @@ func (e *Editor) stageHunkOf(dt *diffTab, k int) error {
 			out := append(append(append([]string{}, lines[:ih.A]...), cur[ih.B:ih.B+ih.BLen]...), lines[ih.A+ih.ALen:]...)
 			return r.StageText(path, strings.Join(out, "\n"))
 		}
-		return errors.New("这处改动已经暂存了")
-	}, func(e *Editor) { e.status = "已暂存这处改动" })
+		return errors.New(i18n.T("This change is already staged"))
+	}, func(e *Editor) { e.status = i18n.T("Staged this change") })
 }
 
 // ---- 提交的标签（照着 Mayoi 的 commit tab）：说明、作者、日期、提交号、分支，再是它改的每个文件 ----
@@ -590,11 +591,11 @@ func (e *Editor) showHistoryTab(from, to string, preview bool) *tab {
 	return e.showHistoryTabAt(root, from, to, preview)
 }
 func (e *Editor) showHistoryTabAt(root, from, to string, preview bool) *tab {
-	name, identity := "提交 "+git.ShortHash(to), to
+	name, identity := i18n.F("Commit %s", git.ShortHash(to)), to
 	dt := &diffTab{repoRoot: root, changes: true, commit: &git.Commit{Hash: to}, expanded: map[int]bool{}, collapsed: map[string]bool{}}
 	if from != "" {
 		dt.compareFrom = &git.Commit{Hash: from}
-		name, identity = "比较 "+git.ShortHash(from)+" → "+git.ShortHash(to), from+".."+to
+		name, identity = i18n.F("Compare %s → %s", git.ShortHash(from), git.ShortHash(to)), from+".."+to
 	}
 	// Full hashes identify virtual tabs; short display names can collide.
 	dt.path = filepath.Join(root, ".yan-history", identity, "changes")
@@ -621,7 +622,7 @@ func (e *Editor) loadCommit(t *tab) {
 		// Session tabs are restored before background repository discovery finishes.
 		dt.awaitRepo, dt.loading = !e.repository().git.ready, !e.repository().git.ready
 		if e.repository().git.ready {
-			dt.loadError = "此文件夹已不在 Git 仓库中"
+			dt.loadError = i18n.T("This folder is no longer in a Git repository")
 		}
 		e.buildChanges(t.doc, dt)
 		return
@@ -669,7 +670,7 @@ func (e *Editor) loadCommit(t *tab) {
 				var ok bool
 				txt, ok, err = r.Show(rev, path)
 				if err == nil && !ok {
-					err = fmt.Errorf("无法读取 %s 中的 %s", git.ShortHash(rev), r.Rel(path))
+					err = fmt.Errorf(i18n.T("Couldn't read %[2]s in %[1]s"), git.ShortHash(rev), r.Rel(path))
 				}
 				if strings.ContainsRune(txt, 0) {
 					s.binary = true

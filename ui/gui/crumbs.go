@@ -8,6 +8,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/workspace"
 )
 
@@ -168,7 +169,7 @@ func (f *Frontend) crumbsBox(c *ui.Context, anchor ui.Element) {
 	}
 	ui.PopoverBase(c, anchor, &k.open, func(panel ui.Element) {
 		p := f.pal
-		f.floating(c, panel.Width(300).Radius(8).Padding(4).Gap(0)).Role(ui.RoleDialog).Label("文件夹 " + filepath.Base(k.dir))
+		f.floating(c, panel.Width(300).Radius(8).Padding(4).Gap(0)).Role(ui.RoleDialog).Label(i18n.F("Folder %s", filepath.Base(k.dir)))
 		panel.Children(func() {
 			kids, read := k.kids[k.dir]
 			note := func(s string, col ui.Color) {
@@ -176,11 +177,11 @@ func (f *Frontend) crumbsBox(c *ui.Context, anchor ui.Element) {
 			}
 			switch {
 			case k.errs[k.dir] != "":
-				note("读不了 "+filepath.Base(k.dir)+"："+k.errs[k.dir], p.danger)
+				note(i18n.F("Couldn't read %s: %s", filepath.Base(k.dir), k.errs[k.dir]), p.danger)
 			case !read:
-				note("正在读取…", p.muted)
+				note(i18n.T("Reading…"), p.muted)
 			case len(kids) == 0:
-				note("空文件夹", p.muted)
+				note(i18n.T("Empty folder"), p.muted)
 			default:
 				f.crumbsTree(c, kids)
 			}

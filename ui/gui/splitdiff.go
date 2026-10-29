@@ -8,6 +8,7 @@ import (
 	"github.com/egoist/mygo/ui"
 
 	"github.com/corn12138/yan-source/core/app"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/style"
 	"github.com/corn12138/yan-source/core/view"
 )
@@ -231,9 +232,9 @@ func (f *Frontend) splitArrows(c *ui.Context, ci int, pf *view.PaneFrame) {
 		if y < codePadY-2 || y > r.H {
 			continue
 		}
-		label, tip := "»", "还原这处：左边的行换进右边（可以撤销）；按住 Ctrl 或 Alt 点击是追加"
+		label, tip := "»", i18n.T("Revert this change: the left lines replace the right (can be undone); Ctrl- or Alt-click appends")
 		if b.Compare {
-			tip = "把左边这处写进右边的文件（可以撤销）"
+			tip = i18n.T("Write this left-side change into the right file (can be undone)")
 		}
 		a := ui.Box(c.Key(fmt.Sprintf("split-arrow-%d", b.Line))).Absolute().Left(g.g+splitGutterW/2-10).Top(y+(f.font.lineH-18)/2).
 			Size(20, 18).Radius(9).Justify(ui.Center).AlignItems(ui.Center).Cursor(ui.CursorPointer).Label(label).Tooltip(tip)
@@ -262,9 +263,9 @@ func (f *Frontend) splitArrows(c *ui.Context, ci int, pf *view.PaneFrame) {
 		if y < codePadY+float32(len(pf.Sticky))*f.font.lineH || y > r.H {
 			continue
 		}
-		label, word := "添加评审意见", "+"
+		label, word := i18n.T("Add Review Comment"), "+"
 		if row.ReviewID != 0 {
-			label, word = fmt.Sprintf("编辑意见 %d", row.ReviewID), "●"
+			label, word = i18n.F("Edit Comment %d", row.ReviewID), "●"
 		}
 		b := ui.Box(c.Key(fmt.Sprintf("split-review-%d", row.Line))).Absolute().Left(g.rightX).Top(y).Width(18).Height(f.font.lineH).
 			AlignItems(ui.Center).Justify(ui.Center).Cursor(ui.CursorPointer).Label(label).Tooltip(label)

@@ -10,12 +10,13 @@ import (
 
 	"github.com/egoist/mygo"
 
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/view"
 )
 
 // SelfTestTour walks the feature guide in the real window. Phase "first": the launch offer,
 // the maximize lesson done through its commands, the merge lesson in its practice repository
-// and back, the palette's unreleased badge, and a lesson left half done before quitting.
+// and back, the palette's release badge, and a lesson left half done before quitting.
 // Phase "resume": the next launch resumes that lesson at the same step and does not offer
 // the guide again. Captures go to dir/shots.
 func (f *Frontend) SelfTestTour(dir, phase string, report func(string)) {
@@ -61,23 +62,23 @@ func (f *Frontend) SelfTestTour(dir, phase string, report func(string)) {
 			fr := frame()
 			check(!fr.Guide.Visible && fr.Sidebar.View == view.SideLearn, "taking the offer opens the guide and ends the offer")
 
-			maximize := lesson("最大化编辑区") // lesson reads the frame on the main thread itself
+			maximize := lesson(i18n.T("Maximize Editor Area")) // lesson reads the frame on the main thread itself
 			onMain(func() { f.ed.StartLesson(maximize) })
 			settle()
 			onMain(func() { f.ed.Run("workbench.action.splitEditor") })
 			onMain(func() { f.ed.Run("workbench.action.toggleMaximizeEditorGroup") })
 			settle()
 			fr = frame()
-			check(fr.Maximized && strings.HasPrefix(fr.Status.Message, "下一步："), "maximize step done; the status names the next step: "+fr.Status.Message)
+			check(fr.Maximized && strings.HasPrefix(fr.Status.Message, i18n.F("Next step: %s", "")), "maximize step done; the status names the next step: "+fr.Status.Message)
 			capture("maximized")
 			onMain(func() { f.ed.Run("workbench.action.toggleMaximizeEditorGroup") })
 			settle()
 			l := frame().Sidebar.Learn
-			check(!frame().Maximized && l.Lessons[lesson("最大化编辑区")].Done, "restoring finishes the lesson")
+			check(!frame().Maximized && l.Lessons[lesson(i18n.T("Maximize Editor Area"))].Done, "restoring finishes the lesson")
 			capture("maximize-done")
 
 			home := filepath.Base(f.ed.Root())
-			merge := lesson("三方合并")
+			merge := lesson(i18n.T("Three-Way Merge"))
 			onMain(func() { f.ed.StartLesson(merge) })
 			for range 40 {
 				settle()
@@ -108,22 +109,22 @@ func (f *Frontend) SelfTestTour(dir, phase string, report func(string)) {
 			settle()
 			onMain(func() { f.ed.Run("yan.guide.open") })
 			settle()
-			check(frame().Sidebar.Learn.Lessons[lesson("三方合并")].Done, "resolving and marking finishes the merge lesson")
+			check(frame().Sidebar.Learn.Lessons[lesson(i18n.T("Three-Way Merge"))].Done, "resolving and marking finishes the merge lesson")
 			onMain(func() { f.ed.Run("yan.guide.leave") })
 			settle()
 			check(filepath.Base(f.ed.Root()) == home, "back in "+f.ed.Root())
 
 			onMain(func() {
 				f.ed.Run("workbench.action.showCommands")
-				f.ed.SetOverlayInput("学习：回到上一步")
+				f.ed.SetOverlayInput(i18n.T("Learn: Previous Step"))
 			})
 			settle()
 			fr = frame()
-			check(len(fr.Overlay.Items) > 0 && fr.Overlay.Items[0].Unreleased, "the palette badges an unreleased command")
+			check(len(fr.Overlay.Items) > 0 && !fr.Overlay.Items[0].Unreleased, "the released Previous Step command has no unreleased badge")
 			capture("palette")
 			onMain(func() { f.ed.CloseOverlay() })
 
-			editing := lesson("编辑基础")
+			editing := lesson(i18n.T("Editing Basics"))
 			onMain(func() {
 				f.ed.StartLesson(editing)
 				f.ed.Run("expandLineSelection")
@@ -137,7 +138,7 @@ func (f *Frontend) SelfTestTour(dir, phase string, report func(string)) {
 			onMain(func() { f.ed.Run("yan.guide.open") })
 			settle()
 			l := frame().Sidebar.Learn
-			check(l.Active == lesson("编辑基础") && len(l.Steps) > 2 && l.Steps[2].Current, "the guide resumes 编辑基础 at step 3")
+			check(l.Active == lesson(i18n.T("Editing Basics")) && len(l.Steps) > 2 && l.Steps[2].Current, "the guide resumes 编辑基础 at step 3")
 			col := frame().Columns[frame().Active]
 			check(len(col.Tabs) > 0 && col.Tabs[col.Active].Name == "编辑基础.go", "its practice file is open again")
 			capture("resumed")

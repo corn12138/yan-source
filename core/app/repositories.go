@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/corn12138/yan-source/core/git"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/view"
 )
 
@@ -96,7 +97,7 @@ func (e *Editor) runRepositoryItem(rc *repositoryContext, fn func(*Editor) error
 		return fn(e)
 	}
 	if rc.dead {
-		return userError("这个仓库已不可用，请重新选择")
+		return userError(i18n.T("This repository is no longer available; select again"))
 	}
 	defer e.bindRepository(rc)()
 	return fn(e)
@@ -122,7 +123,7 @@ func (e *Editor) InRepository(id uint64, fn func(*Editor)) {
 		e.inRepository(rc, func() { fn(e) })
 		return
 	}
-	e.status = "仓库列表已变化，请重新选择"
+	e.status = i18n.T("The repository list changed; select again")
 }
 func (e *Editor) postGit() func(func(*Editor)) {
 	rc, epoch := e.repository(), e.wsEpoch
@@ -157,7 +158,7 @@ func (e *Editor) repositoryName(root string) string {
 	return filepath.Base(root)
 }
 func (e *Editor) chooseRepository() error {
-	items := []ovItem{{label: "自动跟随当前文件", run: func(e *Editor) error { e.repositories.selected = ""; return nil }}}
+	items := []ovItem{{label: i18n.T("Follow the Current File Automatically"), run: func(e *Editor) error { e.repositories.selected = ""; return nil }}}
 	for _, rc := range e.repositoryContexts() {
 		if rc.git.repo == nil {
 			continue
@@ -165,13 +166,13 @@ func (e *Editor) chooseRepository() error {
 		root := rc.git.repo.Root
 		items = append(items, ovItem{label: e.repositoryName(root), detail: root, run: func(e *Editor) error {
 			if rc.dead {
-				return userError("这个仓库已不可用")
+				return userError(i18n.T("This repository is no longer available"))
 			}
 			e.repositories.selected = root
 			return nil
 		}})
 	}
-	e.choose("选择仓库", items...)
+	e.choose(i18n.T("Select Repository"), items...)
 	return nil
 }
 func (e *Editor) ToggleRepository(id uint64) {
@@ -268,7 +269,7 @@ func (e *Editor) startRepositories(root string) {
 				}
 				e.git.ready = true
 				if err != nil {
-					e.git.nestedError = "读取仓库失败：" + err.Error()
+					e.git.nestedError = i18n.F("Couldn't read repositories: %s", err.Error())
 					return
 				}
 				e.git.nestedError = ""
@@ -325,7 +326,7 @@ func (e *Editor) reconcileRepositories(ctx context.Context, root *git.Repo, foun
 				for _, t := range c.tabs {
 					if dt := t.diff; dt != nil && dt.repoRoot == rc.git.repo.Root {
 						dt.loading, dt.awaitRepo = false, false
-						dt.loadError = "原仓库已不可用"
+						dt.loadError = i18n.T("The original repository is no longer available")
 						if dt.changes {
 							e.buildChanges(t.doc, dt)
 						}

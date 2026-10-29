@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"path/filepath"
 	"slices"
 	"strconv"
@@ -12,6 +11,7 @@ import (
 	sf "github.com/sahilm/fuzzy"
 
 	"github.com/corn12138/yan-source/core/edit"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/keymap"
 	"github.com/corn12138/yan-source/core/search/fuzzy"
 	"github.com/corn12138/yan-source/core/view"
@@ -24,8 +24,11 @@ type ovItem struct {
 	label, detail, hint string
 	font                string // the window shows a sample in this font family (the font picker)
 	theme               string
-	labelHit, detailHit []int // 命中字符的字节下标
-	unreleased          bool  // a command the official release does not have yet
+	labelHit, detailHit []int  // 命中字符的字节下标
+	unreleased          bool   // a command the official release does not have yet
+	group               string // Settings: the heading of the items from this one on
+	checked             bool   // Settings: the option saved
+	stay                bool   // choosing it leaves the overlay open (Settings)
 	run                 func(e *Editor) error
 }
 
@@ -111,6 +114,10 @@ func (e *Editor) setOverlayInput(in string) {
 		e.themeItems()
 		return
 	}
+	if ov.kind == view.OverlaySettings {
+		e.settingsItems()
+		return
+	}
 	q := normalizePrefix(in)
 	if ov.kind == view.OverlayFinder && strings.HasPrefix(q, ">") {
 		ov.kind = view.OverlayPalette // 与 VS Code 一样，">" 切到命令面板
@@ -124,7 +131,7 @@ func (e *Editor) setOverlayInput(in string) {
 		return
 	}
 	if ov.kind == view.OverlayPrompt {
-		ov.items, ov.footer = ov.items[:0], "回车确定 · Esc 取消"
+		ov.items, ov.footer = ov.items[:0], i18n.T("Enter to confirm · Esc to cancel")
 		if strings.TrimSpace(in) != "" {
 			accept := ov.accept
 			ov.items = append(ov.items, ovItem{label: ov.hint(in), run: func(e *Editor) error { return accept(e, in) }})
@@ -136,7 +143,7 @@ func (e *Editor) setOverlayInput(in string) {
 		return
 	}
 	if ov.kind == view.OverlayChoice {
-		ov.items, ov.footer = ov.items[:0], "回车选择 · Esc 取消"
+		ov.items, ov.footer = ov.items[:0], i18n.T("Enter to choose · Esc to cancel")
 		q := strings.ToLower(strings.TrimSpace(in))
 		for _, it := range ov.choices {
 			if strings.Contains(strings.ToLower(it.label), q) {
@@ -164,9 +171,9 @@ func (e *Editor) recentItems() {
 		name, dir := splitPath(e.rel(p))
 		ov.items = append(ov.items, ovItem{label: name, detail: dir, run: openRun(p)})
 	}
-	ov.footer = "最近打开"
+	ov.footer = i18n.T("Recently Opened")
 	if len(ov.items) == 0 {
-		ov.footer = "输入文件名搜索 · : 跳到行 · > 命令"
+		ov.footer = i18n.T("Type a file name to search · : go to line · > commands")
 	}
 }
 
@@ -175,19 +182,19 @@ func (e *Editor) gotoItems(arg string) {
 	ov.items, ov.footer = ov.items[:0], ""
 	t := e.cur()
 	if t == nil {
-		ov.footer = "没有打开的文件"
+		ov.footer = i18n.T("No open file")
 		return
 	}
 	n := t.doc.buf.Snapshot().LineCount()
 	line, col, ok := parseLineCol(arg)
 	if !ok {
-		ov.footer = fmt.Sprintf("输入 1 到 %d 之间的行号，可加 :列", n)
+		ov.footer = i18n.F("Enter a line number from 1 to %d, optionally with :column", n)
 		return
 	}
 	line = min(line, n)
-	label := fmt.Sprintf("跳到第 %d 行", line)
+	label := i18n.F("Go to line %d", line)
 	if col > 0 {
-		label += fmt.Sprintf("，第 %d 列", col)
+		label += i18n.F(", column %d", col)
 	}
 	ov.items = append(ov.items, ovItem{label: label, run: func(e *Editor) error {
 		e.gotoLineCol(line, col)
@@ -227,7 +234,7 @@ func (e *Editor) gotoLineCol(line, col int) {
 func (e *Editor) fuzzyItems(q string) {
 	ov := e.ov
 	if e.ws == nil {
-		ov.items, ov.footer = ov.items[:0], "没有打开文件夹（yan 目录）"
+		ov.items, ov.footer = ov.items[:0], i18n.T("No folder open (yan folder)")
 		return
 	}
 	if ov.cancel != nil {
@@ -265,12 +272,12 @@ func (e *Editor) indexFooter(hits int) {
 	ov, w := e.ov, e.ws
 	var parts []string
 	if hits >= 0 {
-		parts = append(parts, fmt.Sprintf("%d 个结果", hits))
+		parts = append(parts, i18n.F("%d results", hits))
 	}
 	if w.indexing {
-		parts = append(parts, fmt.Sprintf("索引中 %d", len(w.index)))
+		parts = append(parts, i18n.F("Indexing %d", len(w.index)))
 	} else {
-		parts = append(parts, fmt.Sprintf("共 %d 个文件", len(w.index)))
+		parts = append(parts, i18n.F("%d files", len(w.index)))
 	}
 	ov.footer = strings.Join(parts, " · ")
 }
@@ -383,7 +390,7 @@ func (e *Editor) paletteItems(q string) {
 		add(h.id, h.th, h.ih)
 	}
 	if len(hits) == 0 {
-		ov.footer = "没有匹配的命令"
+		ov.footer = i18n.T("No matching commands")
 	}
 }
 
@@ -408,6 +415,12 @@ func (e *Editor) handleOverlayKey(c keymap.Chord) bool {
 	case keymap.KeyEnter:
 		if ov.sel >= 0 && ov.sel < len(ov.items) {
 			it := ov.items[ov.sel]
+			if it.stay {
+				if err := it.run(e); err != nil {
+					e.status = err.Error()
+				}
+				return true
+			}
 			e.closeOverlay()
 			if err := e.runRepositoryItem(ov.repository, it.run); err != nil {
 				e.status = err.Error()

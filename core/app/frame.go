@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	"path/filepath"
 	"slices"
 	"strconv"
@@ -10,6 +9,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/corn12138/yan-source/core/edit"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/style"
 	"github.com/corn12138/yan-source/core/syntax/highlight"
 	"github.com/corn12138/yan-source/core/text"
@@ -312,7 +312,7 @@ func (e *Editor) columnFrame(c *column, focused bool, dst *view.Column) {
 	}
 	if t.image || t.svg {
 		p.Kind, p.Path = view.PaneImage, t.doc.buf.Path()
-		p.Message = filepath.Base(p.Path) + "：图片在窗口版里看（yan-app）"
+		p.Message = i18n.F("%s: images are shown in the window version (yan-app)", filepath.Base(p.Path))
 		if t.svg {
 			s := t.doc.buf.Snapshot()
 			p.SVG = s.AppendRange(p.SVG[:0], 0, s.Len())
@@ -493,22 +493,22 @@ func (e *Editor) treeRow(n *workspace.Node) view.TreeRow {
 func (e *Editor) welcomeHints() []view.Hint {
 	type hint struct{ id, title string }
 	hints := []hint{
-		{"workbench.action.files.openFolder", "打开文件夹"},
-		{"workbench.action.openRecent", "打开最近的文件夹"},
-		{"workbench.action.showCommands", "命令面板"},
-		{"workbench.action.terminal.toggleTerminal", "终端"},
-		{"workbench.action.quit", "退出"},
+		{"workbench.action.files.openFolder", i18n.T("Open Folder")},
+		{"workbench.action.openRecent", i18n.T("Open Recent Folder")},
+		{"workbench.action.showCommands", i18n.T("Command Palette")},
+		{"workbench.action.terminal.toggleTerminal", i18n.T("Terminal")},
+		{"workbench.action.quit", i18n.T("Quit")},
 	}
 	if e.ws != nil {
 		hints = []hint{
-			{"workbench.action.quickOpen", "快速打开文件"},
-			{"workbench.action.gotoSymbol", "转到文件里的符号"},
-			{"workbench.action.findInFiles", "在文件中搜索"},
-			{"workbench.view.scm", "源代码管理"},
-			{"workbench.action.showCommands", "命令面板"},
-			{"workbench.action.toggleSidebarVisibility", "显示/隐藏资源管理器"},
-			{"workbench.action.terminal.toggleTerminal", "终端"},
-			{"workbench.action.openRecent", "打开最近的文件夹"},
+			{"workbench.action.quickOpen", i18n.T("Quick Open File")},
+			{"workbench.action.gotoSymbol", i18n.T("Go to Symbol in File")},
+			{"workbench.action.findInFiles", i18n.T("Search in Files")},
+			{"workbench.view.scm", i18n.T("Source Control")},
+			{"workbench.action.showCommands", i18n.T("Command Palette")},
+			{"workbench.action.toggleSidebarVisibility", i18n.T("Show/Hide Explorer")},
+			{"workbench.action.terminal.toggleTerminal", i18n.T("Terminal")},
+			{"workbench.action.openRecent", i18n.T("Open Recent Folder")},
 		}
 		if e.repository().git.repo == nil {
 			hints = slices.DeleteFunc(hints, func(h hint) bool { return h.id == "workbench.view.scm" })
@@ -526,7 +526,7 @@ func (e *Editor) welcomeHints() []view.Hint {
 func (e *Editor) statusFrame(dst *view.Status) {
 	dst.Message = e.status
 	if dst.Message == "" && e.configProblem != "" {
-		dst.Message = "配置有错：" + e.configProblem
+		dst.Message = i18n.F("Configuration error: %s", e.configProblem)
 	}
 	dst.Action = view.StatusAction{}
 	if a := e.action; a.text != "" && a.text == e.status {
@@ -549,7 +549,7 @@ func (e *Editor) statusFrame(dst *view.Status) {
 	case e.root != "":
 		dst.Left = e.root
 	default:
-		dst.Left = "砚 yan"
+		dst.Left = i18n.T("Yan")
 	}
 	if t == nil || t.image || t.term != nil {
 		return // 图片：只显示路径
@@ -565,15 +565,15 @@ func (e *Editor) statusFrame(dst *view.Status) {
 	if e.cfg.Vim {
 		dst.Right = append(dst.Right, view.StatusItem{Text: t.vim.label(), Keep: view.KeepVim})
 	}
-	pos := fmt.Sprintf("行 %d，列 %d", line+1, col)
+	pos := i18n.F("Ln %d, Col %d", line+1, col)
 	if !main.Empty() {
-		pos += fmt.Sprintf("（已选择 %d）", main.To()-main.From())
+		pos += i18n.F(" (%d selected)", main.To()-main.From())
 	}
 	dst.Right = append(dst.Right, view.StatusItem{Text: pos, Keep: view.KeepPosition})
 	if n := len(sels.Ranges); n > 1 {
-		dst.Right = append(dst.Right, view.StatusItem{Text: fmt.Sprintf("%d 个光标", n), Keep: view.KeepCursors})
+		dst.Right = append(dst.Right, view.StatusItem{Text: i18n.F("%d cursors", n), Keep: view.KeepCursors})
 	}
-	lang := "纯文本"
+	lang := i18n.T("Plain Text")
 	if t.doc.hl != nil {
 		lang = highlight.DisplayName(t.doc.hl.Lexer())
 	}
@@ -597,19 +597,21 @@ func (e *Editor) overlayFrame(dst *view.Overlay) {
 		dst.Appearance = ov.preview.appearance
 	}
 	dst.Selected, dst.Top = ov.sel, ov.top
-	dst.Title = "快速打开"
+	dst.Title = i18n.T("Quick Open")
 	switch ov.kind {
 	case view.OverlayPalette:
-		dst.Title = "命令面板"
+		dst.Title = i18n.T("Command Palette")
 	case view.OverlayBranch:
-		dst.Title = "切换分支"
+		dst.Title = i18n.T("Switch Branch")
 	case view.OverlayRecent:
-		dst.Title = "最近打开"
+		dst.Title = i18n.T("Recently Opened")
 	case view.OverlayPrompt, view.OverlayChoice, view.OverlayTheme:
 		dst.Title = ov.title
+	case view.OverlaySettings:
+		e.settingsFrame(dst)
 	}
 	for _, it := range ov.items {
-		dst.Items = append(dst.Items, view.OverlayItem{Label: it.label, Detail: it.detail, Hint: it.hint, Font: it.font, Theme: it.theme, LabelHits: it.labelHit, DetailHits: it.detailHit, Unreleased: it.unreleased})
+		dst.Items = append(dst.Items, view.OverlayItem{Label: it.label, Detail: it.detail, Hint: it.hint, Font: it.font, Theme: it.theme, LabelHits: it.labelHit, DetailHits: it.detailHit, Unreleased: it.unreleased, Group: it.group, Checked: it.checked})
 	}
 }
 

@@ -53,7 +53,7 @@ deps() { "$GO" version -m "$1" | awk '$1 == "dep" || $1 == "=>" { print $2, $3 }
 [ "$(deps "$EXE")" = "$(deps bin/yan-app)" ] || fail "包里的可执行文件和生成声明用的 bin/yan-app 链接的模块不一样"
 v=$("$EXE" --version)
 case "$v" in
-"yan-app ${VERSION}（${COMMIT%"${COMMIT#????????????}"}）") ;;
+"yan-app ${VERSION} (${COMMIT%"${COMMIT#????????????}"})") ;;
 *) fail "版本号不对：$v" ;;
 esac
 codesign --verify --deep --strict "$APP" || fail "签名校验失败"

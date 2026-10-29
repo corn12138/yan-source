@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/style"
 	"github.com/corn12138/yan-source/core/view"
 	"strings"
@@ -40,14 +41,14 @@ func (f *Frontend) drawRepositories(s *view.SCM, changes int, r view.Rect, focus
 			if on {
 				selected = len(rows)
 			}
-			rows = append(rows, row{text: "  说明 " + l, message: l, active: on, style: style.Text, hit: sideLine{repositoryID: p.RepositoryID, kind: sideRepositoryMessage}})
+			rows = append(rows, row{text: i18n.F("  Message %s", l), message: l, active: on, style: style.Text, hit: sideLine{repositoryID: p.RepositoryID, kind: sideRepositoryMessage}})
 		}
-		rows = append(rows, row{text: "  Tab 写说明 · ⌃K C " + p.CommitLabel, style: style.Dim})
+		rows = append(rows, row{text: i18n.F("  Tab to write the message · ⌃K C %s", p.CommitLabel), style: style.Dim})
 		if p.Busy != "" {
 			rows = append(rows, row{text: "  " + p.Busy, style: style.StatusAccent})
 		}
 		if p.Op != "" {
-			rows = append(rows, row{text: "  " + p.Op + "：命令面板继续或中止", style: style.StatusAccent})
+			rows = append(rows, row{text: i18n.F("  %s: continue or abort from the Command Palette", p.Op), style: style.StatusAccent})
 		}
 		i := 0
 		for _, g := range p.Groups {
@@ -77,7 +78,7 @@ func (f *Frontend) drawRepositories(s *view.SCM, changes int, r view.Rect, focus
 		i += len(g.Rows)
 	}
 	if len(s.Commits) > 0 {
-		rows = append(rows, row{text: "  提交历史 · " + "当前仓库", style: style.Dim})
+		rows = append(rows, row{text: i18n.T("  Commit history · current repository"), style: style.Dim})
 	}
 	for _, commit := range s.Commits {
 		st := style.Text
@@ -91,8 +92,8 @@ func (f *Frontend) drawRepositories(s *view.SCM, changes int, r view.Rect, focus
 		i++
 	}
 	w, x0 := int(r.W), int(r.X)
-	f.drawText(x0, 0, w, fmt.Sprintf(" 源代码管理 (%d) · 多仓库", changes), style.Tab)
-	f.drawText(x0, 1, w, " 命令面板：Git：选择仓库", style.Dim)
+	f.drawText(x0, 0, w, i18n.F(" Source Control (%d) · multiple repositories", changes), style.Tab)
+	f.drawText(x0, 1, w, i18n.T(" Command Palette: Git: Select Repository"), style.Dim)
 	count := max(0, int(r.H)-2)
 	top := max(0, selected-count+1)
 	for i := top; i < len(rows) && i-top < count; i++ {
@@ -100,7 +101,7 @@ func (f *Frontend) drawRepositories(s *view.SCM, changes int, r view.Rect, focus
 		row := rows[i]
 		f.sideLines[y] = row.hit
 		if row.active && focused {
-			x, on := f.field(x0+1, y, w-2, "说明 ", row.message, "写提交说明", true)
+			x, on := f.field(x0+1, y, w-2, i18n.T("Message "), row.message, i18n.T("Write a commit message"), true)
 			caret, ok = [2]int{x, y}, on
 		} else {
 			f.drawText(x0, y, w, row.text, row.style)

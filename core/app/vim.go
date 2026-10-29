@@ -6,6 +6,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/corn12138/yan-source/core/edit"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/keymap"
 	"github.com/corn12138/yan-source/core/text"
 )
@@ -33,13 +34,13 @@ const (
 func (m vimMode) String() string {
 	switch m {
 	case vimInsert:
-		return "插入"
+		return i18n.T("Insert")
 	case vimVisual:
-		return "可视"
+		return i18n.T("Visual")
 	case vimVisualLine:
-		return "可视行"
+		return i18n.T("Visual Line")
 	}
-	return "普通"
+	return i18n.T("Normal")
 }
 
 func (m vimMode) visual() bool { return m == vimVisual || m == vimVisualLine }
@@ -1537,9 +1538,9 @@ func (e *Editor) toggleVim() error {
 	}
 	e.settingsGen++
 	if e.cfg.Vim {
-		e.status = "Vim 模式：开"
+		e.status = i18n.T("Vim Mode: On")
 	} else {
-		e.status = "Vim 模式：关"
+		e.status = i18n.T("Vim Mode: Off")
 	}
 	return nil
 }

@@ -4,7 +4,6 @@ package config
 
 import (
 	"errors"
-	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -13,6 +12,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/keymap"
 )
 
@@ -29,10 +29,15 @@ type Config struct {
 	// PreviewMermaid 把 Markdown 预览里的 mermaid 代码块画成图（[ui] preview_mermaid，默认开）；
 	// .mmd、.mermaid 文件的预览不看它，总是画图。
 	PreviewMermaid bool
+	PreviewMath    bool
 	FontFamily     string
 	FontSize       float64
-	LineHeight     float64
-	Blame          bool // 光标停下时在行尾显示这一行最后是谁改的（[git] blame）
+	// Language is the interface language the user configuration names ([ui] language):
+	// "system", "zh-Hans", "en", or "" when it names none. Only the user's file may set it: the
+	// interface language is the application's, never a project's.
+	Language   string
+	LineHeight float64
+	Blame      bool // 光标停下时在行尾显示这一行最后是谁改的（[git] blame）
 	// DiffWhitespace is which whitespace the diffs leave out of the comparison ([diff] whitespace):
 	// "" every character counts, "eol" line-end spaces and tabs do not, "all" no whitespace does,
 	// "blank" also lines made only of whitespace. The text shown and staged stays the file's own.
@@ -72,7 +77,7 @@ type Config struct {
 
 // Default 返回内置默认配置：零配置即可用。
 func Default() *Config {
-	return &Config{ThemeEffects: true, PreviewMermaid: true, TerminalCopyOnSelect: true, TabWidth: 4, DiffContext: 3, DiffSyncScroll: true, DiffAlignedRows: true, LineNumbers: true, SidebarWidth: 30, FontFamily: "monospace", FontSize: 14, LineHeight: 1.6, Blame: true,
+	return &Config{ThemeEffects: true, PreviewMermaid: true, PreviewMath: true, TerminalCopyOnSelect: true, TabWidth: 4, DiffContext: 3, DiffSyncScroll: true, DiffAlignedRows: true, LineNumbers: true, SidebarWidth: 30, FontFamily: "monospace", FontSize: 14, LineHeight: 1.6, Blame: true,
 		Keys: map[string]map[string]string{}}
 }
 
@@ -103,8 +108,10 @@ type file struct {
 	} `toml:"diff"`
 	UI struct {
 		Theme        *string  `toml:"theme"`
+		Language     *string  `toml:"language"`
 		ThemeEffects *bool    `toml:"theme_effects"`
 		Mermaid      *bool    `toml:"preview_mermaid"`
+		Math         *bool    `toml:"preview_math"`
 		Appearance   *string  `toml:"appearance"`
 		FontFamily   *string  `toml:"font_family"`
 		FontSize     *float64 `toml:"font_size"`
@@ -185,7 +192,7 @@ func Load(projectRoot string) (*Config, []string) {
 		paths = append(paths, filepath.Join(projectRoot, ".yan.toml"))
 	}
 	for _, p := range paths {
-		warns = append(warns, c.merge(p)...)
+		warns = append(warns, c.merge(p, p != UserPath())...)
 	}
 	kp := KeybindingsPath()
 	if b, err := os.ReadFile(kp); err == nil {
@@ -196,7 +203,7 @@ func Load(projectRoot string) (*Config, []string) {
 		} else if good, ok := lastGood.files[kp]; ok {
 			// A malformed save keeps the keys every window was using, and says so.
 			c.Keybindings = good
-			warns = append(warns, fmt.Sprintf("keybindings.json：%v（沿用上次能读的键位）", err))
+			warns = append(warns, i18n.F("keybindings.json: %v (keeping the last keys that could be read)", err))
 		}
 		lastGood.Unlock()
 	} else if errors.Is(err, fs.ErrNotExist) {
@@ -204,7 +211,7 @@ func Load(projectRoot string) (*Config, []string) {
 		delete(lastGood.files, kp)
 		lastGood.Unlock()
 	} else {
-		warns = append(warns, fmt.Sprintf("keybindings.json：%v", err))
+		warns = append(warns, i18n.F("%s: %v", "keybindings.json", err))
 	}
 	return c, warns
 }
@@ -216,7 +223,7 @@ var lastGood = struct {
 	files map[string][]byte
 }{files: map[string][]byte{}}
 
-func (c *Config) merge(path string) []string {
+func (c *Config) merge(path string, project bool) []string {
 	var f file
 	data, err := os.ReadFile(path)
 	if errors.Is(err, fs.ErrNotExist) {
@@ -226,7 +233,7 @@ func (c *Config) merge(path string) []string {
 		return nil
 	}
 	if err != nil {
-		return []string{fmt.Sprintf("%s：%v", filepath.Base(path), err)}
+		return []string{i18n.F("%s: %v", filepath.Base(path), err)}
 	}
 	md, err := toml.Decode(string(data), &f)
 	var warns []string
@@ -236,15 +243,15 @@ func (c *Config) merge(path string) []string {
 	} else if good, ok := lastGood.files[path]; ok {
 		f = file{}
 		md, _ = toml.Decode(string(good), &f)
-		warns = append(warns, fmt.Sprintf("%s：%v（沿用上次能读的内容）", filepath.Base(path), err))
+		warns = append(warns, i18n.F("%s: %v (keeping the last content that could be read)", filepath.Base(path), err))
 		err = nil
 	}
 	lastGood.Unlock()
 	if err != nil {
-		return []string{fmt.Sprintf("%s：%v", filepath.Base(path), err)}
+		return []string{i18n.F("%s: %v", filepath.Base(path), err)}
 	}
 	for _, k := range md.Undecoded() {
-		warns = append(warns, fmt.Sprintf("%s：未知配置项 %s", filepath.Base(path), k))
+		warns = append(warns, i18n.F("%s: unknown setting %s", filepath.Base(path), k))
 	}
 	if v := f.Editor.TabWidth; v != nil && *v > 0 && *v <= 16 {
 		c.TabWidth = *v
@@ -265,7 +272,7 @@ func (c *Config) merge(path string) []string {
 		if location, ok := terminalLocation(*v); ok {
 			c.TerminalLocation = location
 		} else {
-			warns = append(warns, fmt.Sprintf("%s：terminal.location 只能是 panel 或 editor", filepath.Base(path)))
+			warns = append(warns, i18n.F("%s: terminal.location must be panel or editor", filepath.Base(path)))
 		}
 	}
 	if v := f.Terminal.Position; v != nil {
@@ -273,7 +280,7 @@ func (c *Config) merge(path string) []string {
 		case "", "bottom", "left", "right":
 			c.PanelPosition = strings.TrimPrefix(*v, "bottom")
 		default:
-			warns = append(warns, fmt.Sprintf("%s：terminal.position 只能是 bottom、left 或 right", filepath.Base(path)))
+			warns = append(warns, i18n.F("%s: terminal.position must be bottom, left or right", filepath.Base(path)))
 		}
 	}
 	if v := f.Editor.WordWrap; v != nil {
@@ -285,8 +292,21 @@ func (c *Config) merge(path string) []string {
 	if v := f.Explorer.Right; v != nil {
 		c.SidebarRight = *v
 	}
+	if v := f.UI.Language; v != nil {
+		switch _, ok := i18n.ParsePreference(*v); {
+		case project:
+			warns = append(warns, i18n.F("%s: ui.language is ignored here: the interface language is set in the user configuration or in Settings", filepath.Base(path)))
+		case ok:
+			c.Language = *v
+		default:
+			warns = append(warns, i18n.F("%s: ui.language must be system, zh-Hans or en", filepath.Base(path)))
+		}
+	}
 	if v := f.UI.ThemeEffects; v != nil {
 		c.ThemeEffects = *v
+	}
+	if v := f.UI.Math; v != nil {
+		c.PreviewMath = *v
 	}
 	if v := f.UI.Mermaid; v != nil {
 		c.PreviewMermaid = *v
@@ -296,7 +316,7 @@ func (c *Config) merge(path string) []string {
 		case "", "mayoi", "matrix", "claude":
 			c.Theme = strings.TrimPrefix(*v, "mayoi")
 		default:
-			warns = append(warns, fmt.Sprintf("%s：未知主题 %q（可用 mayoi、matrix、claude）", filepath.Base(path), *v))
+			warns = append(warns, i18n.F("%s: unknown theme %q (available: mayoi, matrix, claude)", filepath.Base(path), *v))
 		}
 	}
 	if v := f.UI.Appearance; v != nil {
@@ -304,7 +324,7 @@ func (c *Config) merge(path string) []string {
 		case "", "system", "light", "dark":
 			c.Appearance = strings.TrimPrefix(*v, "system")
 		default:
-			warns = append(warns, fmt.Sprintf("%s：未知外观 %q（可用 system、light、dark）", filepath.Base(path), *v))
+			warns = append(warns, i18n.F("%s: unknown appearance %q (available: system, light, dark)", filepath.Base(path), *v))
 		}
 	}
 	if v := f.Git.Blame; v != nil {
@@ -314,7 +334,7 @@ func (c *Config) merge(path string) []string {
 		if w, ok := DiffWhitespaceMode(*v); ok {
 			c.DiffWhitespace = w
 		} else {
-			warns = append(warns, fmt.Sprintf("%s：diff.whitespace 只能是 exact、eol、all 或 blank", filepath.Base(path)))
+			warns = append(warns, i18n.F("%s: diff.whitespace must be exact, eol, all or blank", filepath.Base(path)))
 		}
 	}
 	if v := f.Diff.CrossFiles; v != nil {
@@ -322,21 +342,21 @@ func (c *Config) merge(path string) []string {
 		case "", "ask", "always", "never":
 			c.DiffCrossFiles = strings.TrimPrefix(*v, "ask")
 		default:
-			warns = append(warns, fmt.Sprintf("%s：diff.cross_files 只能是 ask、always 或 never", filepath.Base(path)))
+			warns = append(warns, i18n.F("%s: diff.cross_files must be ask, always or never", filepath.Base(path)))
 		}
 	}
 	if v := f.Diff.Highlight; v != nil {
 		if h, ok := DiffHighlightMode(*v); ok {
 			c.DiffHighlight = h
 		} else {
-			warns = append(warns, fmt.Sprintf("%s：diff.highlight 只能是 word、char 或 line", filepath.Base(path)))
+			warns = append(warns, i18n.F("%s: diff.highlight must be word, char or line", filepath.Base(path)))
 		}
 	}
 	if v := f.Diff.Context; v != nil {
 		if *v >= 0 && *v <= MaxDiffContext {
 			c.DiffContext = *v
 		} else {
-			warns = append(warns, fmt.Sprintf("%s：diff.context 只能是 0 到 %d", filepath.Base(path), MaxDiffContext))
+			warns = append(warns, i18n.F("%s: diff.context must be 0 to %d", filepath.Base(path), MaxDiffContext))
 		}
 	}
 	if v := f.Diff.SyncScroll; v != nil {
@@ -349,7 +369,7 @@ func (c *Config) merge(path string) []string {
 		if l, ok := DiffLayoutMode(*v); ok {
 			c.DiffLayout = l
 		} else {
-			warns = append(warns, fmt.Sprintf("%s：diff.layout 只能是 auto、split 或 inline", filepath.Base(path)))
+			warns = append(warns, i18n.F("%s: diff.layout must be auto, split or inline", filepath.Base(path)))
 		}
 	}
 	if v := f.UI.FontFamily; v != nil && *v != "" {

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/corn12138/yan-source/core/config"
+	"github.com/corn12138/yan-source/core/i18n"
 )
 
 // Importing settings from VS Code, Cursor and the other editors that share its files. An import
@@ -20,7 +21,7 @@ import (
 func (e *Editor) importVSCode() error {
 	srcs := config.VSCodeSources(e.profile.Platform())
 	if len(srcs) == 0 {
-		return errors.New("没有找到 VS Code、Cursor 等编辑器的设置：用「从文件导入设置」指定 settings.json")
+		return errors.New(i18n.T("No settings of VS Code, Cursor or similar editors found: use \"Import Settings from File\" to choose a settings.json"))
 	}
 	items := make([]ovItem, 0, len(srcs))
 	for _, s := range srcs {
@@ -28,14 +29,14 @@ func (e *Editor) importVSCode() error {
 			return e.importSettingsFrom(s.Name, s.Dir)
 		}})
 	}
-	e.choose("从哪个编辑器导入设置和快捷键（导入后立即生效）", items...)
+	e.choose(i18n.T("Import settings and shortcuts from which editor (they take effect immediately)"), items...)
 	return nil
 }
 
 // importSettingsFile asks for a settings.json, or the folder holding it and keybindings.json.
 func (e *Editor) importSettingsFile() error {
-	e.prompt("导入设置：settings.json 或它所在文件夹的路径（同一文件夹里的 keybindings.json 也会导入）", "", func(s string) string {
-		return "导入 " + strings.TrimSpace(s)
+	e.prompt(i18n.T("Import settings: path of settings.json or its folder (keybindings.json in the same folder is imported too)"), "", func(s string) string {
+		return i18n.F("Import %s", strings.TrimSpace(s))
 	}, func(e *Editor, s string) error {
 		p := e.bindingPath(strings.TrimSpace(s))
 		fi, err := os.Stat(p)
@@ -66,13 +67,13 @@ func (e *Editor) importSettingsFrom(name, dir string) error {
 		found, keys = true, data
 	}
 	if !found {
-		return fmt.Errorf("%s 里没有 settings.json 或 keybindings.json", shortHome(dir))
+		return fmt.Errorf(i18n.T("%s has no settings.json or keybindings.json"), shortHome(dir))
 	}
 	// Both files are checked before either is written, so a refusal changes nothing.
 	user, kb := config.UserPath(), config.KeybindingsPath()
 	for _, p := range []string{user, kb} {
 		if d := e.docOf(p); d != nil && d.buf.Dirty() {
-			return fmt.Errorf("%s 有未保存的修改：先保存或关掉它再导入", filepath.Base(p))
+			return fmt.Errorf(i18n.T("%s has unsaved changes: save or close it before importing"), filepath.Base(p))
 		}
 	}
 	var merged []byte
@@ -105,10 +106,10 @@ func (e *Editor) importSettingsFrom(name, dir string) error {
 	}
 	e.reloadDocs(user, kb)
 	e.reloadConfig()
-	msg := fmt.Sprintf("已从 %s 导入 %d 项设置、%d 个快捷键，已生效", name, len(sets), added)
+	msg := i18n.F("Imported %[2]d settings and %[3]d shortcuts from %[1]s; they are in effect", name, len(sets), added)
 	if len(skipped) > 0 {
 		shown := skipped[:min(len(skipped), 4)]
-		msg += fmt.Sprintf("；砚没有对应的 %d 项未导入：%s", len(skipped), strings.Join(shown, "、"))
+		msg += i18n.F("; %d items Yan has no equivalent for were not imported: %s", len(skipped), i18n.Join(shown))
 		if len(skipped) > len(shown) {
 			msg += "…"
 		}

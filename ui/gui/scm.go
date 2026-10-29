@@ -11,6 +11,7 @@ import (
 	"github.com/egoist/mygo/ui"
 
 	"github.com/corn12138/yan-source/core/app"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/keymap"
 	"github.com/corn12138/yan-source/core/view"
 )
@@ -52,7 +53,7 @@ func (f *Frontend) scmPanel(c *ui.Context, s *view.SCM, multi bool) {
 	state := f.scmState(s.RepositoryID)
 	p := f.pal
 	if s.Busy != "" {
-		ui.Progress(c.Key("scm-activity"), -1).Height(2).Radius(0).Label("git 运行中")
+		ui.Progress(c.Key("scm-activity"), -1).Height(2).Radius(0).Label(i18n.T("git running"))
 	} else {
 		ui.Box(c.Key("scm-activity")).Height(2)
 	}
@@ -62,13 +63,15 @@ func (f *Frontend) scmPanel(c *ui.Context, s *view.SCM, multi bool) {
 		}
 		ui.Column(c).Padding(28, 20, 16, 20).Gap(8).AlignItems(ui.Center).Children(func() {
 			ui.Icon(c, iconBranch).FontSize(22).TextColor(p.muted)
-			ui.Text(c, "这个文件夹不在 git 仓库里").FontSize(13).FontWeight(600).TextColor(p.text)
+			ui.Text(c, i18n.T("This folder is not in a Git repository")).FontSize(13).FontWeight(600).TextColor(p.text)
 			b := ui.Box(c.Key("git-init")).Height(28).Padding(0, 14).Radius(6).Justify(ui.Center).AlignItems(ui.Center).
-				Background(c.Theme().Accent).Label("初始化仓库")
+				Background(c.Theme().Accent).Label(i18n.T("Initialize Repository"))
 			if b.Hovered() {
 				b.Background(c.Theme().AccentHover)
 			}
-			b.Children(func() { ui.Text(c, "初始化仓库").FontSize(12.5).FontWeight(600).TextColor(c.Theme().AccentText) })
+			b.Children(func() {
+				ui.Text(c, i18n.T("Initialize Repository")).FontSize(12.5).FontWeight(600).TextColor(c.Theme().AccentText)
+			})
 			if b.Clicked() {
 				ed.Run("git.init")
 			}
@@ -83,18 +86,18 @@ func (f *Frontend) scmPanel(c *ui.Context, s *view.SCM, multi bool) {
 		if s.Amend {
 			ui.Row(c).Gap(6).AlignItems(ui.Center).Padding(4, 4, 4, 8).Radius(5).Background(p.accent.Alpha(0.12)).Children(func() {
 				ui.Icon(c, iconPencil).FontSize(12).TextColor(p.accent)
-				ui.Text(c, "正在修改上次提交").FontSize(11.5).TextColor(p.text).Grow(1).SingleLine().Shrink(1)
+				ui.Text(c, i18n.T("Amending the last commit")).FontSize(11.5).TextColor(p.text).Grow(1).SingleLine().Shrink(1)
 			})
 		}
 		if state.scmMessage != s.Message && !state.scmEditing {
 			state.scmMessage = s.Message
 		}
 		state.scmEditing = false
-		hint := "提交说明（" + f.modKeys(keymap.KeyEnter) + " 提交）"
+		hint := i18n.F("Commit message (%s to commit)", f.modKeys(keymap.KeyEnter))
 		if s.Branch != "" {
-			hint = fmt.Sprintf("提交说明（%s 提交到 %s）", f.modKeys(keymap.KeyEnter), s.Branch)
+			hint = i18n.F("Commit message (%s to commit to %s)", f.modKeys(keymap.KeyEnter), s.Branch)
 		}
-		label := "提交说明"
+		label := i18n.T("Commit message")
 		if multi {
 			label += " · " + f.repositoryLabel(s.Root)
 		}
@@ -125,10 +128,10 @@ func (f *Frontend) scmPanel(c *ui.Context, s *view.SCM, multi bool) {
 	})
 	drawList := func() {
 		if len(s.Groups) == 0 {
-			ui.Text(c, "没有改动").FontSize(12).TextColor(p.muted).Padding(8, 12)
+			ui.Text(c, i18n.T("No changes")).FontSize(12).TextColor(p.muted).Padding(8, 12)
 		} else { // 在一个标签里看所有改了的文件（照着 Mayoi 的 Changes 标签）
-			b := ui.Row(c.Key("all-changes")).Height(22).Padding(0, 8).Gap(6).AlignItems(ui.Center).Radius(4).Label("打开所有改动").
-				Tooltip("在一个标签里看所有改了的文件：j k 上下，] [ 改动，. , 文件，s 暂存，z 折起")
+			b := ui.Row(c.Key("all-changes")).Height(22).Padding(0, 8).Gap(6).AlignItems(ui.Center).Radius(4).Label(i18n.T("Open All Changes")).
+				Tooltip(i18n.T("See every changed file in one tab: j k up/down, ] [ changes, . , files, s stage, z fold"))
 			col := p.muted
 			if b.Hovered() {
 				b.Background(p.hover)
@@ -136,7 +139,7 @@ func (f *Frontend) scmPanel(c *ui.Context, s *view.SCM, multi bool) {
 			}
 			b.Children(func() {
 				ui.Icon(c, iconColumns).FontSize(12).TextColor(col)
-				ui.Text(c, "打开所有改动").FontSize(12).TextColor(col)
+				ui.Text(c, i18n.T("Open All Changes")).FontSize(12).TextColor(col)
 			})
 			if b.Clicked() {
 				ed.Run("git.openAllChanges")
@@ -166,9 +169,9 @@ func (f *Frontend) scmPanel(c *ui.Context, s *view.SCM, multi bool) {
 // and the title. It grows to take the header's free width, so the buttons beside it stay buttons.
 func (f *Frontend) sectionToggle(c *ui.Context, key, title string, folded bool, toggle func()) {
 	p := f.pal
-	label := "折起" + title
+	label := i18n.F("Fold %s", title)
 	if folded {
-		label = "展开" + title
+		label = i18n.F("Unfold %s", title)
 	}
 	t := ui.Row(c.Key(key)).Gap(4).AlignItems(ui.Center).Grow(1).MinWidth(0).Height(22).Label(label).Cursor(ui.CursorPointer)
 	t.Children(func() {
@@ -190,14 +193,14 @@ func (f *Frontend) scmHistoryHeader(c *ui.Context, s *view.SCM) {
 
 	p := f.pal
 	ui.Row(c.Key("group:commits")).Gap(4).AlignItems(ui.Center).Height(22).Padding(6, 4, 0, 4).Children(func() {
-		f.sectionToggle(c, "fold:commits", "提交", s.CommitsFolded, func() { ed.SCMToggleSection("commits") })
+		f.sectionToggle(c, "fold:commits", i18n.T("Commit"), s.CommitsFolded, func() { ed.SCMToggleSection("commits") })
 		if s.HistoryLoading {
-			ui.Text(c, "读取中…").FontSize(10.5).TextColor(p.faint)
+			ui.Text(c, i18n.T("Reading…")).FontSize(10.5).TextColor(p.faint)
 		}
 		ui.Spacer(c)
-		label := "显示所有分支"
+		label := i18n.T("Show All Branches")
 		if s.AllBranches {
-			label = "只显示当前分支"
+			label = i18n.T("Show Current Branch Only")
 		}
 		b := ui.Box(c.Key("all-branches")).Size(20, 20).Radius(4).Justify(ui.Center).AlignItems(ui.Center).Label(label).Tooltip(label)
 		col := p.muted
@@ -234,10 +237,10 @@ func (f *Frontend) scmCommit(c *ui.Context, id uint64, cm *view.SCMCommit, i int
 	p := f.pal
 	tip := fmt.Sprintf("%s\n%s · %s · %s", cm.Subject, cm.Author, cm.When, cm.Short)
 	if cm.Unpushed {
-		tip += " · 还没推送"
+		tip += i18n.T(" · not pushed yet")
 	}
 	if cm.Merge {
-		tip += " · 合并"
+		tip += i18n.T(" · merge")
 	}
 	row := ui.Row(c.Key("commit:"+cm.Hash)).Gap(6).AlignItems(ui.Center).Height(22).Padding(0, 4, 0, 2).Radius(4).Tooltip(tip)
 	switch {
@@ -250,21 +253,21 @@ func (f *Frontend) scmCommit(c *ui.Context, id uint64, cm *view.SCMCommit, i int
 		ed.act(func(e *app.Editor) { e.SCMOpenCommit(cm.Hash, false) })
 	}
 	row.ContextMenu(func(m *ui.Menu) {
-		if m.Item("打开").Chosen() {
+		if m.Item(i18n.T("Open")).Chosen() {
 			ed.act(func(e *app.Editor) { e.SCMOpenCommit(cm.Hash, true) })
 		}
-		if m.Item("检出、合并、变基、重置、还原、拣选…").Chosen() {
+		if m.Item(i18n.T("Check Out, Merge, Rebase, Reset, Revert, Cherry-Pick…")).Chosen() {
 			ed.SCMCommitCommand(cm.Hash, "yan.scm.commitActions")
 		}
 		m.Separator()
 		for _, action := range []struct{ id, label string }{
-			{"yan.git.exportPatch", "导出补丁…"},
-			{"yan.git.copyPatch", "复制改动补丁"},
-			{"yan.git.compareHeadToCommit", "比较 HEAD → 此提交"},
-			{"yan.git.compareCommitToHead", "比较此提交 → HEAD"},
-			{"yan.git.selectCompare", "选为比较起点"},
-			{"yan.git.compareSelected", "与选定起点比较"},
-			{"yan.git.openCommitRemote", "在远端打开提交"},
+			{"yan.git.exportPatch", i18n.T("Export Patch…")},
+			{"yan.git.copyPatch", i18n.T("Copy Patch")},
+			{"yan.git.compareHeadToCommit", i18n.T("Compare HEAD → This Commit")},
+			{"yan.git.compareCommitToHead", i18n.T("Compare This Commit → HEAD")},
+			{"yan.git.selectCompare", i18n.T("Select as Comparison Start")},
+			{"yan.git.compareSelected", i18n.T("Compare with Selected Start")},
+			{"yan.git.openCommitRemote", i18n.T("Open Commit on Remote")},
 		} {
 			disabled := (action.id == "yan.git.compareHeadToCommit" || action.id == "yan.git.compareCommitToHead") && cm.Head
 			if action.id == "yan.git.compareSelected" {
@@ -283,12 +286,12 @@ func (f *Frontend) scmCommit(c *ui.Context, id uint64, cm *view.SCMCommit, i int
 		if cm.Expanded {
 			arrow = iconChevronDown
 		}
-		if f.smallButton(c, arrow, "展开/折叠提交文件 "+cm.Short) {
+		if f.smallButton(c, arrow, i18n.F("Expand/collapse commit files %s", cm.Short)) {
 			f.root.Focus(c)
 			ed.act(func(e *app.Editor) { e.SCMToggleCommitFiles(cm.Hash) })
 		}
 		if cm.FilesLoading {
-			ui.Text(c, "读取中…").FontSize(10).TextColor(p.muted)
+			ui.Text(c, i18n.T("Reading…")).FontSize(10).TextColor(p.muted)
 		}
 		if cm.FilesError != "" {
 			ui.Text(c, cm.FilesError).FontSize(10).TextColor(p.danger)
@@ -415,7 +418,7 @@ func (f *Frontend) subjectLength(c *ui.Context, msg string) {
 	if n > 72 {
 		col = f.pal.modified
 	}
-	ui.Text(c, fmt.Sprintf("第一行 %d 个字", n)).FontSize(11).TextColor(col).TextAlign(ui.End)
+	ui.Text(c, i18n.F("First line: %d characters", n)).FontSize(11).TextColor(col).TextAlign(ui.End)
 }
 
 func (f *Frontend) scmBranchRow(c *ui.Context, s *view.SCM) {
@@ -425,10 +428,10 @@ func (f *Frontend) scmBranchRow(c *ui.Context, s *view.SCM) {
 	ui.Row(c).Height(30).Padding(0, 8, 0, 8).Gap(2).AlignItems(ui.Center).Children(func() {
 		branch := s.Branch
 		if branch == "" {
-			branch = "没有分支"
+			branch = i18n.T("No branch")
 		}
 		b := ui.Row(c.Key("scm-branch")).Height(24).Padding(0, 6).Gap(5).Radius(5).AlignItems(ui.Center).
-			Shrink(1).Label("分支 " + branch).Tooltip("切换分支…")
+			Shrink(1).Label(i18n.F("Branch %s", branch)).Tooltip(i18n.T("Switch Branch…"))
 		if b.Hovered() || b.Pressed() {
 			b.Background(p.hover)
 		}
@@ -441,18 +444,18 @@ func (f *Frontend) scmBranchRow(c *ui.Context, s *view.SCM) {
 			ed.Run("git.checkout")
 		}
 		ui.Spacer(c)
-		if f.syncButton(c, "fetch", iconFetch, "抓取", 0).Clicked() {
+		if f.syncButton(c, "fetch", iconFetch, i18n.T("Fetch"), 0).Clicked() {
 			ed.Run("git.fetch")
 		}
-		pull, push := "拉取", "推送"
+		pull, push := i18n.T("Pull"), i18n.T("Push")
 		if !s.Upstream {
-			push = "发布分支"
+			push = i18n.T("Publish Branch")
 		}
 		if s.Behind > 0 {
-			pull = fmt.Sprintf("拉取 %d 个提交", s.Behind)
+			pull = i18n.F("Pull %d commits", s.Behind)
 		}
 		if s.Ahead > 0 {
-			push = fmt.Sprintf("推送 %d 个提交", s.Ahead)
+			push = i18n.F("Push %d commits", s.Ahead)
 		}
 		if f.syncButton(c, "pull", iconPull, pull, s.Behind).Clicked() {
 			ed.Run("git.pull")
@@ -495,7 +498,7 @@ func (f *Frontend) commitButton(c *ui.Context, s *view.SCM) {
 	ed := repositoryEditor{Editor: f.ed, id: s.RepositoryID}
 
 	t := c.Theme()
-	committing := s.Busy == "提交中…"
+	committing := s.Busy == i18n.T("Committing…")
 	idle := s.Busy == "" && (s.Amend || len(s.Groups) > 0)
 	bg, hover, pressed, fg := t.Accent, t.AccentHover, t.AccentPressed, t.AccentText
 	if !idle && !committing {
@@ -516,7 +519,7 @@ func (f *Frontend) commitButton(c *ui.Context, s *view.SCM) {
 		main.Children(func() {
 			if committing {
 				ui.Spinner(c).Size(12, 12)
-				ui.Text(c, "提交中…").FontSize(12.5).FontWeight(600).TextColor(fg).SingleLine()
+				ui.Text(c, i18n.T("Committing…")).FontSize(12.5).FontWeight(600).TextColor(fg).SingleLine()
 				return
 			}
 			ui.Icon(c, iconCheck).FontSize(14).TextColor(fg)
@@ -527,7 +530,7 @@ func (f *Frontend) commitButton(c *ui.Context, s *view.SCM) {
 		}
 		ui.Box(c).Width(1).Height(28).Background(fg.Alpha(0.28).Over(bg))
 		more := ui.Row(c.Key("commit-more")).Width(28).Height(28).Radius(0, 6, 6, 0).Justify(ui.Center).AlignItems(ui.Center).
-			Background(bg).Label("更多提交方式").Tooltip("更多提交方式")
+			Background(bg).Label(i18n.T("More Commit Options")).Tooltip(i18n.T("More Commit Options"))
 		switch {
 		case more.Pressed():
 			more.Background(pressed)
@@ -536,17 +539,17 @@ func (f *Frontend) commitButton(c *ui.Context, s *view.SCM) {
 		}
 		more.Children(func() { ui.Icon(c, iconChevronDown).FontSize(14).TextColor(fg) })
 		more.Menu(func(m *ui.Menu) {
-			if m.Item("提交").Chosen() {
+			if m.Item(i18n.T("Commit")).Chosen() {
 				ed.Run("git.commit")
 			}
-			if m.Item("提交并推送").Chosen() {
+			if m.Item(i18n.T("Commit and Push")).Chosen() {
 				ed.Run("git.commitAndPush")
 			}
 			m.Separator()
-			if m.Item("修改上次提交").Checked(s.Amend).Chosen() {
+			if m.Item(i18n.T("Amend Last Commit")).Checked(s.Amend).Chosen() {
 				ed.Run("git.commitAmend")
 			}
-			if m.Item("撤销上次提交").Chosen() {
+			if m.Item(i18n.T("Undo Last Commit")).Chosen() {
 				ed.Run("git.undoCommit")
 			}
 		})
@@ -564,18 +567,18 @@ func (f *Frontend) scmGroupHeader(c *ui.Context, id uint64, g view.SCMGroup) {
 		if hovered {
 			switch g.Kind {
 			case view.GroupStaged:
-				if f.smallButton(c, iconMinus, "取消暂存全部") {
+				if f.smallButton(c, iconMinus, i18n.T("Unstage All")) {
 					ed.SCMStageGroup(g.Kind)
 				}
 			case view.GroupChanges, view.GroupUntracked:
-				if f.smallButton(c, iconUndo, "放弃全部修改…") {
+				if f.smallButton(c, iconUndo, i18n.T("Discard All Changes…")) {
 					f.confirmDiscard(ed.id, ed.SCMGroupFiles(g.Kind))
 				}
-				if f.smallButton(c, iconPlus, "暂存全部") {
+				if f.smallButton(c, iconPlus, i18n.T("Stage All")) {
 					ed.SCMStageGroup(g.Kind)
 				}
 			case view.GroupMerge:
-				if f.smallButton(c, iconPlus, "暂存全部合并的改动") {
+				if f.smallButton(c, iconPlus, i18n.T("Stage All Merged Changes")) {
 					ed.SCMStageGroup(g.Kind)
 				}
 			}
@@ -639,14 +642,14 @@ func (f *Frontend) scmRow(c *ui.Context, id uint64, g view.SCMGroup, r view.SCMR
 		ui.Spacer(c)
 		if hovered {
 			if g.Kind == view.GroupStaged {
-				if f.smallButton(c, iconMinus, "取消暂存") {
+				if f.smallButton(c, iconMinus, i18n.T("Unstage")) {
 					ed.SCMStageRows(targets)
 				}
 			} else {
-				if g.Kind != view.GroupMerge && f.smallButton(c, iconUndo, "放弃修改…") {
+				if g.Kind != view.GroupMerge && f.smallButton(c, iconUndo, i18n.T("Discard Changes…")) {
 					f.confirmDiscard(ed.id, targets)
 				}
-				if f.smallButton(c, iconPlus, "暂存") {
+				if f.smallButton(c, iconPlus, i18n.T("Stage")) {
 					ed.SCMStageRows(targets)
 				}
 			}
@@ -673,9 +676,9 @@ func (f *Frontend) smallButton(c *ui.Context, icon *ui.SVG, label string) bool {
 func (f *Frontend) confirmDiscard(id uint64, rows []view.SCMRow) {
 	ed := repositoryEditor{Editor: f.ed, id: id}
 
-	msg := fmt.Sprintf("放弃 %d 个文件的修改吗？", len(rows))
+	msg := i18n.F("Discard changes to %d files?", len(rows))
 	if len(rows) == 1 {
-		msg = "放弃 " + rows[0].Name + " 的修改吗？"
+		msg = i18n.F("Discard changes to %s?", rows[0].Name)
 	}
 	for _, panel := range f.frame.Sidebar.SCM.Panels {
 		if panel.State.RepositoryID == id {
@@ -686,8 +689,8 @@ func (f *Frontend) confirmDiscard(id uint64, rows []view.SCMRow) {
 	go func() {
 		res, err := mygo.Dialog.Message(mygo.MessageOptions{
 			Parent: f.win, Type: mygo.MessageWarning, Message: msg,
-			Detail:  "这不能撤销。未跟踪的文件会移到" + app.TrashName(hostOS) + "。",
-			Buttons: []string{"放弃修改", "取消"}, DefaultButton: 1, CancelButton: 1,
+			Detail:  i18n.F("This can't be undone. Untracked files are moved to %s.", app.TrashName(hostOS)),
+			Buttons: []string{i18n.T("Discard Changes"), i18n.T("Cancel")}, DefaultButton: 1, CancelButton: 1,
 		})
 		if err == nil && res.Button == 0 {
 			f.do(func() { ed.SCMDiscard(rows) })
@@ -702,9 +705,9 @@ func (f *Frontend) scmOpBanner(c *ui.Context, s *view.SCM) {
 	p := f.pal
 	ui.Row(c.Key("scm-op")).Gap(6).AlignItems(ui.Center).Padding(4, 4, 4, 8).Radius(5).Background(p.modified.Alpha(0.14)).Children(func() {
 		ui.Icon(c, iconBranch).FontSize(12).TextColor(p.modified)
-		ui.Text(c, s.Op+"遇到冲突").FontSize(11.5).TextColor(p.text).Grow(1).SingleLine().Shrink(1).
-			Tooltip("解决冲突、暂存文件后点「继续」；「中止」回到" + s.Op + "之前")
-		for _, b := range []struct{ label, cmd string }{{"中止", "yan.git.abortOp"}, {"继续", "yan.git.continueOp"}} {
+		ui.Text(c, i18n.F("%s hit conflicts", s.Op)).FontSize(11.5).TextColor(p.text).Grow(1).SingleLine().Shrink(1).
+			Tooltip(i18n.F("Resolve the conflicts, stage the files, then click \"Continue\"; \"Abort\" returns to before the %s", s.Op))
+		for _, b := range []struct{ label, cmd string }{{i18n.T("Abort"), "yan.git.abortOp"}, {i18n.T("Continue"), "yan.git.continueOp"}} {
 			btn := ui.Box(c.Key("scm-op:"+b.cmd)).Height(20).Padding(0, 8).Radius(4).Justify(ui.Center).AlignItems(ui.Center).Label(b.label)
 			col := p.text
 			if btn.Hovered() {
@@ -728,7 +731,7 @@ func (f *Frontend) scmFolderRow(c *ui.Context, id uint64, g view.SCMGroup, r vie
 
 	p := f.pal
 	row := ui.Row(c.Key(fmt.Sprintf("%d:dir:%s", g.Kind, r.Path))).Gap(6).AlignItems(ui.Center).Height(22).
-		Padding(0, 0, 0, 2+float32(r.Depth)*14).Radius(4).Label("文件夹 " + r.Name)
+		Padding(0, 0, 0, 2+float32(r.Depth)*14).Radius(4).Label(i18n.F("Folder %s", r.Name))
 	hovered := row.Hovered()
 	switch {
 	case selected && f.frame.Focus == view.FocusSidebar:
@@ -752,15 +755,15 @@ func (f *Frontend) scmFolderRow(c *ui.Context, id uint64, g view.SCMGroup, r vie
 			return
 		}
 		if g.Kind == view.GroupStaged {
-			if f.smallButton(c, iconMinus, "取消暂存这个文件夹") {
+			if f.smallButton(c, iconMinus, i18n.T("Unstage This Folder")) {
 				ed.SCMStageFolder(i, true)
 			}
 			return
 		}
-		if g.Kind != view.GroupMerge && f.smallButton(c, iconUndo, "放弃这个文件夹的修改…") {
+		if g.Kind != view.GroupMerge && f.smallButton(c, iconUndo, i18n.T("Discard This Folder's Changes…")) {
 			f.confirmDiscard(ed.id, ed.SCMFolderFiles(i))
 		}
-		if f.smallButton(c, iconPlus, "暂存这个文件夹") {
+		if f.smallButton(c, iconPlus, i18n.T("Stage This Folder")) {
 			ed.SCMStageFolder(i, false)
 		}
 	})
@@ -780,13 +783,13 @@ func (f *Frontend) scmHistory(c *ui.Context, s *view.SCM) {
 		i++
 	}
 	if s.MoreCommits {
-		b := ui.Row(c.Key("more-commits")).Height(22).Padding(0, 8).Radius(4).AlignItems(ui.Center).Label("显示更多提交")
+		b := ui.Row(c.Key("more-commits")).Height(22).Padding(0, 8).Radius(4).AlignItems(ui.Center).Label(i18n.T("Show More Commits"))
 		col := p.muted
 		if b.Hovered() {
 			b.Background(p.hover)
 			col = p.text
 		}
-		b.Children(func() { ui.Text(c, "显示更多提交…").FontSize(12).TextColor(col) })
+		b.Children(func() { ui.Text(c, i18n.T("Show More Commits…")).FontSize(12).TextColor(col) })
 		if b.Clicked() {
 			ed.Run("yan.scm.moreCommits")
 		}

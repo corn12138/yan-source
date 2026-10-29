@@ -14,6 +14,7 @@ import (
 	"github.com/egoist/mygo/ui"
 
 	"github.com/corn12138/yan-source/core/app"
+	"github.com/corn12138/yan-source/core/i18n"
 )
 
 // 项目标签，照着 Mayoi v0.8.0–v0.8.1（MIT，cmd/mayoi 的 project tabs 和它的 rail）：「显示 › 项目标签」打开后，
@@ -69,7 +70,7 @@ func (g *group) rail(c *ui.Context) {
 	f := g.cur()
 	p := f.applyTheme(c)
 	col := ui.Column(c.Key("rail")).Width(railW).AlignSelf(ui.Stretch).Padding(titleBarH, 0, 8, 0).Gap(6).AlignItems(ui.Center).
-		Background(p.chrome).BorderWidth(0, 1, 0, 0).BorderColor(p.border).Label("项目")
+		Background(p.chrome).BorderWidth(0, 1, 0, 0).BorderColor(p.border).Label(i18n.T("Projects"))
 	folders := transfer.DropOptions{Formats: []transfer.Format{transfer.FileList}}
 	if _, over := ui.DataDragOver(col, folders); over {
 		col.Background(p.accent.Alpha(0.12))
@@ -93,7 +94,7 @@ func (g *group) rail(c *ui.Context) {
 			g.square(c, p, i, pf, labels[i])
 		}
 		add := ui.Box(c.Key("rail:add")).Size(railSq, railSq).Radius(8).Justify(ui.Center).AlignItems(ui.Center).
-			Label("打开文件夹…").Tooltip("打开文件夹…（加一个项目）")
+			Label(i18n.T("Open Folder…")).Tooltip(i18n.T("Open Folder… (Add a Project)"))
 		fg := p.muted
 		if add.Hovered() {
 			add.Background(p.hover)
@@ -138,7 +139,7 @@ func (g *group) square(c *ui.Context, p *palette, i int, pf *Frontend, label str
 			bar.Background(p.accent)
 		}
 		ui.Box(c).Width((railW - railSq - 6) / 2)
-		sq := ui.Box(c).Size(railSq, railSq).Radius(8).Justify(ui.Center).AlignItems(ui.Center).Label("项目 " + name).Tooltip(tip).
+		sq := ui.Box(c).Size(railSq, railSq).Radius(8).Justify(ui.Center).AlignItems(ui.Center).Label(i18n.F("Project %s", name)).Tooltip(tip).
 			Drag(railDrag{pf}) // 拖到别的方块上：挪到那里
 		if d, over := ui.DragOver[railDrag](sq); over && d.f != pf {
 			bar.Background(p.accent.Alpha(0.6))
@@ -197,30 +198,31 @@ func (g *group) square(c *ui.Context, p *palette, i int, pf *Frontend, label str
 		}
 		sq.ContextMenu(func(m *ui.Menu) {
 			if root != "" {
-				if m.Item("在" + app.FileManager(hostOS) + "中显示").Chosen() {
+				if m.Item(i18n.F("Reveal in %s", app.FileManager(hostOS))).Chosen() {
 					mygo.Shell.ShowItemInFolder(root)
 				}
-				if m.Item("复制路径").Chosen() {
+				if m.Item(i18n.T("Copy Path")).Chosen() {
 					host{pf}.SetClipboard(root)
 				}
 				m.Separator()
 			}
-			if root != "" && m.Item("自定义标识与颜色…").Chosen() {
+			if root != "" && m.Item(i18n.T("Customize Badge and Color…")).Chosen() {
 				g.show(i)
 				pf.ed.Run("yan.project.customize")
 			}
-			if root != "" && m.Item("选择图标…").Chosen() {
+			if root != "" && m.Item(i18n.T("Choose Icon…")).Chosen() {
 				g.chooseProjectIcon(pf, root)
 			}
-			if pf.ed.ProjectIcon(root) != "" && m.Item("重置图标").Chosen() {
+			if pf.ed.ProjectIcon(root) != "" && m.Item(i18n.T("Reset Icon")).Chosen() {
 				pf.ed.ClearProjectIcon(root)
 				g.icons = nil
 			}
-			if m.Item("关闭项目").Chosen() {
+			if m.Item(i18n.T("Close Project")).Chosen() {
 				g.close(i)
 			}
-			if m.Item("关闭其他项目").Disabled(len(g.projects) < 2).Chosen() {
-				g.closeOthers(i)
+			if m.Item(i18n.T("Close Other Projects")).Disabled(len(g.projects) < 2).Chosen() {
+				// Modal dialogs pump native events, so leave the view builder first.
+				pf.do(func() { g.closeOthers(slices.Index(g.projects, pf)) })
 			}
 		})
 	})
@@ -237,7 +239,7 @@ func projectKey(f *Frontend, i int) string {
 // projectName 是项目的名字：文件夹的名字，没打开文件夹时是「未打开」。
 func projectName(root string) string {
 	if root == "" {
-		return "未打开"
+		return i18n.T("Not Open")
 	}
 	return filepath.Base(root)
 }
@@ -434,7 +436,7 @@ func (g *group) add(root string) {
 			return
 		}
 		if fi, err := os.Stat(root); err != nil || !fi.IsDir() {
-			g.cur().ed.Notify("无法打开文件夹：" + root)
+			g.cur().ed.Notify(i18n.F("Couldn't open the folder: %s", root))
 			return
 		}
 	}
@@ -458,7 +460,7 @@ func (g *group) chooseFolder() {
 	f := g.cur()
 	go func() {
 		paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{
-			Parent: g.win, Title: "打开文件夹", ButtonLabel: "打开", Directory: true, CreateDirectories: true,
+			Parent: g.win, Title: i18n.T("Open Folder"), ButtonLabel: i18n.T("Open"), Directory: true, CreateDirectories: true,
 		})
 		if err == nil && len(paths) > 0 {
 			f.do(func() { g.add(paths[0]) })
@@ -468,7 +470,7 @@ func (g *group) chooseFolder() {
 
 // close 关掉第 i 个项目（有没保存的修改时先问）；只剩它时关窗口。
 func (g *group) close(i int) {
-	if i < 0 || i >= len(g.projects) {
+	if g.confirming || i < 0 || i >= len(g.projects) {
 		return
 	}
 	if len(g.projects) == 1 {
@@ -486,16 +488,16 @@ func (g *group) close(i int) {
 		g.remove(f)
 		return
 	}
-	detail := "不保存的话，修改会丢失。"
+	detail := i18n.T("If you don't save, your changes will be lost.")
 	if lost != nil {
-		detail = "未命名的文件没能留到下次（" + lost.Error() + "）：先另存为它们，或者选「不保存」放弃。" + detail
+		detail = i18n.F("Untitled files couldn't be kept for next time (%s): save them as files first, or choose \"Don't Save\" to discard them. %s", lost.Error(), detail)
 	}
 	go func() {
 		res, err := mygo.Dialog.Message(mygo.MessageOptions{
 			Parent: g.win, Type: mygo.MessageWarning,
-			Message: projectName(f.ed.Root()) + " 里有文件还没保存，要先保存吗？",
+			Message: i18n.F("Some files in %s are not saved. Save them first?", projectName(f.ed.Root())),
 			Detail:  detail,
-			Buttons: []string{"全部保存", "不保存", "取消"}, DefaultButton: 0, CancelButton: 2,
+			Buttons: []string{i18n.T("Save All"), i18n.T("Don't Save"), i18n.T("Cancel")}, DefaultButton: 0, CancelButton: 2,
 		})
 		if err != nil || res.Button == 2 {
 			return
@@ -512,13 +514,43 @@ func (g *group) close(i int) {
 	}()
 }
 
-// closeOthers 关掉第 i 个以外的项目（没保存的那些各问一次）。
+// Mayoi d888678: bulk closing stops terminals too, even when all files are saved.
+// Settle projects one at a time; cancelling or failing a save stops the remaining closes.
 func (g *group) closeOthers(i int) {
+	if g.confirming || i < 0 || i >= len(g.projects) || len(g.projects) < 2 {
+		return
+	}
+	g.confirming = true
+	defer func() { g.confirming = false }()
 	keep := g.projects[i]
-	for _, pf := range slices.Clone(g.projects) {
-		if pf != keep {
-			g.close(slices.Index(g.projects, pf))
+	targets := slices.Clone(g.projects)
+	res, err := closeDialog(mygo.MessageOptions{
+		Parent: g.win, Type: mygo.MessageWarning,
+		Message: i18n.F("Close other projects (%d)?", len(targets)-1),
+		Detail:  i18n.T("Their terminals and running tasks will stop. Unsaved changes will still ask to be saved."),
+		Buttons: []string{i18n.T("Close"), i18n.T("Cancel")}, DefaultButton: 1, CancelButton: 1,
+	})
+	if err != nil || res.Button != 0 {
+		return
+	}
+	for _, pf := range targets {
+		if !slices.Contains(g.projects, keep) {
+			return
 		}
+		if at := slices.Index(g.projects, pf); pf != keep && at >= 0 {
+			g.show(at)
+			one := &group{win: g.win, projects: []*Frontend{pf}}
+			if !one.mayClose() {
+				return
+			}
+			// Modal waits may move a project to another window; never close it there.
+			if slices.Contains(g.projects, pf) && slices.Contains(g.projects, keep) {
+				g.remove(pf)
+			}
+		}
+	}
+	if at := slices.Index(g.projects, keep); at >= 0 {
+		g.show(at)
 	}
 }
 
@@ -602,7 +634,7 @@ func (g *group) restoreProjects() {
 func (g *group) restoreDrafts() {
 	ids, problems := app.RootlessDrafts()
 	for _, err := range problems {
-		g.cur().ed.Notify("未命名文件的备份读不出来，已移到一边：" + err.Error())
+		g.cur().ed.Notify(i18n.F("Couldn't read the backup of untitled files; moved it aside: %s", err.Error()))
 	}
 	for i, id := range ids {
 		if i > 0 || g.cur().ed.Root() != "" {

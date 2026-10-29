@@ -11,6 +11,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/corn12138/yan-source/core/git"
+	"github.com/corn12138/yan-source/core/i18n"
 	"github.com/corn12138/yan-source/core/keymap"
 	"github.com/corn12138/yan-source/core/view"
 )
@@ -103,10 +104,10 @@ func (e *Editor) scmAllGroups() []view.SCMGroup {
 		}
 	}()
 	for _, g := range []view.SCMGroup{
-		{Kind: view.GroupMerge, Title: "合并冲突", Rows: merge},
-		{Kind: view.GroupStaged, Title: "已暂存的更改", Rows: staged},
-		{Kind: view.GroupChanges, Title: "更改", Rows: changes},
-		{Kind: view.GroupUntracked, Title: "未跟踪的文件", Rows: untracked},
+		{Kind: view.GroupMerge, Title: i18n.T("Merge Conflicts"), Rows: merge},
+		{Kind: view.GroupStaged, Title: i18n.T("Staged Changes"), Rows: staged},
+		{Kind: view.GroupChanges, Title: i18n.T("Changes"), Rows: changes},
+		{Kind: view.GroupUntracked, Title: i18n.T("Untracked Files"), Rows: untracked},
 	} {
 		if len(g.Rows) > 0 {
 			out = append(out, g)
@@ -176,11 +177,11 @@ func (e *Editor) scmOneFrame(dst *view.SCM) {
 func (e *Editor) commitLabel() string {
 	switch {
 	case e.repository().scm.amend:
-		return "修改上次提交"
+		return i18n.T("Amend Last Commit")
 	case e.stagedCount() == 0:
-		return "全部提交"
+		return i18n.T("Commit All")
 	}
-	return "提交"
+	return i18n.T("Commit")
 }
 
 func (e *Editor) stagedCount() int {
@@ -212,11 +213,11 @@ func (e *Editor) gitDo(busy string, fn func(r *git.Repo) error, then func(e *Edi
 	g := e.repository().git
 	r := g.repo
 	if r == nil {
-		return errors.New("不在 git 仓库里")
+		return errors.New(i18n.T("Not in a Git repository"))
 	}
 	if busy != "" {
 		if g.busy != "" {
-			return fmt.Errorf("%s 还没完成", g.busy)
+			return fmt.Errorf(i18n.T("%s is not finished yet"), g.busy)
 		}
 		g.busy = busy
 	}
@@ -257,14 +258,14 @@ func (e *Editor) gitDo(busy string, fn func(r *git.Repo) error, then func(e *Edi
 // gitError 把 git 的报错写成一句话；要登录的命令提示去终端里跑一次。
 func gitError(err error) string {
 	if git.NeedsAuth(err) {
-		return "git 需要登录：在终端里运行一次这个命令，之后这里就能用了"
+		return i18n.T("git needs you to sign in: run this command once in a terminal, then it works here")
 	}
 	var ge *git.Error
 	if errors.As(err, &ge) && strings.TrimSpace(ge.Stderr) != "" {
 		lines := strings.Split(strings.TrimSpace(ge.Stderr), "\n")
-		return "git：" + lines[len(lines)-1]
+		return i18n.F("%s: %s", "git", lines[len(lines)-1])
 	}
-	return "git：" + err.Error()
+	return i18n.F("%s: %s", "git", err.Error())
 }
 
 // saveAllFor 先保存要提交、切换分支的文件，免得把旧内容提交上去。
@@ -313,10 +314,10 @@ func (e *Editor) discard(rows []view.SCMRow) error {
 	for _, r := range rows {
 		if r.Letter == 'U' && !r.Staged {
 			if e.host == nil {
-				return errors.New("当前前端不能移到" + e.trashName())
+				return errors.New(i18n.F("This frontend can't move files to %s", e.trashName()))
 			}
 			if err := e.host.Trash(r.Path); err != nil {
-				return fmt.Errorf("移到%s失败：%w", e.trashName(), err)
+				return fmt.Errorf(i18n.T("Couldn't move to %s: %w"), e.trashName(), err)
 			}
 			continue
 		}
@@ -333,23 +334,23 @@ func (e *Editor) discard(rows []view.SCMRow) error {
 // commit 提交暂存的改动；什么都没暂存时先暂存全部。amend 时修改上次提交。push 为真时提交后推送。
 func (e *Editor) commit(push bool) error {
 	if e.repository().git.repo == nil {
-		return errors.New("先打开一个 git 仓库")
+		return errors.New(i18n.T("Open a Git repository first"))
 	}
 	msg := strings.TrimSpace(e.repository().scm.message)
 	if msg == "" && !e.repository().scm.amend {
 		e.repository().scm.focusMsg = true
-		return errors.New("先写提交说明")
+		return errors.New(i18n.T("Write a commit message first"))
 	}
 	if err := e.saveDirtyInRepo(); err != nil {
 		return err
 	}
 	all := e.stagedCount() == 0 && !e.repository().scm.amend
 	if all && e.changeCount() == 0 {
-		return errors.New("没有要提交的改动")
+		return errors.New(i18n.T("No changes to commit"))
 	}
 	amend := e.repository().scm.amend
 	branch, upstream := e.branch(), e.repository().git.status != nil && e.repository().git.status.Upstream != ""
-	return e.gitDo("提交中…", func(r *git.Repo) error {
+	return e.gitDo(i18n.T("Committing…"), func(r *git.Repo) error {
 		if all {
 			if err := r.Stage(r.Root); err != nil {
 				return err
@@ -365,10 +366,10 @@ func (e *Editor) commit(push bool) error {
 	}, func(e *Editor) {
 		e.repository().scm.message, e.repository().scm.amend, e.repository().scm.focusMsg = "", false, false
 		if push {
-			e.status = "已提交并推送"
+			e.status = i18n.T("Committed and pushed")
 			return
 		}
-		e.tell("已提交", "撤销", "git.undoCommit") // 撤销：提交拿回来，改动留在暂存区，说明放回提交说明里
+		e.tell(i18n.T("Committed"), i18n.T("Undo"), "git.undoCommit") // 撤销：提交拿回来，改动留在暂存区，说明放回提交说明里
 	})
 }
 
@@ -376,7 +377,7 @@ func (e *Editor) commit(push bool) error {
 func (e *Editor) startAmend() error {
 	r := e.repository().git.repo
 	if r == nil {
-		return errors.New("不在 git 仓库里")
+		return errors.New(i18n.T("Not in a Git repository"))
 	}
 	e.showSide(sideSCM)
 	e.repository().scm.amend, e.repository().scm.focusMsg = true, true
@@ -396,24 +397,24 @@ func (e *Editor) startAmend() error {
 func (e *Editor) undoCommit() error {
 	r := e.repository().git.repo
 	if r == nil {
-		return errors.New("不在 git 仓库里")
+		return errors.New(i18n.T("Not in a Git repository"))
 	}
 	post := e.postGit()
-	return e.gitDo("撤销提交中…", func(r *git.Repo) error {
+	return e.gitDo(i18n.T("Undoing commit…"), func(r *git.Repo) error {
 		msg := r.LastMessage()
 		if err := r.UndoCommit(); err != nil {
 			return err
 		}
 		post(func(e *Editor) { e.repository().scm.message = msg })
 		return nil
-	}, func(e *Editor) { e.status = "已撤销上次提交，改动留在暂存区" })
+	}, func(e *Editor) { e.status = i18n.T("Undid the last commit; its changes stay staged") })
 }
 
 func (e *Editor) push() error {
 	branch := e.branch()
 	upstream := e.repository().git.status != nil && e.repository().git.status.Upstream != ""
-	return e.gitDo("推送中…", func(r *git.Repo) error { return r.Push(branch, upstream) },
-		func(e *Editor) { e.status = "已推送" })
+	return e.gitDo(i18n.T("Pushing…"), func(r *git.Repo) error { return r.Push(branch, upstream) },
+		func(e *Editor) { e.status = i18n.T("Pushed") })
 }
 
 // gitSync pulls (fast-forward only) and then pushes the branch checked out, in one background
@@ -421,7 +422,7 @@ func (e *Editor) push() error {
 func (e *Editor) gitSync() error {
 	st := e.repository().git.status
 	if e.repository().git.repo == nil || st == nil || st.Branch == "" || st.Head == "" {
-		return errors.New("先检出一个有提交的分支，再同步")
+		return errors.New(i18n.T("Check out a branch with commits before syncing"))
 	}
 	if st.Upstream == "" {
 		return e.push()
@@ -430,7 +431,7 @@ func (e *Editor) gitSync() error {
 		return err
 	}
 	upstream, ahead, pulled := st.Upstream, st.Ahead, 0
-	return e.gitDo("同步中…", func(r *git.Repo) error {
+	return e.gitDo(i18n.T("Syncing…"), func(r *git.Repo) error {
 		before := r.Head()
 		if err := r.Sync(); err != nil {
 			return err
@@ -442,9 +443,9 @@ func (e *Editor) gitSync() error {
 	}, func(e *Editor) {
 		e.checkDisk()
 		if pulled == 0 && ahead == 0 {
-			e.status = "已是最新"
+			e.status = i18n.T("Already up to date")
 		} else {
-			e.status = "已与 " + upstream + " 同步"
+			e.status = i18n.F("Synced with %s", upstream)
 		}
 	})
 }
@@ -453,14 +454,14 @@ func (e *Editor) pull() error {
 	if err := e.saveDirtyInRepo(); err != nil {
 		return err
 	}
-	return e.gitDo("拉取中…", (*git.Repo).Pull, func(e *Editor) {
-		e.status = "已拉取"
+	return e.gitDo(i18n.T("Pulling…"), (*git.Repo).Pull, func(e *Editor) {
+		e.status = i18n.T("Pulled")
 		e.checkDisk()
 	})
 }
 
 func (e *Editor) fetch() error {
-	return e.gitDo("抓取中…", (*git.Repo).Fetch, func(e *Editor) { e.status = "已抓取" })
+	return e.gitDo(i18n.T("Fetching…"), (*git.Repo).Fetch, func(e *Editor) { e.status = i18n.T("Fetched") })
 }
 
 // switchBranch 切换到分支（远程分支检出一个跟踪它的本地分支）；create 为真时新建。
@@ -470,7 +471,7 @@ func (e *Editor) switchBranch(name string, create bool) error {
 		return err
 	}
 	var occupied *git.WorktreeInUse
-	return e.gitDo("切换分支中…", func(r *git.Repo) error {
+	return e.gitDo(i18n.T("Switching branch…"), func(r *git.Repo) error {
 		err := r.Switch(name, create)
 		if errors.As(err, &occupied) {
 			return nil
@@ -481,7 +482,7 @@ func (e *Editor) switchBranch(name string, create bool) error {
 			e.askOpenWorktree(occupied)
 			return
 		}
-		e.status = "已切换到 " + name
+		e.status = i18n.F("Switched to %s", name)
 		e.checkDisk()
 	})
 }
@@ -490,10 +491,10 @@ func (e *Editor) switchBranch(name string, create bool) error {
 // 打开它不会改动任何一边检出的分支。它的文件夹已经被删掉时，问要不要清理掉再在这里切换。
 func (e *Editor) askOpenWorktree(w *git.WorktreeInUse) {
 	r := e.repository().git.repo
-	cancel := ovItem{label: "取消", run: func(*Editor) error { return nil }}
+	cancel := ovItem{label: i18n.T("Cancel"), run: func(*Editor) error { return nil }}
 	if _, err := os.Stat(w.Path); errors.Is(err, os.ErrNotExist) {
-		e.gitChoose("分支 "+w.Branch+" 所在的 worktree 文件夹已经不在了",
-			ovItem{label: "清理失效的 worktree，在这里切换到 " + w.Branch, detail: shortHome(w.Path), run: func(e *Editor) error {
+		e.gitChoose(i18n.F("The worktree folder of branch %s no longer exists", w.Branch),
+			ovItem{label: i18n.F("Prune the stale worktree and switch to %s here", w.Branch), detail: shortHome(w.Path), run: func(e *Editor) error {
 				if e.repository().git.repo != r {
 					return nil
 				}
@@ -501,13 +502,13 @@ func (e *Editor) askOpenWorktree(w *git.WorktreeInUse) {
 			}}, cancel)
 		return
 	}
-	e.gitChoose("分支 "+w.Branch+" 已经检出在另一个 worktree 里",
-		ovItem{label: "在这个窗口打开那个 worktree", detail: shortHome(w.Path), run: func(e *Editor) error {
+	e.gitChoose(i18n.F("Branch %s is already checked out in another worktree", w.Branch),
+		ovItem{label: i18n.T("Open That Worktree in This Window"), detail: shortHome(w.Path), run: func(e *Editor) error {
 			if e.repository().git.repo != r {
 				return nil
 			}
 			if fi, err := os.Stat(w.Path); err != nil || !fi.IsDir() {
-				return fmt.Errorf("worktree 不是文件夹：%s", w.Path)
+				return fmt.Errorf(i18n.T("The worktree is not a folder: %s"), w.Path)
 			}
 			return e.SwitchFolder(w.Path)
 		}}, cancel)
@@ -519,16 +520,16 @@ func (e *Editor) removeAndSwitch(path, branch string) error {
 	if err := e.saveDirtyInRepo(); err != nil {
 		return err
 	}
-	return e.gitDo("切换分支中…", func(r *git.Repo) error {
+	return e.gitDo(i18n.T("Switching branch…"), func(r *git.Repo) error {
 		removeErr := r.RemoveWorktree(path)
 		err := r.Switch(branch, false)
 		var occupied *git.WorktreeInUse
 		if errors.As(err, &occupied) { // 锁住的 worktree 清理不掉
-			return fmt.Errorf("%s 的 worktree 清理不掉（被锁住了的话先用 git worktree unlock 解锁）：%w", occupied.Path, removeErr)
+			return fmt.Errorf(i18n.T("Couldn't prune the worktree of %s (if it is locked, unlock it with git worktree unlock first): %w"), occupied.Path, removeErr)
 		}
 		return err
 	}, func(e *Editor) {
-		e.status = "已切换到 " + branch
+		e.status = i18n.F("Switched to %s", branch)
 		e.checkDisk()
 	})
 }
@@ -537,7 +538,7 @@ func (e *Editor) removeAndSwitch(path, branch string) error {
 func (e *Editor) openBranchPicker() error {
 	r := e.repository().git.repo
 	if r == nil {
-		return errors.New("不在 git 仓库里")
+		return errors.New(i18n.T("Not in a Git repository"))
 	}
 	e.closeOverlay()
 	e.ov = &overlay{kind: view.OverlayBranch, repository: e.repository()}
@@ -577,7 +578,7 @@ func (e *Editor) branchItems(q string) {
 		name := b.Name
 		detail := b.Subject
 		if b.Name == cur {
-			detail = "当前分支 · " + detail
+			detail = i18n.F("Current branch · %s", detail)
 		}
 		remote := b.Remote
 		ov.items = append(ov.items, ovItem{label: name, detail: detail, run: func(e *Editor) error {
@@ -596,15 +597,15 @@ func (e *Editor) branchItems(q string) {
 	}
 	if q != "" && !exists && branchNameProblem(q, nil) == "" {
 		name := q
-		ov.items = slices.Insert(ov.items, 0, ovItem{label: "新建分支 " + name, detail: "从 " + cur, run: func(e *Editor) error {
+		ov.items = slices.Insert(ov.items, 0, ovItem{label: i18n.F("Create branch %s", name), detail: i18n.F("From %s", cur), run: func(e *Editor) error {
 			return e.switchBranch(name, true)
 		}})
 	}
 	if q == "" { // 常驻的一项：问名字再新建（照着 Mayoi #60）
-		ov.items = slices.Insert(ov.items, 0, ovItem{label: "新建分支…", detail: "从 " + cur + " 新建并切换过去", run: (*Editor).createBranchPrompt})
+		ov.items = slices.Insert(ov.items, 0, ovItem{label: i18n.T("New Branch…"), detail: i18n.F("Create from %s and switch to it", cur), run: (*Editor).createBranchPrompt})
 	}
 	if len(e.repository().scm.branches) == 0 {
-		ov.footer = "读取分支中…"
+		ov.footer = i18n.T("Reading branches…")
 	}
 }
 
@@ -760,13 +761,13 @@ func (e *Editor) scmDiscardSelected() error {
 			}
 		}
 		if len(changed) == 0 {
-			return errors.New("选中的文件里没有能放弃的修改（已暂存的先取消暂存）")
+			return errors.New(i18n.T("The selected files have no changes to discard (unstage staged ones first)"))
 		}
 		id := e.running
 		key := fmt.Sprint(len(changed), changed[0].Path)
 		if e.armed != id || e.armedRepository != e.repository().id || e.armedPath != key {
 			e.armedRepository, e.armedPath, e.armed = e.repository().id, key, id
-			return fmt.Errorf("再按一次 %s 放弃选中的 %d 个文件的修改（不能撤销）", e.hintOr(id, "Delete"), len(changed))
+			return fmt.Errorf(i18n.T("Press %s again to discard changes to the %d selected files (can't be undone)"), e.hintOr(id, "Delete"), len(changed))
 		}
 		e.armed = ""
 		return e.discard(changed)
@@ -779,7 +780,7 @@ func (e *Editor) scmDiscardSelected() error {
 	if e.armed != id || e.armedRepository != e.repository().id || e.armedPath != r.Path {
 		e.armedRepository, e.armedPath = e.repository().id, r.Path
 		e.armed = id
-		return fmt.Errorf("再按一次 %s 放弃 %s 的修改（不能撤销）", e.hintOr(id, "Delete"), e.repositoryName(e.repository().git.repo.Root)+"/"+r.Name)
+		return fmt.Errorf(i18n.T("Press %s again to discard changes to %s (can't be undone)"), e.hintOr(id, "Delete"), e.repositoryName(e.repository().git.repo.Root)+"/"+r.Name)
 	}
 	e.armed = ""
 	if r.Folder {
@@ -813,10 +814,10 @@ func (e *Editor) handleMessageKey(c keymap.Chord) bool {
 func (e *Editor) initRepo() error {
 	defer e.bindRepository(e.rootRepository())()
 	if e.repository().git.repo != nil {
-		return errors.New("已经在 git 仓库里了")
+		return errors.New(i18n.T("Already in a Git repository"))
 	}
 	if e.root == "" {
-		return errors.New("先打开一个文件夹")
+		return errors.New(i18n.T("Open a folder first"))
 	}
 	root := e.root
 	post := e.postGit()
@@ -828,7 +829,7 @@ func (e *Editor) initRepo() error {
 				return
 			}
 			e.startGit(root)
-			e.status = "已初始化 git 仓库"
+			e.status = i18n.T("Initialized Git repository")
 		})
 	}()
 	return nil
@@ -916,9 +917,9 @@ func (e *Editor) toggleSCMTree() error {
 	}()
 	e.repository().scm.tree = !e.repository().scm.tree
 	if e.repository().scm.tree {
-		e.status = "源代码管理：以树的形式查看"
+		e.status = i18n.T("Source Control: View as Tree")
 	} else {
-		e.status = "源代码管理：以列表查看"
+		e.status = i18n.T("Source Control: View as List")
 	}
 	return nil
 }
@@ -987,11 +988,11 @@ func (e *Editor) SCMStageFolder(i int, unstage bool) {
 func (e *Editor) checkRepositoryPaths(paths []string) error {
 	r := e.repository().git.repo
 	if r == nil || e.repository().dead {
-		return errors.New("这个仓库已不可用")
+		return errors.New(i18n.T("This repository is no longer available"))
 	}
 	for _, path := range paths {
 		if !r.Contains(path) {
-			return errors.New("文件不属于所选仓库，请重新选择")
+			return errors.New(i18n.T("The file doesn't belong to the selected repository; select again"))
 		}
 	}
 	return nil
