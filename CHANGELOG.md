@@ -8,6 +8,26 @@ version's section, and that section becomes the "What's new" of the release note
 - Yan's own source is licensed under MIT; see `LICENSE` for reuse terms and `THIRD_PARTY_NOTICES.md` for included third-party code. To build from source, follow the clone and `make build` steps in `README.md`.
 - On macOS and Linux, saved sessions (including recent paths and review notes) and crash logs are now readable only by your account. Existing session permissions are tightened when the session is next saved; crash-log permissions are tightened when the app next starts.
 
+## 0.1.0-alpha.38
+
+- Source Control distinguishes a changed submodule commit reference from uncommitted files inside it. In the window app, use **Open Submodule Changes** on the row to select the child's panel without leaving the workspace; commit the child's files first, then stage its reference in the parent. Discarding parent changes leaves submodule content alone.
+- In the multi-repository Source Control view, clean repositories start collapsed. In the window app, use the arrow to expand retained commit drafts, or click a repository name to select its history without changing its expansion. Tab reveals the selected repository's commit draft before focusing it.
+- Source Control keeps the selected file and selection anchor when background refreshes insert files above them, so the next keyboard action stays on the same file.
+
+## 0.1.0-alpha.37
+
+- Editor text and Mermaid labels stay visible after font-cache recycling, even when their content and font settings have not changed.
+- On macOS, downloaded updates replace the app after it exits, keeping the running app and its Dock icon intact until restart.
+- Terminals keep rendering correctly when the font cache is recycled during long sessions or repeated font changes, preventing a native font crash. Existing shells and their output are preserved.
+
+## 0.1.0-alpha.36
+
+- Markdown preview now recognizes bold, italic, and strikethrough around Chinese, Japanese, and Korean punctuation, including text next to Latin words without spaces.
+
+- **Zoom text with the mouse or trackpad.** Hold Command on macOS (Ctrl on Windows/Linux) and scroll
+  vertically over a text or diff pane to change the font size. Small trackpad movements accumulate into
+  gradual steps; release the key to scroll normally. The size is remembered; use View → Actual Size to reset it.
+
 ## 0.1.0-alpha.35
 
 - Files containing a line longer than 64 KiB are refused before text layout, with an explanation, so minified bundles and source maps cannot stall the editor when opened or restored. Session restore skips these files and keeps other tabs. If an external change introduces a long line, the current buffer and undo history stay intact; format the file externally before reopening or reloading it. UTF-8 BOM and CRLF line endings do not consume the line budget.

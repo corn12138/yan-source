@@ -12,6 +12,7 @@ SHOTS=$PWD/build/shots go test ./ui/gui   # 无头界面测试顺便截图
 编辑终端标签、焦点或拖动时，另运行 `CGO_ENABLED=0 go test -tags selftest ./ui/gui -run TestNativeTerminal`。
 这组测试加载 libghostty-vt，以模拟连接验证真实终端控件，不启动用户 shell；原生库需已在本机缓存或应用资源中。
 评审交接另有 `TestNativeTerminalReviewHandoff` 和真实窗口 `YAN_SELFTEST_MODE=review`；后者使用独立目录中的 `review.go`，验证多行粘贴未提交及撤销清空。
+字体缓存回收的回归为 `CGO_ENABLED=0 go test -tags selftest ./ui/gui -run TestNativeTerminalFontCacheRecovery`；真实窗口入口为 `YAN_SELFTEST_MODE=terminal-font`（独立配置、目录和 `XDG_RUNTIME_DIR`），覆盖两个 shell、缓存回收、字号、深浅色及面板/编辑区迁移。
 真实窗口的 shell 验证入口为 `YAN_SELFTEST_MODE=terminal`（`-tags selftest` 构建、独立配置）。
 窗口复用、Dock 回调与真实第二进程投递的入口为 `YAN_SELFTEST_MODE=window-workflows`；
 测试目录准备 `dirty.txt`、`other/` 和指向自身的 `alias` 目录链接，并使用独立配置与 `XDG_RUNTIME_DIR`。
@@ -22,6 +23,8 @@ SHOTS=$PWD/build/shots go test ./ui/gui   # 无头界面测试顺便截图
 超长行保护的原生验收为 `YAN_SELFTEST_MODE=long-line`（独立目录、关闭自动保存），覆盖 26 MiB 单行文件拒绝、原有脏文件、重载/还原、撤销和恢复正常文件。
 
 公式预览原生验收使用 `YAN_SELFTEST_MODE=math`（`-tags selftest`、独立目录和配置），覆盖深浅色、双栏、字号、源码编辑/撤销和配置热重载。
+
+子模块 SCM 原生验收使用 `YAN_SELFTEST_MODE=submodule-scm`。在独立测试目录下准备 `repo/` 父仓库和已初始化、有内部改动的 `repo/modules/lib` 子模块，以 `repo/` 为启动目录，`YAN_SELFTEST` 指向测试目录；配置与 `XDG_RUNTIME_DIR` 也独立。分别用中文、英文配置运行，验证真实输入焦点、仓库切换、草稿、折叠和深浅色截图。入口调用实际操作处理函数；菜单点击另由无头 GUI 回归覆盖。
 
 ## CI
 
@@ -101,7 +104,7 @@ documents the rename operation used here.
 The native self-test `YAN_SELFTEST_MODE=update-restart` checks updater-window creation and a real
 relaunch with a saved dirty buffer; prepare `edited.txt` and independent configuration. The
 `update-feed` mode verifies the published feed and replaces its own disposable verification bundle
-with the signed release. Set `YAN_SELFTEST_UPDATE_VERSION` to the version without `v`, embed the
+with the signed release after that process exits. The self-test writes `update-staged.json`; an external verifier must wait for exit, then check the replaced executable and bundle signature. Set `YAN_SELFTEST_UPDATE_VERSION` to the version without `v`, embed the
 public feed/key and production flag, and never run that mode from an installed user application.
 
 ### Desktop proxy verification

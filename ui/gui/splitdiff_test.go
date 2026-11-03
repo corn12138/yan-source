@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/egoist/mygo/ui"
 )
 
 // A side-by-side diff in the window: two panes with a gutter of bands between them, an arrow
@@ -46,6 +48,22 @@ func TestSplitDiffInTheWindow(t *testing.T) {
 		t.Fatalf("split %+v", sd)
 	}
 	h.shot("split-diff-aligned")
+
+	_, _, base, _ := h.ed.Settings()
+	modifier := ui.Ctrl
+	if h.f.Profile().MacKeys() {
+		modifier = ui.Super
+	}
+	left, right := sd.Left.Lines[sd.Left.Over], sd.Right.Lines[sd.Right.Over]
+	h.f.splitInput(0, ui.InputEvent{Kind: ui.InputScroll, Mods: modifier, DY: -120})
+	h.settle()
+	_, _, size, _ := h.ed.Settings()
+	sd = h.f.frame.Columns[0].Pane.Split
+	if size != base+1 || sd == nil || sd.Left.Lines[sd.Left.Over] != left || sd.Right.Lines[sd.Right.Over] != right {
+		t.Fatal("modified scroll should resize text without scrolling either side of the diff")
+	}
+	h.ed.Run("workbench.action.zoomReset")
+	h.settle()
 
 	if err := h.tt.Click("»"); err != nil { // the first change's arrow: take the insertion back
 		t.Fatal(err)

@@ -70,7 +70,7 @@ func TestMultiRepositoryGUI(t *testing.T) {
 	if h.f.frame.Sidebar.SCM.Panels[1].State.Message != "WEB still typing" {
 		t.Fatal("draft was overwritten by another panel")
 	}
-	if err := h.tt.Click("仓库 api"); err != nil {
+	if err := h.tt.Click("展开或折叠仓库 api"); err != nil {
 		t.Fatal(err)
 	}
 	h.settle()
@@ -78,6 +78,14 @@ func TestMultiRepositoryGUI(t *testing.T) {
 		t.Fatal("collapse did not persist")
 	}
 	if err := h.tt.Click("仓库 api"); err != nil {
+		t.Fatal(err)
+	}
+
+	h.settle()
+	if !h.f.frame.Sidebar.SCM.Panels[0].State.Collapsed || h.f.frame.Sidebar.SCM.Root != a {
+		t.Fatalf("choosing history: collapsed=%v root=%q want=%q", h.f.frame.Sidebar.SCM.Panels[0].State.Collapsed, h.f.frame.Sidebar.SCM.Root, a)
+	}
+	if err := h.tt.Click("展开或折叠仓库 api"); err != nil {
 		t.Fatal(err)
 	}
 	h.settle()

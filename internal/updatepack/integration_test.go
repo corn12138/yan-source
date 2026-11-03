@@ -11,6 +11,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 )
 
 // Exercise the real MyGo downloader and bundle replacement, confined to a disposable app.
@@ -57,7 +58,7 @@ func TestMyGoUpdateIntegration(t *testing.T) {
 	source := filepath.Join(t.TempDir(), "main.go")
 	code := `package main
 import("context";"fmt";"os";"time";"github.com/egoist/mygo")
-func main(){mygo.App.SetVersion(os.Args[1]);ctx,cancel:=context.WithTimeout(context.Background(),10*time.Second);defer cancel();up,err:=mygo.Updater.Check(ctx);if err!=nil{fmt.Println(err);os.Exit(1)};if up==nil{fmt.Println("current");return};if os.Args[2]=="install"{if err=up.Install(ctx,nil);err!=nil{fmt.Println(err);os.Exit(1)}};fmt.Println(up.Version)}
+func main(){mygo.App.SetVersion(os.Args[1]);ctx,cancel:=context.WithTimeout(context.Background(),10*time.Second);defer cancel();up,err:=mygo.Updater.Check(ctx);if err!=nil{fmt.Println(err);os.Exit(1)};if up==nil{fmt.Println("current");return};if os.Args[2]=="install"{if err=up.Install(ctx,nil);err!=nil{fmt.Println(err);os.Exit(1)};if _,err=os.Stat(os.Args[3]);err!=nil{fmt.Println("running bundle was replaced");os.Exit(1)}};fmt.Println(up.Version)}
 `
 	if err = os.WriteFile(source, []byte(code), 0644); err != nil {
 		t.Fatal(err)
@@ -70,7 +71,7 @@ func main(){mygo.App.SetVersion(os.Args[1]);ctx,cancel:=context.WithTimeout(cont
 	}
 	run := func(current, action, want string, success bool) {
 		t.Helper()
-		out, err := exec.Command(exe, current, action).CombinedOutput()
+		out, err := exec.Command(exe, current, action, marker).CombinedOutput()
 		if (err == nil) != success || !strings.Contains(string(out), want) {
 			t.Fatalf("%s: %s, %v", action, out, err)
 		}
@@ -99,6 +100,15 @@ func main(){mygo.App.SetVersion(os.Args[1]);ctx,cancel:=context.WithTimeout(cont
 		t.Fatal(err)
 	}
 	run("0.1.0-alpha.9", "install", "0.1.0-alpha.11", true)
+	// macOS swaps the staged bundle only after the app process exits, preserving
+	// its Dock identity. Wait for the helper's completed swap, not just app exit.
+	for deadline := time.Now().Add(10 * time.Second); time.Now().Before(deadline); {
+		got, _ := os.ReadFile(exe)
+		if string(got) == "new executable" {
+			break
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
 	if _, err = os.Stat(marker); !os.IsNotExist(err) {
 		t.Fatal("old bundle remained")
 	}

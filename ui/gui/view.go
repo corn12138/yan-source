@@ -53,11 +53,13 @@ func (f *Frontend) view(c *ui.Context) {
 	p := f.applyTheme(c)
 	// A removed decoration has no paint callback to clear its last activity state.
 	f.mascot, f.rain.moving = mascotState{}, false
+	fontChanged := f.font.charW != 0 && !f.font.is(f.opts)
 	if f.font.charW == 0 || !f.font.is(f.opts) {
 		f.font = newCodeFont(f.opts)
 		f.glyphs.reset()
 	}
-	f.sizePanes(c)
+	f.glyphs.beginFrame(f.font)
+	f.sizePanes(c, fontChanged)
 	f.ed.Frame(&f.frame)
 	f.reapTerminals()
 	// Frame owns a stable active-column snapshot: tab presses during rendering
@@ -79,6 +81,13 @@ func (f *Frontend) view(c *ui.Context) {
 		f.focusRoot = true // 终端仍在旁边可见时，列切换也必须把键盘交回文件。
 	}
 	if fr.Review == nil && !fr.Overlay.Visible && (f.focusRoot || !f.root.FocusWithin(c)) {
+		if f.focusRoot {
+			// Native focus changes settle after rendering the children. Keep
+			// the old draft from selecting its repository in that interval.
+			for _, state := range f.scmStates {
+				state.scmBlurPending = state.scmMessageIn.Focused(c)
+			}
+		}
 		f.root.Focus(c) // 浮层关掉后、关掉终端面板后，把键盘还给工作台
 		f.focusRoot = false
 		f.shownTerm = 0
@@ -178,7 +187,7 @@ func (f *Frontend) sidebarPane(c *ui.Context) {
 }
 
 // sizePanes 按上一帧排好的位置算出每个代码窗格能放几列几行，告诉内核。
-func (f *Frontend) sizePanes(c *ui.Context) {
+func (f *Frontend) sizePanes(c *ui.Context, keepScroll bool) {
 	n := f.ed.Columns()
 	for len(f.cols) < n {
 		f.cols = append(f.cols, colState{reviewHover: -1, split: splitState{hover: -1, review: -1}})
@@ -191,7 +200,12 @@ func (f *Frontend) sizePanes(c *ui.Context) {
 		}
 		w := int((b.W - codePadR) / f.font.charW)
 		h := int((b.H - codePadY) / f.font.lineH)
-		f.ed.SetPaneSize(i, view.Size{W: view.Unit(max(w, 1)), H: view.Unit(max(h, 1))})
+		size := view.Size{W: view.Unit(max(w, 1)), H: view.Unit(max(h, 1))}
+		if keepScroll {
+			f.ed.SetPaneSizeKeepingScroll(i, size)
+		} else {
+			f.ed.SetPaneSize(i, size)
+		}
 	}
 	if b := f.tree.Handle.Bounds(c); b.H > 0 {
 		f.ed.SetSidebarRows(int(b.H / treeRowH))

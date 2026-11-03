@@ -74,11 +74,13 @@ func (f *Frontend) SelfTestTerminal(dir string, report func(string)) {
 		s.t.Resize(100, 30)
 		c, r := s.t.Size()
 		report(fmt.Sprintf("resize: %dx%d", c, r))
-		s.t.Send([]byte("sleep 30; echo not-interrupted\r"))
+		// Split the marker so shell echo cannot be mistaken for command output.
+		// Some shells continue compound lists after SIGINT; only successful sleep may print it.
+		s.t.Send([]byte("sleep 30 && printf 'unexpected-%s\\n' completion\r"))
 		time.Sleep(time.Second)
 		s.t.Send([]byte{3})
 		s.t.Send([]byte("echo after-ctrl-c-$((1+1))\r"))
-		report(fmt.Sprint("ctrl+c returns to the prompt: ", wait(s, "after-ctrl-c-2", 1), ", interrupted: ", strings.Count(s.t.Text(), "not-interrupted") == 1)) // 只有敲进去的那行命令
+		report(fmt.Sprint("ctrl+c returns to the prompt: ", wait(s, "after-ctrl-c-2", 1), ", interrupted: ", !strings.Contains(s.t.Text(), "unexpected-completion")))
 		onMain(func() { f.removeTerminal(s) })
 		report(fmt.Sprint("closed, terminals left: ", len(f.terms)))
 		onMain(func() { f.newTerminal(dir) }) // 开着终端退出

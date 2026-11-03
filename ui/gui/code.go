@@ -50,11 +50,33 @@ func (f codeFont) font() ui.Font { return ui.Font{Family: f.family, Size: f.size
 
 // glyphCache 记住塑形过的文字：每帧画的大多是同样的几十行，塑形一次就够。
 type glyphCache struct {
-	m   map[string][]ui.Glyph
-	tmp []ui.Glyph
+	m        map[string][]ui.Glyph
+	tmp      []ui.Glyph
+	identity fontIdentity
 }
 
 func (g *glyphCache) reset() { g.m = nil }
+
+func (g *glyphCache) beginFrame(f codeFont) {
+	if g.identity.changed(f.font()) {
+		g.reset()
+	}
+}
+
+type fontIdentity struct{ probe ui.Glyph }
+
+func (id *fontIdentity) changed(font ui.Font) bool {
+	// Shape returns the native font identity inside each glyph. A fresh probe
+	// changes after MyGo recycles its fonts, even when our font settings did not.
+	// Retained editor rows and diagram labels must then discard their layouts.
+	probe := ui.Shape("0", font)
+	if len(probe) == 0 {
+		return true
+	}
+	changed := probe[0] != id.probe
+	id.probe = probe[0]
+	return changed
+}
 
 func (g *glyphCache) shape(s string, f codeFont) []ui.Glyph {
 	if g.m == nil || len(g.m) > 16384 {
@@ -281,6 +303,9 @@ func (f *Frontend) paneInput(ci int, ev ui.InputEvent) bool {
 			return true
 		}
 	case ui.InputScroll:
+		if f.zoomFontOnScroll(ci, ev) {
+			return true
+		}
 		// 触控板按像素滚，鼠标滚轮按行滚：攒够一行（横向攒够一格）才让内核滚。
 		// 只沿主方向滚，同 VS Code 的 editor.scrollPredominantAxis（照着 Mayoi 8b7214a）：
 		// 触控板横着划总带点上下，竖着划总带点左右，不然文字边滚边漂。

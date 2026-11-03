@@ -118,9 +118,19 @@ func (e *Editor) zoom(by float64) error {
 	if e.imageZoom(by) {
 		return nil // 当前标签是图片：缩放图片
 	}
+	e.ZoomFont(by)
+	return nil
+}
+
+// ZoomFont 调整并记住代码字号（by 为 0 时恢复默认值），不改变焦点或缩放图片。
+// 指针所在的代码窗格可能没有键盘焦点，不能按当前标签决定缩放对象。
+func (e *Editor) ZoomFont(by float64) {
 	size := config.Default().FontSize
 	if by != 0 {
 		size = max(min(e.cfg.FontSize+by, 28), 9)
+	}
+	if size == e.cfg.FontSize {
+		return
 	}
 	e.cfg.FontSize = size
 	if e.state != nil {
@@ -128,7 +138,6 @@ func (e *Editor) zoom(by float64) error {
 		e.saveState()
 	}
 	e.settingsGen++
-	return nil
 }
 
 func (e *Editor) toggleAutoSave() error {

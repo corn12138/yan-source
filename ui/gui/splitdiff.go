@@ -332,6 +332,9 @@ func (f *Frontend) splitInput(ci int, ev ui.InputEvent) bool {
 		f.ed.SplitClick(ci, int(sp.Lines[i]), right, ev.Clicks >= 2)
 		return true
 	case ui.InputScroll:
+		if f.zoomFontOnScroll(ci, ev) {
+			return true
+		}
 		side := 0
 		if right {
 			side = 1

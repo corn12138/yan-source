@@ -586,7 +586,7 @@ func registerBuiltins(e *Editor) {
 		}},
 		{"list.focusMessage", func(e *Editor) error {
 			if e.side == sideSCM && e.repository().git.repo != nil {
-				e.repository().scm.focusMsg = true
+				e.FocusCommitMessage(true)
 			}
 			return nil
 		}},

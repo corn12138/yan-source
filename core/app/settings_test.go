@@ -124,3 +124,23 @@ func TestThemeActivity(t *testing.T) {
 		t.Fatal("finished activity remained")
 	}
 }
+
+func TestFontZoomBoundsAndPersistence(t *testing.T) {
+	e, _ := newFolderEditor(t, map[string]string{"a.txt": "text"})
+	path := filepath.Join(t.TempDir(), "state.json")
+	e.SetState(config.LoadState(path))
+	base := config.Default().FontSize
+	for _, s := range []struct{ by, want float64 }{{1, base + 1}, {-1, base}, {100, 28}, {1, 28}, {-100, 9}, {-1, 9}, {0, base}} {
+		_, _, before, gen := e.Settings()
+		e.ZoomFont(s.by)
+		_, _, size, nextGen := e.Settings()
+		if size != s.want || (nextGen != gen) != (before != size) {
+			t.Fatalf("zoom %v: size %v, generation %d→%d", s.by, size, gen, nextGen)
+		}
+		cfg := config.Default()
+		config.LoadState(path).Apply(cfg)
+		if cfg.FontSize != s.want {
+			t.Fatalf("restored font size %v, want %v", cfg.FontSize, s.want)
+		}
+	}
+}

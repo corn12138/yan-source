@@ -98,6 +98,7 @@ type Frontend struct {
 	findQueryIn, findWithIn ui.Handle
 	// 源代码管理的提交说明
 	scmStates map[uint64]*scmInputState
+	scmReveal string
 	// 在文件中搜索
 	searchText    [4]string // 查询、替换、包含、排除
 	searchEditing int       // 这一帧用户改了第几个输入框（从 1 数；0 表示没改）
@@ -154,6 +155,7 @@ type colState struct {
 	strip       bool       // 左键按在右边那一条上：拖动是在滚文件，不是选文字
 	split       splitState // 并排两窗格的改动视图：滑动、发光、沟槽里指着的箭头（splitdiff.go）
 	link        codeLink   // 按住链接修饰键时指着的名字（点它转到定义）
+	fontZoom    fontZoomGesture
 }
 
 // New 创建图形前端。

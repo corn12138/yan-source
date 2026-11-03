@@ -29,6 +29,14 @@ func runSelftest(ed *app.Editor, fe *gui.Frontend) {
 		return
 	}
 	enc := json.NewEncoder(log)
+	if os.Getenv("YAN_SELFTEST_MODE") == "submodule-scm" {
+		fe.SelfTestSubmodule(dir, func(s string) { enc.Encode(map[string]string{"SubmoduleSCM": s}) })
+		return
+	}
+	if os.Getenv("YAN_SELFTEST_MODE") == "terminal-font" {
+		fe.SelfTestTerminalFonts(dir, func(s string) { enc.Encode(map[string]string{"TerminalFont": s}) })
+		return
+	}
 	if os.Getenv("YAN_SELFTEST_MODE") == "git-login-path" {
 		runGitPathSelftest(dir, fe, func(s string) { enc.Encode(map[string]string{"GitLoginPath": s}) })
 		return

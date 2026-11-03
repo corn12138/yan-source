@@ -15,6 +15,7 @@ type scmInputState struct {
 	scmMessage                string
 	scmEditing, scmFocusAsked bool
 	scmMessageIn              ui.Handle
+	scmBlurPending            bool
 }
 
 func (f *Frontend) scmState(id uint64) *scmInputState {
@@ -46,10 +47,24 @@ func (e repositoryEditor) SetCommitMessage(s string) {
 	e.act(func(ed *app.Editor) { ed.SetCommitMessage(s) })
 }
 func (e repositoryEditor) FocusCommitMessage(on bool) {
-	e.act(func(ed *app.Editor) { ed.FocusCommitMessage(on) })
+	if on {
+		e.act(func(ed *app.Editor) { ed.FocusCommitMessage(true) })
+	} else {
+		// Losing focus is a report about the old draft, not a new choice of
+		// repository; the click that took focus already selected its target.
+		e.InRepository(e.id, func(ed *app.Editor) { ed.FocusCommitMessage(false) })
+	}
 }
 func (e repositoryEditor) SCMClick(i int, open bool) {
 	e.act(func(ed *app.Editor) { ed.SCMClick(i, open) })
+}
+func (e repositoryEditor) SCMOpenSubmodule(path string) {
+	e.act(func(ed *app.Editor) { ed.SCMOpenSubmodule(path) })
+}
+func (f *Frontend) openSubmoduleChanges(ed repositoryEditor, path string) {
+	ed.SCMOpenSubmodule(path)
+	f.scmReveal = path
+	f.focusRoot = true
 }
 func (e repositoryEditor) SCMPick(i int, extend, toggle bool) {
 	e.act(func(ed *app.Editor) { ed.SCMPick(i, extend, toggle) })
@@ -127,7 +142,11 @@ func (f *Frontend) scmView(c *ui.Context) {
 			state := panel.State
 			live[state.RepositoryID] = true
 			ui.Column(c.Key(fmt.Sprint("repository:", state.RepositoryID))).Children(func() {
-				h := ui.Row(c.Key("repository-header")).Height(30).Padding(0, 10).Gap(6).AlignItems(ui.Center).Label(i18n.F("Repository %s", panel.Name)).Tooltip(state.Root)
+				h := ui.Row(c.Key("repository-header")).Height(30).Padding(0, 6).Gap(4).AlignItems(ui.Center).Tooltip(state.Root)
+				if f.scmReveal == state.Root {
+					h.ScrollIntoView()
+					f.scmReveal = ""
+				}
 				if state.RepositoryID == s.RepositoryID {
 					h.Background(f.pal.active)
 				}
@@ -136,8 +155,24 @@ func (f *Frontend) scmView(c *ui.Context) {
 					if state.Collapsed {
 						icon = iconChevronRight
 					}
-					ui.Icon(c, icon).FontSize(12).TextColor(f.pal.muted)
-					ui.Text(c, panel.Name).SingleLine().Shrink(1).Grow(1).FontSize(12).FontWeight(600).TextColor(f.pal.text)
+					arrow := ui.ButtonBase(c.Key("toggle-repository")).Size(20, 24).Label(i18n.F("Toggle Repository %s", panel.Name))
+					arrow.Children(func() { ui.Icon(c, icon).FontSize(12).TextColor(f.pal.muted) })
+					if arrow.Clicked() {
+						f.ed.ToggleRepository(state.RepositoryID)
+					}
+					name := ui.ButtonBase(c.Key("select-repository")).Height(24).Grow(1).Shrink(1).MinWidth(20).Justify(ui.Start).Label(i18n.F("Repository %s", panel.Name))
+					name.Children(func() {
+						ui.Text(c, panel.Name).SingleLine().Shrink(1).FontSize(12).FontWeight(600).TextColor(f.pal.text)
+					})
+					if name.Clicked() {
+						f.ed.SelectRepository(state.RepositoryID)
+						// A still-focused draft would select its repository again on
+						// the next frame when its input reports focus to the core.
+						f.focusRoot = true
+					}
+					if state.Collapsed {
+						ui.Text(c, state.Branch).SingleLine().Shrink(2).MaxWidth(90).FontSize(11).TextColor(f.pal.muted)
+					}
 					count := 0
 					for _, g := range state.Groups {
 						count += g.Count
@@ -149,9 +184,6 @@ func (f *Frontend) scmView(c *ui.Context) {
 						f.ed.SCMOpenRepository(state.Root)
 					}
 				})
-				if h.Clicked() {
-					f.ed.ToggleRepository(state.RepositoryID)
-				}
 				if !state.Collapsed {
 					f.scmPanel(c, &state, true)
 				}
@@ -159,6 +191,7 @@ func (f *Frontend) scmView(c *ui.Context) {
 		}
 		f.scmHistory(c.Key(fmt.Sprint("history:", s.RepositoryID)), s)
 	})
+	f.scmReveal = ""
 	for id := range f.scmStates {
 		if !live[id] {
 			delete(f.scmStates, id)

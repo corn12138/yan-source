@@ -1,6 +1,6 @@
 module github.com/corn12138/yan-source
 
-go 1.27.1
+go 1.27.3
 
 require (
 	github.com/BurntSushi/toml v1.6.0
@@ -38,6 +38,6 @@ require (
 
 tool github.com/egoist/mygo/cmd/mygo
 
-// Mayoi 1010308 pins this fork for inline math object layout. It also retains
-// terminal copy-on-select and image-only clipboard paste support.
-replace github.com/egoist/mygo => github.com/sorrycc/mygo v0.4.9-0.20261022125358-4bd079439ee7
+// This fork retains inline math objects, terminal copy-on-select and image-only
+// paste, and invalidates terminal glyphs when native fonts are released.
+replace github.com/egoist/mygo => github.com/sorrycc/mygo v0.4.9-0.20261029144802-e386308904aa

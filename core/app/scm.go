@@ -78,7 +78,12 @@ func (e *Editor) scmAllGroups() []view.SCMGroup {
 		} else if en.Y != '.' && !en.Untracked() && !en.Conflicted() {
 			l = en.Y
 		}
-		return view.SCMRow{Path: en.Path, Name: name, Dir: strings.TrimSuffix(dir, "/"), Letter: l, Staged: staged}
+		r := view.SCMRow{Path: en.Path, Name: name, Dir: strings.TrimSuffix(dir, "/"), Letter: l, Staged: staged}
+		if en.Submodule() {
+			r.Submodule = true
+			r.Detail, r.Tooltip = submoduleState(en, staged)
+		}
+		return r
 	}
 	for _, en := range st.Entries {
 		switch {
@@ -303,6 +308,14 @@ func (e *Editor) stage(paths []string, unstage bool) error {
 
 // discard 放弃文件的修改：跟踪的文件恢复成索引里的样子，未跟踪的移到废纸篓。开着的文档随后从磁盘重载。
 func (e *Editor) discard(rows []view.SCMRow) error {
+	// A parent's restore can recurse into a submodule when Git is configured
+	// that way. Its content must only be discarded from the child's own panel.
+	rows = slices.DeleteFunc(slices.Clone(rows), func(r view.SCMRow) bool {
+		return r.Submodule || e.repository().git.entries[r.Path].Submodule()
+	})
+	if len(rows) == 0 {
+		return nil
+	}
 	paths := make([]string, 0, len(rows))
 	for _, row := range rows {
 		paths = append(paths, row.Path)
@@ -338,7 +351,7 @@ func (e *Editor) commit(push bool) error {
 	}
 	msg := strings.TrimSpace(e.repository().scm.message)
 	if msg == "" && !e.repository().scm.amend {
-		e.repository().scm.focusMsg = true
+		e.FocusCommitMessage(true)
 		return errors.New(i18n.T("Write a commit message first"))
 	}
 	if err := e.saveDirtyInRepo(); err != nil {
@@ -380,7 +393,8 @@ func (e *Editor) startAmend() error {
 		return errors.New(i18n.T("Not in a Git repository"))
 	}
 	e.showSide(sideSCM)
-	e.repository().scm.amend, e.repository().scm.focusMsg = true, true
+	e.repository().scm.amend = true
+	e.FocusCommitMessage(true)
 	post := e.postGit()
 	go func() {
 		msg := r.LastMessage()
@@ -667,7 +681,7 @@ func (e *Editor) scmOpen(keep bool) error {
 		}
 		return nil
 	}
-	// A gitlink belongs to the parent index; opening the child panel exposes its files.
+	// A gitlink's diff belongs to the parent index, not the child's file buffers.
 	if en, ok := e.repository().git.entries[r.Path]; ok && en.Submodule() {
 		return e.openAllChanges()
 	}
@@ -726,8 +740,11 @@ func (e *Editor) SetCommitMessage(s string) { e.repository().scm.message = s }
 
 // FocusCommitMessage 记下键盘在不在提交说明里。
 func (e *Editor) FocusCommitMessage(on bool) {
-	e.repository().scm.focusMsg = on
+	rc := e.repository()
+	rc.scm.focusMsg = on
 	if on {
+		// Keyboard commands must not send input into a folded repository panel.
+		rc.collapsed, rc.expansionSet = false, true
 		e.side, e.area = sideSCM, areaTree
 	}
 }
@@ -993,6 +1010,13 @@ func (e *Editor) checkRepositoryPaths(paths []string) error {
 	for _, path := range paths {
 		if !r.Contains(path) {
 			return errors.New(i18n.T("The file doesn't belong to the selected repository; select again"))
+		}
+		// Containment alone includes child worktrees. Only their gitlink itself
+		// can be staged through a parent; the files belong to the child index.
+		if owner := e.repositoryForPath(path); owner != nil && owner != e.repository() {
+			if path != owner.git.repo.Root || !e.repository().git.entries[path].Submodule() {
+				return errors.New(i18n.T("The file doesn't belong to the selected repository; select again"))
+			}
 		}
 	}
 	return nil
