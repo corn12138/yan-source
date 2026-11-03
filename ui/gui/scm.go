@@ -109,6 +109,14 @@ func (f *Frontend) scmPanel(c *ui.Context, s *view.SCM, multi bool) {
 		}
 		// 内核要把键盘交给提交说明（修改上次提交、终端里按 Tab）时先要焦点；之后焦点在哪儿以输入框为准。
 		switch focused := box.Focused(); {
+		case f.focusRoot || state.scmBlurPending:
+			// A header/menu click can choose another repository during this
+			// frame. Handle.Focus is deferred, so ignore the old draft's focus
+			// until the native input has actually relinquished it.
+			state.scmBlurPending = focused
+			state.scmMessageIn.CancelFocus(c)
+			state.scmFocusAsked = false
+			ed.FocusCommitMessage(false)
 		case focused && !s.MessageFocused:
 			ed.FocusCommitMessage(true)
 		case !focused && s.MessageFocused && !state.scmFocusAsked:
@@ -596,6 +604,9 @@ func (f *Frontend) scmRow(c *ui.Context, id uint64, g view.SCMGroup, r view.SCMR
 	}
 	p := f.pal
 	row := ui.Row(c.Key(fmt.Sprintf("%d:%s", g.Kind, r.Path))).Gap(6).AlignItems(ui.Center).Height(22).Padding(0, 0, 0, 14+float32(r.Depth)*14).Radius(4)
+	if r.Submodule {
+		row.Tooltip(r.Tooltip)
+	}
 	hovered := row.Hovered()
 	switch {
 	case selected && f.frame.Focus == view.FocusSidebar, r.Picked:
@@ -603,7 +614,7 @@ func (f *Frontend) scmRow(c *ui.Context, id uint64, g view.SCMGroup, r view.SCMR
 	case hovered:
 		row.Background(p.hover)
 	}
-	if r.Letter != 'D' { // 和资源管理器一样的拖动内容：拖到一列上打开，拖到系统文件管理器里复制
+	if r.Letter != 'D' && !r.Submodule { // 和资源管理器一样的拖动内容：拖到一列上打开，拖到系统文件管理器里复制
 		path := r.Path
 		row.DragDataFrom(func() transfer.Data {
 			data, _ := transfer.FileData(path)
@@ -629,8 +640,18 @@ func (f *Frontend) scmRow(c *ui.Context, id uint64, g view.SCMGroup, r view.SCMR
 			targets = picked
 		}
 	}
+	if r.Submodule {
+		row.ContextMenu(func(m *ui.Menu) {
+			if m.Item(i18n.T("Open Submodule Changes")).Chosen() {
+				f.openSubmoduleChanges(ed, r.Path)
+			}
+		})
+	}
 	row.Children(func() {
 		icon, col := fileIcon(p, r.Name)
+		if r.Submodule {
+			icon, col = iconFolder, p.accent
+		}
 		ui.Icon(c, icon).FontSize(14).TextColor(col)
 		label := ui.Text(c, r.Name).FontSize(13).SingleLine().Shrink(0).TextColor(gitColor(p, r.Letter))
 		if r.Letter == 'D' {
@@ -639,14 +660,20 @@ func (f *Frontend) scmRow(c *ui.Context, id uint64, g view.SCMGroup, r view.SCMR
 		if r.Dir != "" {
 			ui.Text(c, r.Dir).FontSize(11.5).TextColor(p.faint).SingleLine().Shrink(1)
 		}
+		if r.Detail != "" {
+			ui.Text(c, r.Detail).FontSize(10.5).TextColor(p.muted).SingleLine().Shrink(2)
+		}
 		ui.Spacer(c)
 		if hovered {
+			if r.Submodule && f.smallButton(c, iconFolder, i18n.T("Open Submodule Changes")) {
+				f.openSubmoduleChanges(ed, r.Path)
+			}
 			if g.Kind == view.GroupStaged {
 				if f.smallButton(c, iconMinus, i18n.T("Unstage")) {
 					ed.SCMStageRows(targets)
 				}
 			} else {
-				if g.Kind != view.GroupMerge && f.smallButton(c, iconUndo, i18n.T("Discard Changes…")) {
+				if g.Kind != view.GroupMerge && !r.Submodule && f.smallButton(c, iconUndo, i18n.T("Discard Changes…")) {
 					f.confirmDiscard(ed.id, targets)
 				}
 				if f.smallButton(c, iconPlus, i18n.T("Stage")) {
@@ -674,6 +701,10 @@ func (f *Frontend) smallButton(c *ui.Context, icon *ui.SVG, label string) bool {
 
 // confirmDiscard 先问一声，再放弃这些文件的修改（不能撤销；未跟踪的文件移到废纸篓）。
 func (f *Frontend) confirmDiscard(id uint64, rows []view.SCMRow) {
+	rows = slices.DeleteFunc(slices.Clone(rows), func(r view.SCMRow) bool { return r.Submodule })
+	if len(rows) == 0 {
+		return
+	}
 	ed := repositoryEditor{Editor: f.ed, id: id}
 
 	msg := i18n.F("Discard changes to %d files?", len(rows))

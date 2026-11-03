@@ -148,6 +148,8 @@ func (e *Editor) gitChanged() {
 
 // setStatus 收下读到的状态，并算出每个目录下面最要紧的改动。
 func (e *Editor) setStatus(st *git.Status) {
+	restoreSelection := e.keepSCMSelection()
+	defer restoreSelection()
 	g := e.repository().git
 	g.status = st
 	g.entries = make(map[string]git.Entry, len(st.Entries))

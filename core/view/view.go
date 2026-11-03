@@ -477,11 +477,13 @@ const (
 
 // SCMRow 是源代码管理里的一个文件。
 type SCMRow struct {
-	Path   string // 绝对路径
-	Name   string
-	Dir    string // 相对仓库根的目录
-	Letter byte   // M、A、D、R、U（未跟踪）、C（冲突）
-	Staged bool
+	Path            string // 绝对路径
+	Name            string
+	Dir             string // 相对仓库根的目录
+	Letter          byte   // M、A、D、R、U（未跟踪）、C（冲突）
+	Staged          bool
+	Submodule       bool
+	Detail, Tooltip string
 	// 以树的形式查看时：Folder 是文件夹的一行（Name 是它的名字，只有一个子文件夹的连起来写，如 internal/git），
 	// Depth 是缩进几级，Collapsed 是折起来了。
 	Folder    bool

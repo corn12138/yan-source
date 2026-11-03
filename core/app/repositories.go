@@ -19,6 +19,7 @@ type repositoryContext struct {
 	git             *gitState
 	scm             *scmState
 	dead, collapsed bool
+	expansionSet    bool
 }
 type repositoryState struct {
 	root     *repositoryContext
@@ -176,7 +177,25 @@ func (e *Editor) chooseRepository() error {
 	return nil
 }
 func (e *Editor) ToggleRepository(id uint64) {
-	e.WithRepository(id, func(e *Editor) { rc := e.repository(); rc.collapsed = !rc.collapsed })
+	e.InRepository(id, func(e *Editor) {
+		rc := e.repository()
+		rc.collapsed, rc.expansionSet = !rc.changesCollapsed(), true
+	})
+}
+
+func (rc *repositoryContext) changesCollapsed() bool {
+	if rc.expansionSet {
+		return rc.collapsed
+	}
+	return (rc.git.status == nil || len(rc.git.status.Entries) == 0 && rc.git.status.Op == "") && !rc.scm.amend && rc.git.busy == ""
+}
+
+// SelectRepository changes the command/history target without folding its files.
+func (e *Editor) SelectRepository(id uint64) {
+	e.WithRepository(id, func(e *Editor) {
+		e.repository().scm.focusMsg = false
+		e.showSide(sideSCM)
+	})
 }
 func (e *Editor) scmFrame(dst *view.SCM) {
 	active := e.repository()
@@ -193,7 +212,7 @@ func (e *Editor) scmFrame(dst *view.SCM) {
 		var panel view.SCM
 		e.inRepository(rc, func() { e.scmOneFrame(&panel) })
 		panel.Root, panel.RepositoryID = rc.git.repo.Root, rc.id
-		panel.Collapsed = rc.collapsed
+		panel.Collapsed = rc.changesCollapsed()
 		if rc != active {
 			panel.Selected = -1
 			panel.Commits = nil
@@ -386,7 +405,7 @@ func (e *Editor) moveRepositoryRow(by int) {
 		if i >= 0 && i < len(e.repositories.contexts) {
 			rc = e.repositories.contexts[i]
 			e.repositories.selected = rc.git.repo.Root
-			rc.collapsed = false
+			rc.collapsed, rc.expansionSet = false, true
 			e.inRepository(rc, func() {
 				rc.scm.sel = 0
 				if by < 0 {

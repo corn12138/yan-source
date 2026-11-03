@@ -183,8 +183,15 @@ func markdownFrontMatter(lines []string) bool {
 // renderers, which the preview has no use for and would add unused
 // rendering code.
 func markdownParser(math bool) parser.Parser {
-	inline := append(parser.DefaultInlineParsers(),
-		util.Prioritized(extension.NewStrikethroughParser(), 500),
+	var inline []util.PrioritizedValue
+	for _, v := range parser.DefaultInlineParsers() {
+		if v.Value != parser.NewEmphasisParser() {
+			inline = append(inline, v)
+		}
+	}
+	inline = append(inline,
+		util.Prioritized(cjkEmphasisParser{emphasisDelimiters}, 500),
+		util.Prioritized(cjkEmphasisParser{strikethroughDelimiters}, 500),
 		util.Prioritized(extension.NewTaskCheckBoxParser(), 0),
 		util.Prioritized(extension.NewLinkifyParser(), 999),
 		util.Prioritized(extension.NewFootnoteParser(), 101))

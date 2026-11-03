@@ -99,8 +99,9 @@ type mermaidDiagram struct {
 	err string
 	// shaped are the labels shaped at scale, the scale the diagram was
 	// drawn at last, for the UI thread that draws it.
-	shaped []*ui.TextLayout
-	scale  float32
+	shaped   []*ui.TextLayout
+	scale    float32
+	identity fontIdentity
 }
 
 // mermaidLabel is a run of a label's text in font, with its top left at
@@ -121,7 +122,8 @@ func (d *mermaidDiagram) draw(pt *ui.Painter, r ui.Rect) {
 	}
 	pt.Image(d.svg, r, ui.FillBox)
 	s := r.W / d.w
-	if size := float32(math.Round(float64(s)*100) / 100); size != d.scale || len(d.shaped) != len(d.labels) {
+	fontsChanged := len(d.labels) > 0 && d.identity.changed(d.labels[0].font)
+	if size := float32(math.Round(float64(s)*100) / 100); fontsChanged || size != d.scale || len(d.shaped) != len(d.labels) {
 		d.scale, d.shaped = size, make([]*ui.TextLayout, len(d.labels))
 		for i, l := range d.labels {
 			f := l.font

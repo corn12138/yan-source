@@ -616,6 +616,15 @@ func (e *Editor) MoveTab(from, i, to, at int) {
 
 // SetPaneSize 告诉内核第 col 列代码窗格的尺寸（Unit）；前端每次排版后调用。
 func (e *Editor) SetPaneSize(col int, size view.Size) {
+	e.setPaneSize(col, size, true)
+}
+
+// SetPaneSizeKeepingScroll 用于字体变化后的重新排版：阅读位置可能已经离开光标，不能拉回光标。
+func (e *Editor) SetPaneSizeKeepingScroll(col int, size view.Size) {
+	e.setPaneSize(col, size, false)
+}
+
+func (e *Editor) setPaneSize(col int, size view.Size, reveal bool) {
 	if col < 0 || col >= len(e.cols) {
 		return
 	}
@@ -623,7 +632,7 @@ func (e *Editor) SetPaneSize(col int, size view.Size) {
 	if c.size != size {
 		c.size = size
 		e.sync()
-		if col == e.col {
+		if reveal && col == e.col {
 			e.reveal()
 		}
 		e.sync()

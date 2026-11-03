@@ -48,12 +48,15 @@ func TestNestedRepositoriesGUI(t *testing.T) {
 		t.Fatal("missing repository panel")
 	}
 	h.shot("nested-repositories")
-	if err := h.tt.Click("仓库 group/project"); err != nil {
+	if !h.f.frame.Sidebar.SCM.Panels[0].State.Collapsed {
+		t.Fatal("clean repository should start collapsed")
+	}
+	if err := h.tt.Click("展开或折叠仓库 group/project"); err != nil {
 		t.Fatal(err)
 	}
 	h.settle()
-	if !h.f.frame.Sidebar.SCM.Panels[0].State.Collapsed {
-		t.Fatal("repository header did not collapse")
+	if h.f.frame.Sidebar.SCM.Panels[0].State.Collapsed {
+		t.Fatal("clean repository could not be expanded")
 	}
 
 }

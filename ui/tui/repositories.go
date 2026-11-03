@@ -62,6 +62,9 @@ func (f *Frontend) drawRepositories(s *view.SCM, changes int, r view.Rect, focus
 					}
 				}
 				label := file.Name
+				if file.Detail != "" {
+					label += " · " + file.Detail
+				}
 				if file.Dir != "" {
 					label += "  " + file.Dir
 				}

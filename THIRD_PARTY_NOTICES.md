@@ -4,6 +4,10 @@
 
 ## Mayoi
 
+- Submodule state labels and independent repository selection/expansion follow [Mayoi PR #76](https://github.com/sorrycc/Mayoi/pull/76) by xierenyuan (阿平), merged as `20e7968c3d63132d5525c38003253402dfc57779` (MIT). Parent discard exclusion follows `cmd/mayoi/scm.go` at that snapshot. Yan adapts these behaviors to repository-bound core actions and the shared GUI/TUI frame; status-refresh selection preservation is implemented against Yan's row identities.
+
+- CJK-friendly Markdown emphasis parsing and regression fixtures in `ui/gui/cjkemphasis.go` and `ui/gui/cjkemphasis_test.go` are adapted from `ff4eb6a6c43327cb0e7b6b9df798c178b3472bf7` (MIT, Copyright (c) 2026 chencheng).
+
 - 来源：https://github.com/sorrycc/Mayoi （v0.5.1；后来又从 v0.7.0 移植了下面注明的部分）
 - 许可：MIT
 - 用到的部分：

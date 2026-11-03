@@ -574,8 +574,12 @@ func (f *Frontend) drawSCM(s *view.SCM, changes int, r view.Rect, focused bool) 
 			}
 			f.drawText(x0, y, w, "   "+indent+row.Name+"  ", st)
 			end := x0 + 3 + width.String(indent+row.Name) + 2
-			if row.Dir != "" && end < x0+w-3 {
-				f.drawText(end, y, x0+w-3-end, row.Dir, style.Dim)
+			detail := row.Dir
+			if row.Detail != "" {
+				detail = strings.TrimSpace(row.Detail + " " + detail)
+			}
+			if detail != "" && end < x0+w-3 {
+				f.drawText(end, y, x0+w-3-end, detail, style.Dim)
 			}
 			f.screen.Put(x0+w-2, y, string(row.Letter), f.pal.theme[st].Foreground(f.gitTC(row.Letter)))
 			y++

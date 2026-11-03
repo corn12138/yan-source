@@ -2,7 +2,14 @@ package i18n
 
 // zhHans is the Simplified Chinese catalog, keyed by the English text of each message.
 var zhHans = map[string]string{
-	"Formula rendering timed out":                                   "公式渲染超时",
+	"Commit reference": "提交引用",
+	"Content changes":  "内部改动",
+	"The submodule commit reference changed; stage and commit it in this repository separately.":    "子模块的提交引用已变化，请在当前仓库中单独暂存并提交。",
+	"Commit files in the submodule first, then stage its updated reference here.":                   "请先在子模块中提交文件，再到这里暂存更新后的引用。",
+	"This submodule is not available; initialize it outside Yan, then refresh the repository list.": "此子模块尚不可用，请在砚外初始化后刷新仓库列表。",
+	"Open Submodule Changes":      "打开子模块改动",
+	"Toggle Repository %s":        "展开或折叠仓库 %s",
+	"Formula rendering timed out": "公式渲染超时",
 	"The formula contains characters outside the bundled math font": "公式含有内置数学字体不支持的字符",
 	"The formula has no valid size":                                 "公式尺寸无效",
 	"The formula is too long (maximum 32 KiB)":                      "公式过长（最多 32 KiB）",

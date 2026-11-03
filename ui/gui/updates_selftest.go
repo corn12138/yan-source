@@ -4,9 +4,9 @@ package gui
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -113,11 +113,13 @@ func (f *Frontend) SelfTestPublishedUpdate(dir string, report func(string)) {
 			report("FAIL executable " + err.Error())
 			return
 		}
-		out, err := exec.Command(exe, "--version").CombinedOutput()
-		if err != nil || !strings.Contains(string(out), "v"+want+" (") && !strings.Contains(string(out), "v"+want+"（") {
-			report(fmt.Sprintf("FAIL installed executable: %s %v", out, err))
+		// The macOS helper swaps the bundle after this process exits. An external
+		// verifier must then check the replacement executable and its signature.
+		staged, _ := json.Marshal(map[string]string{"executable": exe, "version": want})
+		if err := os.WriteFile(filepath.Join(dir, "update-staged.json"), staged, 0o600); err != nil {
+			report("FAIL staged update marker: " + err.Error())
 			return
 		}
-		report("PASS downloaded signed app replaced the verification bundle: " + strings.TrimSpace(string(out)))
+		report("PASS signed update staged; replacement requires verification after exit")
 	}()
 }
